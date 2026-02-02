@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
 
-            // Gerar token de verificação
-            $verificationToken = bin2hex(random_bytes(32));
+            // Gerar código de verificação de 6 dígitos
+            $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
             // Criar utilizador com email_verified = 0
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':u' => $username,
                 ':e' => $email,
                 ':p' => $hash,
-                ':token' => $verificationToken,
+                ':token' => $verificationCode,
                 ':expires' => $tokenExpiry
             ]);
 
@@ -59,11 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $emailSent = false;
             try {
                 $emailService = new EmailService();
-                $emailSent = $emailService->sendVerificationEmail($email, $username, $verificationToken);
+                $emailSent = $emailService->sendVerificationEmail($email, $username, $verificationCode);
                 if ($emailSent) {
                     error_log("Email de verificacao enviado para: $email ($username)");
-                    $success = true;
-                    $successMessage = 'Conta criada com sucesso! Verifica o teu email para ativar a conta.';
+                    // Guardar email na sessão para a página de verificação
+                    $_SESSION['pending_verification_email'] = $email;
+                    // Redirecionar para página de verificação
+                    header('Location: verify.php');
+                    exit;
                 } else {
                     error_log("Falha ao enviar email de verificacao para: $email ($username)");
                     $errors[] = 'Erro ao enviar email de verificação. Contacta o suporte.';

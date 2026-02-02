@@ -300,19 +300,16 @@ HTML;
     }
 
     /**
-     * Enviar email de verificação de conta
+     * Enviar email de verificação de conta com código
      */
-    public function sendVerificationEmail($email, $username, $token) {
+    public function sendVerificationEmail($email, $username, $code) {
         try {
             $this->mail->addAddress($email);
             $this->mail->isHTML(true);
-            $this->mail->Subject = 'Confirma a tua conta FreeCard';
+            $this->mail->Subject = 'Codigo de verificacao - FreeCard';
 
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-            $verificationLink = "http://{$host}/auth/verify.php?token=" . urlencode($token);
-
-            $this->mail->Body = $this->getVerificationTemplate($username, $verificationLink);
-            $this->mail->AltBody = "Ola {$username}! Clica no link para verificar a tua conta: {$verificationLink} - Este link expira em 24 horas.";
+            $this->mail->Body = $this->getVerificationTemplate($username, $code);
+            $this->mail->AltBody = "Ola {$username}! O teu codigo de verificacao e: {$code} - Este codigo expira em 24 horas.";
 
             $this->mail->send();
             $this->mail->clearAddresses();
@@ -467,7 +464,7 @@ HTML;
     /**
      * Template de verificação de conta
      */
-    private function getVerificationTemplate($username, $verificationLink) {
+    private function getVerificationTemplate($username, $code) {
         $styles = $this->getBaseStyles();
         $header = $this->getEmailHeader('Confirmar Conta');
         $footer = $this->getEmailFooter();
@@ -478,7 +475,21 @@ HTML;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>{$styles}</style>
+    <style>
+        {$styles}
+        .verification-code {
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            font-size: 36px;
+            font-weight: 700;
+            letter-spacing: 12px;
+            padding: 25px 40px;
+            border-radius: 12px;
+            text-align: center;
+            margin: 30px 0;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
 </head>
 <body>
     <div class="email-container">
@@ -490,21 +501,20 @@ HTML;
             </div>
 
             <div class="message">
-                Obrigado por te registares no FreeCard! Para ativares a tua conta e comecares a gerir os teus cartoes, confirma o teu endereco de email clicando no botao abaixo.
+                Obrigado por te registares no FreeCard! Para ativares a tua conta, introduz o codigo de verificacao abaixo na pagina de confirmacao.
             </div>
 
-            <div class="btn-container">
-                <a href="{$verificationLink}" class="btn-primary">Confirmar Conta</a>
+            <div class="verification-code">
+                {$code}
             </div>
 
-            <div class="link-text">
-                Ou copia e cola este link no teu navegador:<br>
-                <a href="{$verificationLink}">{$verificationLink}</a>
+            <div class="message" style="text-align: center; font-size: 14px; color: #7f8c8d;">
+                Introduz este codigo na pagina de verificacao para ativar a tua conta.
             </div>
 
             <div class="info-box warning">
-                <div class="info-box-title">Link temporario</div>
-                <div class="info-box-text">Este link e valido durante 24 horas. Apos esse periodo, teras de solicitar um novo email de verificacao.</div>
+                <div class="info-box-title">Codigo temporario</div>
+                <div class="info-box-text">Este codigo e valido durante 24 horas. Apos esse periodo, teras de solicitar um novo codigo de verificacao.</div>
             </div>
 
             <div class="small-text">
