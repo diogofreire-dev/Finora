@@ -34,7 +34,6 @@ if (empty($notifications)) {
     <?php foreach ($notifications as $notif): ?>
         <div class="notification-toast" style="
             background: var(--bg-secondary);
-            border-left: 4px solid #3498db;
             border-radius: 8px;
             padding: 15px;
             margin-bottom: 10px;
