@@ -123,12 +123,12 @@ if (isset($_POST['resend']) && $email) {
     }
     
     .verify-container {
-      max-width: 600px;
+      max-width: 480px;
       width: 100%;
       background: rgba(255, 255, 255, 0.98);
       backdrop-filter: blur(10px);
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      border-radius: 16px;
+      box-shadow: 0 15px 50px rgba(0,0,0,0.25);
       overflow: hidden;
       animation: slideIn 0.6s ease-out;
     }
@@ -145,7 +145,7 @@ if (isset($_POST['resend']) && $email) {
     }
     
     .status-header {
-      padding: 60px 40px;
+      padding: 40px 30px;
       text-align: center;
       position: relative;
       overflow: hidden;
@@ -174,8 +174,8 @@ if (isset($_POST['resend']) && $email) {
     }
     
     .status-icon {
-      font-size: 80px;
-      margin-bottom: 20px;
+      font-size: 60px;
+      margin-bottom: 15px;
       animation: bounceIn 0.8s;
       position: relative;
       z-index: 1;
@@ -200,9 +200,9 @@ if (isset($_POST['resend']) && $email) {
     }
     
     .status-title {
-      font-size: 32px;
+      font-size: 26px;
       font-weight: 700;
-      margin-bottom: 15px;
+      margin-bottom: 12px;
       position: relative;
       z-index: 1;
     }
@@ -238,21 +238,21 @@ if (isset($_POST['resend']) && $email) {
     }
     
     .verify-content {
-      padding: 40px;
+      padding: 30px;
       border-top: 1px solid #e9ecef;
     }
-    
+
     .info-box {
       background: #f8f9fa;
-      padding: 20px;
+      padding: 15px;
       border-radius: 8px;
-      margin-bottom: 25px;
+      margin-bottom: 20px;
     }
-    
+
     .info-box h4 {
       color: #2c3e50;
-      font-size: 18px;
-      margin-bottom: 10px;
+      font-size: 16px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       gap: 10px;
@@ -511,7 +511,7 @@ if (isset($_POST['resend']) && $email) {
             maxlength="6"
             pattern="[0-9]{6}"
             inputmode="numeric"
-            style="font-size: 32px; letter-spacing: 10px; font-weight: 700; padding: 20px; border: 2px solid #e9ecef; border-radius: 12px;"
+            style="font-size: 24px; letter-spacing: 6px; font-weight: 700; padding: 14px; border: 2px solid #e9ecef; border-radius: 12px;"
             autofocus
             required
           >

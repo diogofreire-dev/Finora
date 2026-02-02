@@ -29,36 +29,29 @@ class EmailService {
     }
 
     /**
-     * Estilos CSS base para todos os emails
+     * Estilos CSS base para todos os emails (compativel com clientes de email)
      */
     private function getBaseStyles() {
         return <<<CSS
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #f8f9fa;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #f8f9fa;
             padding: 20px;
-            min-height: 100vh;
+            margin: 0;
         }
 
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background: #ffffff;
+            background-color: #ffffff;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
         }
 
         .email-header {
-            background: linear-gradient(135deg, #1e3c72 0%, #2c3e50 100%);
+            background-color: #1e3c72;
             padding: 30px 20px;
             text-align: center;
+            border-radius: 12px 12px 0 0;
         }
 
         .logo {
@@ -100,14 +93,13 @@ class EmailService {
 
         .btn-primary {
             display: inline-block;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            background-color: #3498db;
             color: #ffffff !important;
             padding: 14px 40px;
             text-decoration: none;
             border-radius: 8px;
             font-weight: 600;
             font-size: 15px;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
         }
 
         .link-text {
@@ -124,22 +116,22 @@ class EmailService {
         }
 
         .info-box {
-            background: #f8f9fa;
+            background-color: #f8f9fa;
             padding: 15px 20px;
             margin: 20px 0;
             border-radius: 8px;
         }
 
         .info-box.warning {
-            background: #fef9e7;
+            background-color: #fef9e7;
         }
 
         .info-box.danger {
-            background: #fdf2f2;
+            background-color: #fdf2f2;
         }
 
         .info-box.success {
-            background: #f0fdf4;
+            background-color: #f0fdf4;
         }
 
         .info-box-title {
@@ -155,7 +147,7 @@ class EmailService {
         }
 
         .data-card {
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 10px;
             padding: 25px;
@@ -475,21 +467,7 @@ HTML;
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        {$styles}
-        .verification-code {
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
-            font-size: 36px;
-            font-weight: 700;
-            letter-spacing: 12px;
-            padding: 25px 40px;
-            border-radius: 12px;
-            text-align: center;
-            margin: 30px 0;
-            font-family: 'Courier New', monospace;
-        }
-    </style>
+    <style>{$styles}</style>
 </head>
 <body>
     <div class="email-container">
@@ -504,9 +482,15 @@ HTML;
                 Obrigado por te registares no FreeCard! Para ativares a tua conta, introduz o codigo de verificacao abaixo na pagina de confirmacao.
             </div>
 
-            <div class="verification-code">
-                {$code}
-            </div>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                <tr>
+                    <td align="center">
+                        <div style="background-color: #3498db; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 20px 30px; border-radius: 12px; display: inline-block; font-family: 'Courier New', Courier, monospace;">
+                            {$code}
+                        </div>
+                    </td>
+                </tr>
+            </table>
 
             <div class="message" style="text-align: center; font-size: 14px; color: #7f8c8d;">
                 Introduz este codigo na pagina de verificacao para ativar a tua conta.
