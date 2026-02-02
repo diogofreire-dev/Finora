@@ -2,6 +2,8 @@
 // site/settings.php
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/EmailService.php';
 $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
@@ -34,13 +36,26 @@ if (!$settings) {
 
 // Buscar informações do utilizador
 $stmt = $pdo->prepare("
-    SELECT username, email, created_at, last_password_change, 
-           last_email_change, two_factor_enabled 
-    FROM users 
+    SELECT username, email, created_at, last_password_change,
+           last_email_change, two_factor_enabled, pending_email, pending_email_expires
+    FROM users
     WHERE id = :uid
 ");
 $stmt->execute([':uid' => $uid]);
 $user = $stmt->fetch();
+
+// Verificar se há email pendente de confirmação
+$hasPendingEmail = false;
+if ($user['pending_email'] && $user['pending_email_expires']) {
+    if (strtotime($user['pending_email_expires']) > time()) {
+        $hasPendingEmail = true;
+    } else {
+        // Limpar email pendente expirado
+        $stmt = $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid");
+        $stmt->execute([':uid' => $uid]);
+        $user['pending_email'] = null;
+    }
+}
 
 // Verificar se pode alterar password/email (30 dias)
 $canChangePassword = true;
@@ -139,15 +154,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $hash = password_hash($newPassword, PASSWORD_DEFAULT);
                 $stmt = $pdo->prepare("
-                    UPDATE users 
-                    SET password_hash = :hash, last_password_change = NOW() 
+                    UPDATE users
+                    SET password_hash = :hash, last_password_change = NOW()
                     WHERE id = :uid
                 ");
                 $stmt->execute([':hash' => $hash, ':uid' => $uid]);
-                
+
+                // Enviar notificação por email
+                try {
+                    $emailService = new EmailService();
+                    $emailService->sendPasswordChangedNotification($user['email'], $user['username']);
+                } catch (Exception $e) {
+                    error_log("Erro ao enviar notificacao de password: " . $e->getMessage());
+                }
+
                 $message = 'Password alterada com sucesso! Próxima alteração disponível em 30 dias.';
                 $messageType = 'success';
-                
+
                 // Atualizar data
                 $user['last_password_change'] = date('Y-m-d H:i:s');
                 $canChangePassword = false;
@@ -165,62 +188,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     elseif ($action === 'change_email') {
         $currentPassword = $_POST['current_password_email'] ?? '';
         $newEmail = trim($_POST['new_email'] ?? '');
-        
+
         $errors = [];
-        
+
         if (!$canChangeEmail) {
             $errors[] = "Só podes alterar o email novamente daqui a {$daysUntilEmailChange} dia(s).";
         }
-        
+
+        if ($hasPendingEmail) {
+            $errors[] = "Já tens um pedido de alteração de email pendente. Verifica a tua caixa de entrada.";
+        }
+
         // Verificar password atual
         $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $userPass = $stmt->fetch();
-        
+
         if (!password_verify($currentPassword, $userPass['password_hash'])) {
             $errors[] = 'A password está incorreta.';
         }
-        
+
         if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
             $errors[] = 'Email inválido.';
         }
-        
+
         if ($newEmail === $user['email']) {
             $errors[] = 'O novo email não pode ser igual ao atual.';
         }
-        
+
         // Verificar se email já está em uso
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email AND id != :uid");
         $stmt->execute([':email' => $newEmail, ':uid' => $uid]);
         if ($stmt->fetch()) {
             $errors[] = 'Este email já está em uso por outra conta.';
         }
-        
+
         if (empty($errors)) {
             try {
+                // Gerar token de verificação
+                $token = bin2hex(random_bytes(32));
+                $tokenExpiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+                // Guardar email pendente na BD
                 $stmt = $pdo->prepare("
-                    UPDATE users 
-                    SET email = :email, last_email_change = NOW() 
+                    UPDATE users
+                    SET pending_email = :email, pending_email_token = :token, pending_email_expires = :expires
                     WHERE id = :uid
                 ");
-                $stmt->execute([':email' => $newEmail, ':uid' => $uid]);
-                
-                $message = 'Email alterado com sucesso! Próxima alteração disponível em 30 dias.';
-                $messageType = 'success';
-                
-                // Atualizar dados locais
-                $user['email'] = $newEmail;
-                $user['last_email_change'] = date('Y-m-d H:i:s');
-                $canChangeEmail = false;
-                $daysUntilEmailChange = 30;
-            } catch (PDOException $e) {
-                $message = 'Erro ao alterar email.';
+                $stmt->execute([
+                    ':email' => $newEmail,
+                    ':token' => $token,
+                    ':expires' => $tokenExpiry,
+                    ':uid' => $uid
+                ]);
+
+                // Enviar email de verificação para o NOVO email
+                $emailService = new EmailService();
+                if ($emailService->sendEmailChangeVerification($newEmail, $user['username'], $token)) {
+                    $message = 'Enviamos um email de confirmação para <strong>' . htmlspecialchars($newEmail) . '</strong>. Clica no link para confirmar a alteração.';
+                    $messageType = 'success';
+                    $hasPendingEmail = true;
+                    $user['pending_email'] = $newEmail;
+                } else {
+                    // Limpar dados se falhar envio
+                    $stmt = $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid");
+                    $stmt->execute([':uid' => $uid]);
+                    $errors[] = 'Erro ao enviar email de verificação. Tenta novamente.';
+                }
+            } catch (Exception $e) {
+                $message = 'Erro ao processar pedido.';
                 $messageType = 'danger';
             }
-        } else {
+        }
+
+        if (!empty($errors)) {
             $message = implode('<br>', $errors);
             $messageType = 'danger';
         }
+    }
+
+    elseif ($action === 'cancel_email_change') {
+        $stmt = $pdo->prepare("
+            UPDATE users
+            SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL
+            WHERE id = :uid
+        ");
+        $stmt->execute([':uid' => $uid]);
+        $hasPendingEmail = false;
+        $user['pending_email'] = null;
+        $message = 'Pedido de alteração de email cancelado.';
+        $messageType = 'info';
     }
 }
 
@@ -439,7 +496,6 @@ $currentTheme = $settings['theme'] ?? 'light';
     }
     .info-box {
       background: var(--bg-primary);
-      border-left: 4px solid #3498db;
       padding: 12px 16px;
       border-radius: 8px;
       margin-top: 12px;
@@ -645,7 +701,11 @@ $currentTheme = $settings['theme'] ?? 'light';
               <div>
                 <h6 class="mb-1">
                   <i class="bi bi-envelope"></i> Alterar Email
-                  <?php if ($canChangeEmail): ?>
+                  <?php if ($hasPendingEmail): ?>
+                    <span class="security-badge" style="background: rgba(243, 156, 18, 0.1); color: #f39c12;">
+                      <i class="bi bi-clock-history"></i> Pendente
+                    </span>
+                  <?php elseif ($canChangeEmail): ?>
                     <span class="security-badge available">
                       <i class="bi bi-check-circle"></i> Disponível
                     </span>
@@ -658,8 +718,13 @@ $currentTheme = $settings['theme'] ?? 'light';
                 <p class="text-muted small mb-0">
                   Email atual: <strong><?=htmlspecialchars($user['email'])?></strong>
                 </p>
+                <?php if ($hasPendingEmail): ?>
+                <p class="small mb-0" style="color: #f39c12;">
+                  <i class="bi bi-arrow-right"></i> Novo email pendente: <strong><?=htmlspecialchars($user['pending_email'])?></strong>
+                </p>
+                <?php endif; ?>
                 <p class="text-muted small mb-0">
-                  Última alteração: 
+                  Última alteração:
                   <?php if ($user['last_email_change']): ?>
                     <?=date('d/m/Y', strtotime($user['last_email_change']))?>
                   <?php else: ?>
@@ -667,52 +732,69 @@ $currentTheme = $settings['theme'] ?? 'light';
                   <?php endif; ?>
                 </p>
               </div>
-              <button 
-                class="btn btn-sm btn-outline-primary" 
-                data-bs-toggle="collapse" 
+              <?php if (!$hasPendingEmail): ?>
+              <button
+                class="btn btn-sm btn-outline-primary"
+                data-bs-toggle="collapse"
                 data-bs-target="#changeEmailForm"
                 <?=!$canChangeEmail ? 'disabled' : ''?>
               >
                 <i class="bi bi-pencil"></i> Alterar
               </button>
+              <?php endif; ?>
             </div>
-            
+
+            <?php if ($hasPendingEmail): ?>
+            <div class="info-box" style="background: rgba(243, 156, 18, 0.1);">
+              <small>
+                <i class="bi bi-envelope-exclamation"></i>
+                <strong>Verificação pendente:</strong> Enviamos um email para <strong><?=htmlspecialchars($user['pending_email'])?></strong>.
+                Clica no link para confirmar a alteração. O link expira em 1 hora.
+              </small>
+            </div>
+            <form method="post" class="mt-2">
+              <input type="hidden" name="action" value="cancel_email_change">
+              <button type="submit" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Cancelar pedido
+              </button>
+            </form>
+            <?php else: ?>
             <div class="collapse" id="changeEmailForm">
               <form method="post" class="mt-3">
                 <input type="hidden" name="action" value="change_email">
-                
+
                 <div class="mb-3">
                   <label class="form-label">Password (para confirmar) *</label>
-                  <input 
-                    type="password" 
-                    name="current_password_email" 
-                    class="form-control" 
+                  <input
+                    type="password"
+                    name="current_password_email"
+                    class="form-control"
                     placeholder="Introduz a tua password"
                     required
                   >
                 </div>
-                
+
                 <div class="mb-3">
                   <label class="form-label">Novo Email *</label>
-                  <input 
-                    type="email" 
-                    name="new_email" 
-                    class="form-control" 
+                  <input
+                    type="email"
+                    name="new_email"
+                    class="form-control"
                     placeholder="novo@email.com"
                     required
                   >
                 </div>
-                
+
                 <div class="info-box">
                   <small>
                     <i class="bi bi-info-circle"></i>
-                    <strong>Política de Segurança:</strong> Por razões de segurança, só podes alterar o email uma vez a cada 30 dias.
+                    <strong>Verificação necessária:</strong> Vais receber um email no novo endereço para confirmar a alteração.
                   </small>
                 </div>
-                
+
                 <div class="d-grid gap-2 mt-3">
                   <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Alterar Email
+                    <i class="bi bi-envelope"></i> Enviar Verificação
                   </button>
                   <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#changeEmailForm">
                     Cancelar
@@ -720,6 +802,7 @@ $currentTheme = $settings['theme'] ?? 'light';
                 </div>
               </form>
             </div>
+            <?php endif; ?>
           </div>
 
           <!-- Autenticação de 2 Fatores -->
