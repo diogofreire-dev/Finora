@@ -12,16 +12,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($emailOrUsername === '' || $password === '') {
         $errors[] = 'Preenche todos os campos.';
     } else {
-        $stmt = $pdo->prepare('SELECT id, username, password_hash FROM users WHERE email = :e OR username = :u LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, username, password_hash, email_verified FROM users WHERE email = :e OR username = :u LIMIT 1');
         $stmt->execute([':e' => $emailOrUsername, ':u' => $emailOrUsername]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['username'] = $user['username'];
-            session_regenerate_id(true);
-            header('Location: ../dashboard.php');
-            exit;
+            // Verificar se o email foi confirmado
+            if (!$user['email_verified']) {
+                $errors[] = 'A tua conta ainda não foi verificada. Verifica o teu email para ativar a conta.';
+            } else {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['username'] = $user['username'];
+                session_regenerate_id(true);
+                header('Location: ../dashboard.php');
+                exit;
+            }
         } else {
             $errors[] = 'Credenciais inválidas.';
         }
@@ -522,11 +527,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         </div>
 
-        <div class="form-group">
+        <div class="form-group mb-2">
           <button class="btn btn-primary" type="submit">
             <i class="bi bi-box-arrow-in-right me-2"></i>
             Entrar
           </button>
+        </div>
+
+        <div class="text-center mt-3">
+          <a href="forgot_password.php" style="color: var(--primary-blue); text-decoration: none; font-size: 14px;">
+            <i class="bi bi-key me-1"></i>
+            Esqueci-me da palavra-passe
+          </a>
         </div>
       </form>
     </div>

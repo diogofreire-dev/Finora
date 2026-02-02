@@ -1,5 +1,5 @@
 <?php
-// site/reset_password.php - Página para redefinir a palavra-passe
+// site/auth/reset_password.php - Página para redefinir a palavra-passe
 
 session_start();
 require_once __DIR__ . '/../../config/db.php';
@@ -14,14 +14,14 @@ $status = 'invalid'; // 'invalid', 'expired', 'valid', 'success'
 if ($token !== '') {
     // Procurar utilizador com este token
     $stmt = $pdo->prepare('
-        SELECT id, username, email, password_reset_expires 
-        FROM users 
-        WHERE password_reset_token = :token 
+        SELECT id, username, email, password_reset_expires
+        FROM users
+        WHERE password_reset_token = :token
         LIMIT 1
     ');
     $stmt->execute([':token' => $token]);
     $user = $stmt->fetch();
-    
+
     if ($user) {
         // Verificar se o token expirou
         if (strtotime($user['password_reset_expires']) < time()) {
@@ -40,7 +40,7 @@ if ($token !== '') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === 'valid') {
     $password = $_POST['password'] ?? '';
     $password2 = $_POST['password2'] ?? '';
-    
+
     // Validar palavra-passe
     if (strlen($password) < 8) {
         $errors[] = 'A palavra-passe deve ter pelo menos 8 caracteres.';
@@ -55,33 +55,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === 'valid') {
     } elseif ($password !== $password2) {
         $errors[] = 'As palavras-passe não coincidem.';
     }
-    
+
     if (empty($errors)) {
         // Atualizar palavra-passe na BD
         $hash = password_hash($password, PASSWORD_DEFAULT);
         $update = $pdo->prepare('
-            UPDATE users 
-            SET password_hash = :hash, password_reset_token = NULL, password_reset_expires = NULL 
+            UPDATE users
+            SET password_hash = :hash, password_reset_token = NULL, password_reset_expires = NULL, last_password_change = NOW()
             WHERE id = :id
         ');
         $update->execute([
             ':hash' => $hash,
             ':id' => $user['id']
         ]);
-        
+
         $status = 'success';
         $message = 'Palavra-passe alterada com sucesso! Podes agora fazer login com a tua nova palavra-passe.';
         $success = true;
     }
-}
-
-function validatePassword($password) {
-    if (strlen($password) < 8) return false;
-    if (!preg_match('/[A-Z]/', $password)) return false;
-    if (!preg_match('/[a-z]/', $password)) return false;
-    if (!preg_match('/[0-9]/', $password)) return false;
-    if (!preg_match('/[^A-Za-z0-9]/', $password)) return false;
-    return true;
 }
 ?>
 <!doctype html>
@@ -96,268 +87,260 @@ function validatePassword($password) {
     :root {
       --primary-blue: #3498db;
       --dark-blue: #2980b9;
-      --darker-blue: #1f4e79;
-      --light-blue: #a8d0e6;
-      --very-light-blue: #d5e6f4;
       --light-bg: #f8f9fa;
     }
-    
+
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      background: linear-gradient(135deg, var(--dark-blue) 0%, var(--darker-blue) 100%);
+      background: linear-gradient(135deg, #1e3c72 0%, #2c3e50 50%, #1e3c72 100%);
+      background-attachment: fixed;
       min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 20px;
+      padding: 40px 0;
       position: relative;
       overflow-x: hidden;
+      overflow-y: auto;
     }
-    
-    /* Animated background shapes */
-    body::before {
-      content: '';
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 50%;
-      top: -250px;
-      right: -100px;
-      animation: float 8s ease-in-out infinite;
+
+    /* Background animado */
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       z-index: 0;
+      pointer-events: none;
     }
-    
-    body::after {
-      content: '';
+
+    .floating-shape {
       position: absolute;
+      border-radius: 50%;
+      background: rgba(52, 152, 219, 0.1);
+      animation: float 20s infinite ease-in-out;
+    }
+
+    .shape1 {
       width: 300px;
       height: 300px;
-      background: rgba(255, 255, 255, 0.06);
-      border-radius: 50%;
-      bottom: -150px;
-      left: -50px;
-      animation: float 10s ease-in-out infinite reverse;
-      z-index: 0;
+      top: -100px;
+      left: -100px;
+      animation-delay: 0s;
     }
-    
+
+    .shape2 {
+      width: 200px;
+      height: 200px;
+      bottom: -50px;
+      right: -50px;
+      animation-delay: 5s;
+    }
+
+    .shape3 {
+      width: 150px;
+      height: 150px;
+      top: 50%;
+      right: 10%;
+      animation-delay: 2s;
+    }
+
     @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); }
-      50% { transform: translateY(-30px) rotate(10deg); }
+      0%, 100% {
+        transform: translateY(0) rotate(0deg);
+        opacity: 0.3;
+      }
+      50% {
+        transform: translateY(-50px) rotate(180deg);
+        opacity: 0.6;
+      }
     }
-    
+
     .login-container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      overflow: hidden;
-      max-width: 500px;
+      min-width: 320px;
+      max-width: 480px;
       width: 100%;
-      animation: slideUp 0.6s ease-out;
+      margin: 0 auto;
+      padding: 20px;
       position: relative;
-      z-index: 10;
-      backdrop-filter: blur(10px);
+      z-index: 1;
+      animation: slideIn 0.6s ease-out;
     }
-    
-    @keyframes slideUp {
+
+    @keyframes slideIn {
       from {
         opacity: 0;
-        transform: translateY(40px);
+        transform: translateY(30px);
       }
       to {
         opacity: 1;
         transform: translateY(0);
       }
     }
-    
+
+    .login-card {
+      background: rgba(255, 255, 255, 0.98);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
     .login-header {
-      background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
-      color: white;
-      padding: 50px 30px;
+      background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+      padding: 40px 40px 30px;
       text-align: center;
+      border-bottom: 1px solid #f0f0f0;
       position: relative;
       overflow: hidden;
     }
-    
+
     .login-header::before {
       content: '';
       position: absolute;
-      width: 200px;
-      height: 200px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      top: -50px;
-      right: -50px;
-      animation: pulse 3s ease-in-out infinite;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(52, 152, 219, 0.05) 0%, transparent 70%);
+      animation: pulse 4s infinite ease-in-out;
     }
-    
+
     @keyframes pulse {
-      0%, 100% { transform: scale(1); opacity: 0.1; }
-      50% { transform: scale(1.2); opacity: 0.15; }
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.5;
+      }
+      50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+      }
     }
-    
+
+    .logo-container {
+      margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo-container img {
+      width: 120px;
+      height: auto;
+      filter: drop-shadow(0 4px 8px rgba(52, 152, 219, 0.2));
+    }
+
     .login-header h1 {
-      font-size: 32px;
-      margin: 0 0 12px;
-      font-weight: 900;
+      font-size: 26px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin-bottom: 8px;
       position: relative;
-      z-index: 2;
-      text-shadow: 0 2px 15px rgba(0, 0, 0, 0.35);
-      color: #FFD700;
-      letter-spacing: 0.5px;
+      z-index: 1;
     }
-    
+
     .login-header p {
+      color: #7f8c8d;
+      font-size: 15px;
       margin: 0;
-      font-size: 15px;
       position: relative;
-      z-index: 2;
-      font-weight: 600;
-      color: #FFEA00;
-      text-shadow: 0 1px 10px rgba(0, 0, 0, 0.3);
-      letter-spacing: 0.3px;
+      z-index: 1;
     }
-    
-    
+
     .login-body {
-      padding: 45px;
+      padding: 40px;
+      position: relative;
     }
-    
-    .form-floating > label {
-      color: var(--dark-blue);
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
       font-weight: 600;
-      font-size: 15px;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
     }
-    
-    .form-floating > .form-control:focus ~ label,
-    .form-floating > .form-control:not(:placeholder-shown) ~ label {
-      color: var(--primary-blue);
-      font-weight: 600;
-    }
-    
+
     .form-control {
-      border: 2px solid #e0e0e0;
+      border: 2px solid #e9ecef;
       border-radius: 12px;
-      padding: 14px 16px;
+      padding: 12px 16px;
       font-size: 15px;
-      transition: all 0.3s ease;
-      background: #fafafa;
+      transition: all 0.3s;
+      background: white;
     }
-    
+
     .form-control:focus {
       border-color: var(--primary-blue);
-      background: white;
-      box-shadow: 0 0 0 0.3rem rgba(52, 152, 219, 0.15);
+      box-shadow: none;
     }
-    
-    .btn-login {
+
+    .btn-primary {
       background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%);
       border: none;
-      padding: 14px 30px;
-      font-weight: 700;
       border-radius: 12px;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      margin-top: 10px;
-      box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-      text-transform: uppercase;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-    
-    .btn-login:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 10px 25px rgba(52, 152, 219, 0.4);
-      color: white;
-    }
-    
-    .btn-login:active {
-      transform: translateY(-1px);
-    }
-    
-    .form-links {
-      text-align: center;
-      margin-top: 25px;
-      font-size: 14px;
-    }
-    
-    .form-links p {
-      margin: 8px 0;
-      color: #666;
-    }
-    
-    .form-links a {
-      color: var(--primary-blue);
-      text-decoration: none;
+      padding: 14px;
       font-weight: 600;
-      transition: all 0.3s ease;
-      position: relative;
-    }
-    
-    .form-links a::after {
-      content: '';
-      position: absolute;
-      width: 0;
-      height: 2px;
-      bottom: -3px;
-      left: 0;
-      background: var(--primary-blue);
-      transition: width 0.3s ease;
-    }
-    
-    .form-links a:hover::after {
+      font-size: 16px;
+      transition: all 0.3s;
       width: 100%;
+      position: relative;
+      overflow: hidden;
     }
-    
+
+    .btn-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
+    }
+
     .alert {
       border-radius: 12px;
-      margin-bottom: 20px;
       border: none;
-      animation: slideDown 0.4s ease-out;
-      font-weight: 500;
+      padding: 12px 16px;
     }
-    
-    @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
+
     .alert-danger {
-      background-color: #ffebee;
-      color: #d32f2f;
-      border-left: 4px solid #d32f2f;
+      background: #fdf2f2;
+      color: #c0392b;
     }
-    
+
     .alert-success {
-      background-color: #e8f5e9;
-      color: #2e7d32;
-      border-left: 4px solid #2e7d32;
+      background: #f0fdf4;
+      color: #27ae60;
     }
-    
+
     .alert-warning {
-      background-color: #fff8e1;
-      color: #e65100;
-      border-left: 5px solid #ffa000;
-      font-weight: 600;
+      background: #fef9e7;
+      color: #e67e22;
     }
-    
-    .alert i {
-      margin-right: 10px;
-      font-weight: bold;
-      font-size: 16px;
+
+    .input-group-text {
+      background: #f8f9fa;
+      border: 2px solid #e9ecef;
+      border-right: none;
+      border-radius: 12px 0 0 12px;
+      color: var(--primary-blue);
+      transition: all 0.3s;
     }
-    
+
+    .input-group .form-control {
+      border-left: none;
+      border-radius: 0 12px 12px 0;
+    }
+
+    .input-group:focus-within .input-group-text {
+      border-color: var(--primary-blue);
+    }
+
     .password-requirements {
       background: linear-gradient(135deg, rgba(52, 152, 219, 0.08) 0%, rgba(41, 128, 185, 0.06) 100%);
       border: 2px solid rgba(52, 152, 219, 0.2);
@@ -365,16 +348,15 @@ function validatePassword($password) {
       border-radius: 12px;
       margin-bottom: 25px;
       font-size: 14px;
-      animation: slideDown 0.5s ease-out;
     }
-    
+
     .password-requirements strong {
       color: var(--dark-blue);
       font-weight: 700;
       display: block;
       margin-bottom: 12px;
     }
-    
+
     .requirement {
       margin: 8px 0;
       color: #666;
@@ -382,158 +364,258 @@ function validatePassword($password) {
       align-items: center;
       transition: all 0.3s ease;
     }
-    
+
     .requirement i {
       margin-right: 8px;
       color: var(--primary-blue);
       width: 20px;
     }
-    
+
     .requirement.valid {
       color: #27ae60;
     }
-    
+
     .requirement.valid i {
       color: #27ae60;
+    }
+
+    .form-links {
+      text-align: center;
+      padding: 20px 40px 30px;
+      background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+      border-top: 1px solid #e9ecef;
+    }
+
+    .form-links p {
+      margin: 8px 0;
+      color: #7f8c8d;
+    }
+
+    .form-links a {
+      color: var(--primary-blue);
+      font-weight: 600;
+      text-decoration: none;
+      position: relative;
+      transition: color 0.3s;
+    }
+
+    .form-links a:hover {
+      color: var(--dark-blue);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.9);
+      text-decoration: none;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      transition: all 0.3s;
+    }
+
+    .back-link:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      transform: translateX(-5px);
+    }
+
+    @media (max-width: 576px) {
+      body {
+        padding: 20px 0;
+      }
+
+      .login-container {
+        padding: 15px;
+      }
+
+      .login-header, .login-body, .form-links {
+        padding-left: 25px;
+        padding-right: 25px;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="login-container">
+
+<!-- Background animado -->
+<div class="bg-animation">
+  <div class="floating-shape shape1"></div>
+  <div class="floating-shape shape2"></div>
+  <div class="floating-shape shape3"></div>
+</div>
+
+<div class="login-container">
+  <div class="login-card">
     <div class="login-header">
-      <h1>🔐 Nova Palavra-passe</h1>
+      <div class="logo-container">
+        <img src="../assets/logo.png" alt="Freecard">
+      </div>
+      <h1>Nova Palavra-passe</h1>
       <p>Define uma nova palavra-passe segura</p>
     </div>
-    
+
     <div class="login-body">
       <?php if ($status === 'invalid' || $status === 'expired'): ?>
-        <div class="alert alert-warning" role="alert" style="color: #e65100; font-weight: 700; font-size: 16px;">
-          <i class="bi bi-exclamation-triangle"></i> 
-          <?php echo htmlspecialchars($message); ?>
+        <div class="alert alert-warning mb-3">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          <?= htmlspecialchars($message) ?>
         </div>
-        <div style="text-align: center;">
-          <p style="margin-bottom: 15px; color: #666;">
-            <a href="forgot_password.php" class="btn btn-sm btn-primary">
-              <i class="bi bi-arrow-left"></i> Solicitar novo link
-            </a>
+        <div class="text-center">
+          <i class="bi bi-link-45deg" style="font-size: 60px; color: #f39c12;"></i>
+          <p class="mt-3" style="color: #7f8c8d;">
+            O link que utilizaste não é válido ou já expirou.
           </p>
+          <a href="forgot_password.php" class="btn btn-primary mt-3">
+            <i class="bi bi-arrow-repeat me-2"></i>
+            Solicitar novo link
+          </a>
         </div>
+
       <?php elseif ($status === 'success'): ?>
-        <div class="alert alert-success" role="alert" style="color: #2e7d32; font-weight: 700; font-size: 16px;">
-          <i class="bi bi-check-circle"></i> 
-          <?php echo htmlspecialchars($message); ?>
+        <div class="alert alert-success mb-3">
+          <i class="bi bi-check-circle me-2"></i>
+          <?= htmlspecialchars($message) ?>
         </div>
-        <div style="text-align: center;">
-          <p style="margin-bottom: 15px; color: #666;">
-            <a href="login.php" class="btn btn-primary">
-              <i class="bi bi-box-arrow-in-right"></i> Ir para Login
-            </a>
+        <div class="text-center">
+          <i class="bi bi-shield-check" style="font-size: 60px; color: #27ae60;"></i>
+          <p class="mt-3" style="color: #7f8c8d;">
+            A tua palavra-passe foi alterada com sucesso.
           </p>
+          <a href="login.php" class="btn btn-primary mt-3">
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+            Ir para Login
+          </a>
         </div>
+
       <?php else: ?>
-        <!-- Formulário de reset -->
         <?php if (!empty($errors)): ?>
           <?php foreach ($errors as $error): ?>
-            <div class="alert alert-danger" role="alert" style="color: #d32f2f; font-weight: 700; font-size: 15px;">
-              <i class="bi bi-exclamation-circle"></i> <?php echo htmlspecialchars($error); ?>
+            <div class="alert alert-danger mb-3">
+              <i class="bi bi-exclamation-circle me-2"></i>
+              <?= htmlspecialchars($error) ?>
             </div>
           <?php endforeach; ?>
         <?php endif; ?>
-        
-        <form method="POST" action="">
-          <div class="password-requirements">
-            <strong>📋 Requisitos da Palavra-passe:</strong>
-            <div class="requirement" data-requirement="length">
-              <i class="bi bi-circle"></i> Mínimo 8 caracteres
-            </div>
-            <div class="requirement" data-requirement="uppercase">
-              <i class="bi bi-circle"></i> Pelo menos uma maiúscula (A-Z)
-            </div>
-            <div class="requirement" data-requirement="lowercase">
-              <i class="bi bi-circle"></i> Pelo menos uma minúscula (a-z)
-            </div>
-            <div class="requirement" data-requirement="number">
-              <i class="bi bi-circle"></i> Pelo menos um número (0-9)
-            </div>
-            <div class="requirement" data-requirement="special">
-              <i class="bi bi-circle"></i> Pelo menos um caractere especial (!@#$%^&*)
-            </div>
+
+        <div class="password-requirements">
+          <strong><i class="bi bi-list-check me-2"></i>Requisitos da Palavra-passe:</strong>
+          <div class="requirement" data-requirement="length">
+            <i class="bi bi-circle"></i> Mínimo 8 caracteres
           </div>
-          
-          <div class="form-floating mb-3">
-            <input 
-              type="password" 
-              class="form-control" 
-              id="password" 
-              name="password" 
-              placeholder="Palavra-passe"
-              required
-            >
-            <label for="password">🔒 Nova Palavra-passe</label>
+          <div class="requirement" data-requirement="uppercase">
+            <i class="bi bi-circle"></i> Pelo menos uma maiúscula (A-Z)
           </div>
-          
-          <div class="form-floating mb-3">
-            <input 
-              type="password" 
-              class="form-control" 
-              id="password2" 
-              name="password2" 
-              placeholder="Confirmar Palavra-passe"
-              required
-            >
-            <label for="password2">🔒 Confirmar Palavra-passe</label>
+          <div class="requirement" data-requirement="lowercase">
+            <i class="bi bi-circle"></i> Pelo menos uma minúscula (a-z)
           </div>
-          
-          <button type="submit" class="btn btn-primary w-100 btn-login">
-            <i class="bi bi-check-circle"></i> Guardar Nova Palavra-passe
-          </button>
-        </form>
-        
-        <div class="form-links">
-          <p>
-            Lembras-te da palavra-passe? <a href="login.php">Entra aqui</a>
-          </p>
+          <div class="requirement" data-requirement="number">
+            <i class="bi bi-circle"></i> Pelo menos um número (0-9)
+          </div>
+          <div class="requirement" data-requirement="special">
+            <i class="bi bi-circle"></i> Pelo menos um caractere especial (!@#$%^&*)
+          </div>
         </div>
+
+        <form method="POST" action="">
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-lock"></i>
+              Nova Palavra-passe
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-key"></i></span>
+              <input
+                type="password"
+                name="password"
+                id="password"
+                class="form-control"
+                placeholder="Introduz a nova palavra-passe"
+                required
+                autofocus
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">
+              <i class="bi bi-lock-fill"></i>
+              Confirmar Palavra-passe
+            </label>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+              <input
+                type="password"
+                name="password2"
+                id="password2"
+                class="form-control"
+                placeholder="Confirma a palavra-passe"
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-group">
+            <button class="btn btn-primary" type="submit">
+              <i class="bi bi-check-circle me-2"></i>
+              Guardar Nova Palavra-passe
+            </button>
+          </div>
+        </form>
       <?php endif; ?>
+    </div>
+
+    <div class="form-links">
+      <p>Lembras-te da palavra-passe? <a href="login.php">Entra aqui</a></p>
     </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    // Validação dinâmica de palavra-passe
-    const passwordInput = document.getElementById('password');
-    const requirements = {
-      length: document.querySelector('[data-requirement="length"]'),
-      uppercase: document.querySelector('[data-requirement="uppercase"]'),
-      lowercase: document.querySelector('[data-requirement="lowercase"]'),
-      number: document.querySelector('[data-requirement="number"]'),
-      special: document.querySelector('[data-requirement="special"]')
-    };
+  <div class="text-center mt-4">
+    <a href="../index.php" class="back-link">
+      <i class="bi bi-arrow-left"></i>
+      <span>Voltar à página inicial</span>
+    </a>
+  </div>
+</div>
 
-    if (passwordInput) {
-      passwordInput.addEventListener('input', function() {
-        const pwd = this.value;
-        
-        // Validar cada requisito
-        updateRequirement(requirements.length, pwd.length >= 8);
-        updateRequirement(requirements.uppercase, /[A-Z]/.test(pwd));
-        updateRequirement(requirements.lowercase, /[a-z]/.test(pwd));
-        updateRequirement(requirements.number, /[0-9]/.test(pwd));
-        updateRequirement(requirements.special, /[^A-Za-z0-9]/.test(pwd));
-      });
-    }
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Validação dinâmica de palavra-passe
+const passwordInput = document.getElementById('password');
+const requirements = {
+  length: document.querySelector('[data-requirement="length"]'),
+  uppercase: document.querySelector('[data-requirement="uppercase"]'),
+  lowercase: document.querySelector('[data-requirement="lowercase"]'),
+  number: document.querySelector('[data-requirement="number"]'),
+  special: document.querySelector('[data-requirement="special"]')
+};
 
-    function updateRequirement(element, isValid) {
-      if (!element) return;
-      
-      if (isValid) {
-        element.classList.add('valid');
-        element.innerHTML = '<i class="bi bi-check-circle-fill"></i> Requisito preenchido';
-      } else {
-        element.classList.remove('valid');
-        element.innerHTML = '<i class="bi bi-circle"></i> Requisito não preenchido';
-      }
-    }
-  </script>
+if (passwordInput) {
+  passwordInput.addEventListener('input', function() {
+    const pwd = this.value;
+
+    updateRequirement(requirements.length, pwd.length >= 8, 'Mínimo 8 caracteres');
+    updateRequirement(requirements.uppercase, /[A-Z]/.test(pwd), 'Pelo menos uma maiúscula (A-Z)');
+    updateRequirement(requirements.lowercase, /[a-z]/.test(pwd), 'Pelo menos uma minúscula (a-z)');
+    updateRequirement(requirements.number, /[0-9]/.test(pwd), 'Pelo menos um número (0-9)');
+    updateRequirement(requirements.special, /[^A-Za-z0-9]/.test(pwd), 'Pelo menos um caractere especial (!@#$%^&*)');
+  });
+}
+
+function updateRequirement(element, isValid, text) {
+  if (!element) return;
+
+  if (isValid) {
+    element.classList.add('valid');
+    element.innerHTML = '<i class="bi bi-check-circle-fill"></i> ' + text;
+  } else {
+    element.classList.remove('valid');
+    element.innerHTML = '<i class="bi bi-circle"></i> ' + text;
+  }
+}
+</script>
 </body>
 </html>

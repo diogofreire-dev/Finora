@@ -14,6 +14,8 @@ function validatePassword($password) {
 }
 
 $errors = [];
+$success = false;
+$successMessage = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
@@ -33,30 +35,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Nome de utilizador ou email já em uso.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-            $ins = $pdo->prepare('INSERT INTO users (username, email, password_hash) VALUES (:u, :e, :p)');
-            $ins->execute([':u' => $username, ':e' => $email, ':p' => $hash]);
+
+            // Gerar token de verificação
+            $verificationToken = bin2hex(random_bytes(32));
+            $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+
+            // Criar utilizador com email_verified = 0
+            $ins = $pdo->prepare('
+                INSERT INTO users (username, email, password_hash, email_verified, verification_token, verification_expires)
+                VALUES (:u, :e, :p, 0, :token, :expires)
+            ');
+            $ins->execute([
+                ':u' => $username,
+                ':e' => $email,
+                ':p' => $hash,
+                ':token' => $verificationToken,
+                ':expires' => $tokenExpiry
+            ]);
 
             $userId = $pdo->lastInsertId();
-            
-            // Enviar email de boas-vindas
+
+            // Enviar email de verificação
             $emailSent = false;
             try {
                 $emailService = new EmailService();
-                $emailSent = $emailService->sendWelcomeEmail($email, $username);
+                $emailSent = $emailService->sendVerificationEmail($email, $username, $verificationToken);
                 if ($emailSent) {
-                    error_log("Email de boas-vindas enviado para: $email ($username)");
+                    error_log("Email de verificacao enviado para: $email ($username)");
+                    $success = true;
+                    $successMessage = 'Conta criada com sucesso! Verifica o teu email para ativar a conta.';
                 } else {
-                    error_log("Falha ao enviar email de boas-vindas para: $email ($username)");
+                    error_log("Falha ao enviar email de verificacao para: $email ($username)");
+                    $errors[] = 'Erro ao enviar email de verificação. Contacta o suporte.';
                 }
             } catch (Exception $e) {
-                error_log("Erro ao enviar email de boas-vindas: " . $e->getMessage());
+                error_log("Erro ao enviar email de verificacao: " . $e->getMessage());
+                $errors[] = 'Erro ao enviar email de verificação. Contacta o suporte.';
             }
-
-            $_SESSION['user_id'] = $userId;
-            $_SESSION['username'] = $username;
-            session_regenerate_id(true);
-            header('Location: ../dashboard.php');
-            exit;
         }
     }
 }
@@ -576,6 +591,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <div class="register-body">
+      <?php if ($success): ?>
+        <div class="alert alert-success mb-3" style="background: #d4edda;">
+          <i class="bi bi-check-circle" style="color: #27ae60;"></i>
+          <strong style="color: #27ae60;"><?= htmlspecialchars($successMessage) ?></strong>
+        </div>
+        <div class="text-center">
+          <i class="bi bi-envelope-check" style="font-size: 60px; color: #3498db;"></i>
+          <p class="mt-3" style="color: #7f8c8d;">
+            Enviamos um email para <strong><?= htmlspecialchars($email) ?></strong>.<br>
+            Clica no link de verificação para ativar a tua conta.
+          </p>
+          <p class="mt-2" style="color: #95a5a6; font-size: 14px;">
+            Não recebeste o email? Verifica a pasta de spam.
+          </p>
+          <a href="login.php" class="btn btn-primary mt-3">
+            <i class="bi bi-box-arrow-in-right me-2"></i>
+            Ir para Login
+          </a>
+        </div>
+      <?php else: ?>
+
       <?php if(!empty($errors)): ?>
         <div class="alert alert-danger mb-3">
           <i class="bi bi-exclamation-circle"></i>
@@ -678,6 +714,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </button>
         </div>
       </form>
+      <?php endif; ?>
     </div>
 
     <div class="login-link">

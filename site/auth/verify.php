@@ -210,7 +210,6 @@ if ($token !== '') {
     
     .info-box {
       background: #f8f9fa;
-      border-left: 4px solid var(--primary-blue);
       padding: 20px;
       border-radius: 8px;
       margin-bottom: 25px;
