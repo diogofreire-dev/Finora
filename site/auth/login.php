@@ -12,14 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($emailOrUsername === '' || $password === '') {
         $errors[] = 'Preenche todos os campos.';
     } else {
-        $stmt = $pdo->prepare('SELECT id, username, password_hash, email_verified FROM users WHERE email = :e OR username = :u LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified FROM users WHERE email = :e OR username = :u LIMIT 1');
         $stmt->execute([':e' => $emailOrUsername, ':u' => $emailOrUsername]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
             // Verificar se o email foi confirmado
             if (!$user['email_verified']) {
-                $errors[] = 'A tua conta ainda não foi verificada. Verifica o teu email para ativar a conta.';
+                // Redirecionar para a página de verificação
+                $_SESSION['pending_verification_email'] = $user['email'];
+                header('Location: verify.php');
+                exit;
             } else {
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['username'] = $user['username'];
