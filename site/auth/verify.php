@@ -303,12 +303,6 @@ if (isset($_POST['resend']) && $email) {
       text-align: center;
     }
     
-    .btn-primary:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(52, 152, 219, 0.4);
-      color: white;
-    }
-    
     .btn-secondary {
       background: #f8f9fa;
       border: 2px solid #e9ecef;
