@@ -43,7 +43,7 @@ class EmailService {
         .email-container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: #ffffff;
+            background-color: #cadef7;
             border-radius: 12px;
         }
 
@@ -296,6 +296,7 @@ HTML;
      */
     public function sendVerificationEmail($email, $username, $code) {
         try {
+            $this->mail->clearAddresses();
             $this->mail->addAddress($email);
             $this->mail->isHTML(true);
             $this->mail->Subject = 'Codigo de verificacao - FreeCard';
@@ -303,12 +304,13 @@ HTML;
             $this->mail->Body = $this->getVerificationTemplate($username, $code);
             $this->mail->AltBody = "Ola {$username}! O teu codigo de verificacao e: {$code} - Este codigo expira em 24 horas.";
 
-            $this->mail->send();
+            $result = $this->mail->send();
             $this->mail->clearAddresses();
 
-            return true;
+            return $result;
         } catch (Exception $e) {
-            error_log("Erro ao enviar email de verificacao: " . $this->mail->ErrorInfo);
+            error_log("Erro ao enviar email de verificacao: " . $this->mail->ErrorInfo . " - Exception: " . $e->getMessage());
+            $this->mail->clearAddresses();
             return false;
         }
     }
@@ -344,8 +346,7 @@ HTML;
             $this->mail->isHTML(true);
             $this->mail->Subject = 'Recuperar palavra-passe - FreeCard';
 
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-            $resetLink = "http://{$host}/auth/reset_password.php?token=" . urlencode($token);
+            $resetLink = $this->baseUrl . "/auth/reset_password.php?token=" . urlencode($token);
 
             $this->mail->Body = $this->getPasswordResetTemplate($username, $resetLink);
             $this->mail->AltBody = "Ola {$username}! Clica no link para recuperar a tua palavra-passe: {$resetLink} - Este link expira em 1 hora.";
@@ -415,8 +416,7 @@ HTML;
             $this->mail->isHTML(true);
             $this->mail->Subject = 'Confirma a alteracao de email - FreeCard';
 
-            $host = $_SERVER['HTTP_HOST'] ?? 'localhost:8000';
-            $verificationLink = "http://{$host}/auth/verify_email_change.php?token=" . urlencode($token);
+            $verificationLink = $this->baseUrl . "/auth/verify_email_change.php?token=" . urlencode($token);
 
             $this->mail->Body = $this->getEmailChangeTemplate($username, $newEmail, $verificationLink);
             $this->mail->AltBody = "Ola {$username}! Clica no link para confirmar a alteracao do teu email para {$newEmail}: {$verificationLink} - Este link expira em 1 hora.";
@@ -563,7 +563,7 @@ HTML;
             </div>
 
             <div class="btn-container">
-                <a href="{$dashboardUrl}" class="btn-primary">Aceder ao Dashboard</a>
+                <a href="{$dashboardUrl}" class="btn-primary">Ir para o FreeCard</a>
             </div>
 
             <div class="message">
@@ -701,7 +701,7 @@ HTML;
             </div>
 
             <div class="btn-container">
-                <a href="{$remindersUrl}" class="btn-primary">Ver Lembretes</a>
+                <a href="{$remindersUrl}" class="btn-primary">Ir para o FreeCard</a>
             </div>
 
             <div class="message">
@@ -793,7 +793,7 @@ HTML;
             </div>
 
             <div class="btn-container">
-                <a href="{$budgetsUrl}" class="btn-primary">Ver Orcamentos</a>
+                <a href="{$budgetsUrl}" class="btn-primary">Ir para o FreeCard</a>
             </div>
         </div>
 
