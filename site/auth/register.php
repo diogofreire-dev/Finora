@@ -62,19 +62,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $emailSent = $emailService->sendVerificationEmail($email, $username, $verificationCode);
                 if ($emailSent) {
                     error_log("Email de verificacao enviado para: $email ($username)");
-                    // Guardar email na sessão para a página de verificação
-                    $_SESSION['pending_verification_email'] = $email;
-                    // Redirecionar para página de verificação
-                    header('Location: verify.php');
-                    exit;
-                } else {
-                    error_log("Falha ao enviar email de verificacao para: $email ($username)");
-                    $errors[] = 'Erro ao enviar email de verificação. Contacta o suporte.';
                 }
             } catch (Exception $e) {
                 error_log("Erro ao enviar email de verificacao: " . $e->getMessage());
-                $errors[] = 'Erro ao enviar email de verificação. Contacta o suporte.';
             }
+
+            // Guardar email na sessão para a página de verificação
+            $_SESSION['pending_verification_email'] = $email;
+
+            // Redirecionar para página de verificação (mesmo se email falhou)
+            // O utilizador pode pedir reenvio na página de verificação
+            if (!$emailSent) {
+                $_SESSION['email_send_warning'] = true;
+            }
+            header('Location: verify.php');
+            exit;
         }
     }
 }
