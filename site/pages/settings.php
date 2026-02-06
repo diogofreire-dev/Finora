@@ -804,29 +804,6 @@ $currentTheme = $settings['theme'] ?? 'light';
             </div>
             <?php endif; ?>
           </div>
-
-          <!-- Autenticação de 2 Fatores -->
-          <div class="setting-item">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <h6 class="mb-1">
-                  <i class="bi bi-shield-check"></i> Autenticação de 2 Fatores
-                  <span class="security-badge coming-soon">
-                    <i class="bi bi-clock-history"></i> Em breve
-                  </span>
-                </h6>
-                <p class="text-muted small mb-0">Adiciona uma camada extra de segurança à tua conta</p>
-              </div>
-              <div class="form-check form-switch">
-                <input 
-                  class="form-check-input" 
-                  type="checkbox" 
-                  disabled
-                  style="width: 3em; height: 1.5em;"
-                >
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -908,12 +885,6 @@ $currentTheme = $settings['theme'] ?? 'light';
             <div class="col-md-6 mb-3">
               <small class="text-muted">Membro desde</small>
               <div class="fw-semibold"><?=date('d/m/Y', strtotime($user['created_at']))?></div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <small class="text-muted">Autenticação 2FA</small>
-              <div class="fw-semibold">
-                <?=$user['two_factor_enabled'] ? 'Ativada' : 'Desativada'?>
-              </div>
             </div>
           </div>
         </div>
