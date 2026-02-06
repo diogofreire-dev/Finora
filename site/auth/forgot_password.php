@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             // Por segurança, não revelar se o email existe ou não
             $success = true;
-            $message = 'Se o email existir na nossa base de dados, receberás um link de recuperação.';
+            $message = 'Se o email existir receberás um link de recuperação.';
         }
     }
 }
