@@ -590,17 +590,17 @@
         <div class="cards-mockup">
           <div class="card-float card-float-1">
             <div class="card-float-chip"></div>
-            <div class="card-float-number">•••• 4532</div>
+            <div class="card-float-number">•••• ••••</div>
             <div class="card-float-name">Platinum Card</div>
           </div>
           <div class="card-float card-float-2">
             <div class="card-float-chip"></div>
-            <div class="card-float-number">•••• 8421</div>
+            <div class="card-float-number">•••• ••••</div>
             <div class="card-float-name">Gold Card</div>
           </div>
           <div class="card-float card-float-3">
             <div class="card-float-chip"></div>
-            <div class="card-float-number">•••• 1234</div>
+            <div class="card-float-number">•••• ••••</div>
             <div class="card-float-name">Silver Card</div>
           </div>
         </div>
