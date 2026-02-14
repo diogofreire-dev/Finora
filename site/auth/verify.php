@@ -973,13 +973,5 @@ if (codeInput) {
   });
 }
 </script>
-<?php if ($status === 'success'): ?>
-<script>
-// Auto-redirect após 3 segundos
-setTimeout(function() {
-  window.location.href = '../dashboard.php';
-}, 3000);
-</script>
-<?php endif; ?>
 </body>
 </html>
