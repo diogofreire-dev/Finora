@@ -13,18 +13,47 @@ function validatePassword($password) {
     return true;
 }
 
+function isEmailDeliverable($email) {
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return false;
+    }
+
+    $domain = strtolower(substr(strrchr($email, '@'), 1));
+    if ($domain === '') {
+        return false;
+    }
+
+    if (function_exists('checkdnsrr')) {
+        return checkdnsrr($domain, 'MX') || checkdnsrr($domain, 'A') || checkdnsrr($domain, 'AAAA');
+    }
+
+    return true;
+}
+
 $errors = [];
 $success = false;
 $successMessage = '';
 
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $csrfToken = $_POST['csrf_token'] ?? '';
+    if (!hash_equals($_SESSION['csrf_token'], $csrfToken)) {
+        $errors[] = 'Sessão inválida. Atualiza a página e tenta novamente.';
+    }
     $username = trim($_POST['username'] ?? '');
-    $email = trim($_POST['email'] ?? '');
+    $email = strtolower(trim($_POST['email'] ?? ''));
+    $emailConfirm = strtolower(trim($_POST['email_confirm'] ?? ''));
     $password = $_POST['password'] ?? '';
     $password2 = $_POST['password2'] ?? '';
 
     if ($username === '' || strlen($username) < 3) $errors[] = 'Nome de utilizador inválido (mínimo 3 caracteres).';
+    if ($username !== '' && !preg_match('/^[A-Za-z0-9_.-]{3,30}$/', $username)) $errors[] = 'O nome de utilizador só pode conter letras, números, ponto, underscore e hífen.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Email inválido.';
+    if ($email !== $emailConfirm) $errors[] = 'Os emails não coincidem.';
+    if ($email !== '' && !isEmailDeliverable($email)) $errors[] = 'O domínio do email parece inválido ou não recebe emails.';
     if (!validatePassword($password)) $errors[] = 'A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.';
     if ($password !== $password2) $errors[] = 'As palavras-passe não coincidem.';
 
@@ -35,48 +64,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Nome de utilizador ou email já em uso.';
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
-
-            // Gerar código de verificação de 6 dígitos
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
             $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
 
-            // Criar utilizador com email_verified = 0
-            $ins = $pdo->prepare('
-                INSERT INTO users (username, email, password_hash, email_verified, verification_token, verification_expires)
-                VALUES (:u, :e, :p, 0, :token, :expires)
-            ');
-            $ins->execute([
-                ':u' => $username,
-                ':e' => $email,
-                ':p' => $hash,
-                ':token' => $verificationCode,
-                ':expires' => $tokenExpiry
-            ]);
-
-            $userId = $pdo->lastInsertId();
-
-            // Enviar email de verificação
-            $emailSent = false;
             try {
+                $pdo->beginTransaction();
+
+                $ins = $pdo->prepare('
+                    INSERT INTO users (username, email, password_hash, email_verified, verification_token, verification_expires)
+                    VALUES (:u, :e, :p, 0, :token, :expires)
+                ');
+                $ins->execute([
+                    ':u' => $username,
+                    ':e' => $email,
+                    ':p' => $hash,
+                    ':token' => $verificationCode,
+                    ':expires' => $tokenExpiry
+                ]);
+
                 $emailService = new EmailService();
-                $emailSent = $emailService->sendVerificationEmail($email, $username, $verificationCode);
-                if ($emailSent) {
-                    error_log("Email de verificacao enviado para: $email ($username)");
+                if (!$emailService->sendVerificationEmail($email, $username, $verificationCode)) {
+                    throw new RuntimeException('Falha ao enviar email de verificação.');
                 }
-            } catch (Exception $e) {
+
+                $pdo->commit();
+                error_log("Email de verificacao enviado para: $email ($username)");
+
+                $_SESSION['pending_verification_email'] = $email;
+                header('Location: verify.php');
+                exit;
+            } catch (Throwable $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
                 error_log("Erro ao enviar email de verificacao: " . $e->getMessage());
+                $errors[] = 'Não foi possível enviar o email de verificação. A conta não foi criada. Verifica o email e tenta novamente.';
             }
-
-            // Guardar email na sessão para a página de verificação
-            $_SESSION['pending_verification_email'] = $email;
-
-            // Redirecionar para página de verificação (mesmo se email falhou)
-            // O utilizador pode pedir reenvio na página de verificação
-            if (!$emailSent) {
-                $_SESSION['email_send_warning'] = true;
-            }
-            header('Location: verify.php');
-            exit;
         }
     }
 }
@@ -629,6 +652,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
 
       <form method="post" novalidate>
+        <input type="hidden" name="csrf_token" value="<?=htmlspecialchars($_SESSION['csrf_token'])?>">
         <div class="form-group">
           <label class="form-label">
             <i class="bi bi-person-circle"></i>
@@ -665,6 +689,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               class="form-control" 
               placeholder="O teu melhor email"
               value="<?=htmlspecialchars($email ?? '')?>" 
+              required
+            >
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">
+            <i class="bi bi-envelope-check"></i>
+            Confirmar email
+          </label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-envelope-check"></i></span>
+            <input
+              type="email"
+              name="email_confirm"
+              class="form-control"
+              placeholder="Repete o teu email"
+              value="<?=htmlspecialchars($emailConfirm ?? '')?>"
               required
             >
           </div>
