@@ -45,14 +45,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $username = trim($_POST['username'] ?? '');
     $email = strtolower(trim($_POST['email'] ?? ''));
-    $emailConfirm = strtolower(trim($_POST['email_confirm'] ?? ''));
     $password = $_POST['password'] ?? '';
     $password2 = $_POST['password2'] ?? '';
 
     if ($username === '' || strlen($username) < 3) $errors[] = 'Nome de utilizador inválido (mínimo 3 caracteres).';
     if ($username !== '' && !preg_match('/^[A-Za-z0-9_.-]{3,30}$/', $username)) $errors[] = 'O nome de utilizador só pode conter letras, números, ponto, underscore e hífen.';
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Email inválido.';
-    if ($email !== $emailConfirm) $errors[] = 'Os emails não coincidem.';
     if ($email !== '' && !isEmailDeliverable($email)) $errors[] = 'O domínio do email parece inválido ou não recebe emails.';
     if (!validatePassword($password)) $errors[] = 'A palavra-passe deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.';
     if ($password !== $password2) $errors[] = 'As palavras-passe não coincidem.';
@@ -689,24 +687,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               class="form-control" 
               placeholder="O teu melhor email"
               value="<?=htmlspecialchars($email ?? '')?>" 
-              required
-            >
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">
-            <i class="bi bi-envelope-check"></i>
-            Confirmar email
-          </label>
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-envelope-check"></i></span>
-            <input
-              type="email"
-              name="email_confirm"
-              class="form-control"
-              placeholder="Repete o teu email"
-              value="<?=htmlspecialchars($emailConfirm ?? '')?>"
               required
             >
           </div>
