@@ -159,7 +159,7 @@ $months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out',
       left: 0;
       width: 100%;
       height: 100%;
-      background: linear-gradient(135deg, #1a1d29 0%, #252936 50%, #1a1d29 100%);
+      background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
       z-index: -1;
     }
     .floating-shape {
@@ -369,7 +369,7 @@ $months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out',
     
     /* Tema escuro - Selects */
     [data-theme="dark"] .form-select {
-      background-color: #1a1d29;
+      background-color: #2b3035;
       color: #ecf0f1;
       border-color: #34495e;
       /* Seta do dropdown em branco */
@@ -377,12 +377,12 @@ $months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out',
     }
     
     [data-theme="dark"] .form-select option {
-      background-color: #252936;
+      background-color: #323844;
       color: #ecf0f1;
     }
     
     [data-theme="dark"] .form-select:focus {
-      background-color: #1a1d29;
+      background-color: #2b3035;
       color: #ecf0f1;
       border-color: #2ecc71;
       box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
