@@ -156,7 +156,7 @@ if (!isset($transaction_date)) {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #1a1d29 0%, #252936 50%, #1a1d29 100%);
+    background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
     z-index: -1;
   }
   .floating-shape {
