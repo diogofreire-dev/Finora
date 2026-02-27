@@ -14,9 +14,9 @@
 
 /* Tema Escuro */
 :root[data-theme="dark"] {
-  --bg-primary: #1a1d29;
+  --bg-primary: #2b3035;
   --bg-secondary: #252936;
-  --bg-hover: #2d3142;
+  --bg-hover: #323844;
   --text-primary: #ecf0f1;
   --text-secondary: #95a5a6;
   --border-color: #34495e;

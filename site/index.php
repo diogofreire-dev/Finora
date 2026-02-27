@@ -467,7 +467,7 @@
     
     /* Footer Moderno */
     footer {
-      background: #1a1d29;
+      background: #2b3035;
       color: white;
       padding: 60px 0 30px;
     }
