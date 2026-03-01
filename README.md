@@ -92,9 +92,11 @@ Link: http://freecard.infinityfreeapp.com/
 
 - **Backend:** PHP 8+ com PDO
 - **Base de Dados:** MySQL/MariaDB
-- **Frontend:** Bootstrap 5, Bootstrap Icons
+- **Frontend:** HTML5, CSS3, JavaScript
+- **Framework CSS:** Bootstrap 5, Bootstrap Icons
 - **Gráficos:** Chart.js
-- **Email:** Brevo API (anteriormente Sendinblue)
+- **Email:** Brevo API (anteriormente Sendinblue) + PHPMailer
+- **PDF:** TCPDF
 - **Servidor:** PHP Built-in Server (desenvolvimento)
 
 ## Instalação
