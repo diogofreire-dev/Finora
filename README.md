@@ -10,6 +10,10 @@ Link: http://freecard.infinityfreeapp.com/
 - Prepared statements (PDO) para prevenir SQL Injection
 - Proteção CSRF através de sessions
 - Validação server-side de todos os inputs
+- Verificação de conta por código via email
+- Recuperação de palavra-passe por email
+- Alteração de email com verificação
+- Notificação de alteração de password
 
 ### Gestão de Cartões
 - Adicionar, editar, ativar/desativar e eliminar cartões
@@ -26,6 +30,30 @@ Link: http://freecard.infinityfreeapp.com/
 - Editar e eliminar transações
 - Atualização automática dos saldos dos cartões
 - Filtrar por mês, categoria e cartão
+- Exportação de transações para PDF
+
+### Gestão de Orçamentos
+- Criar orçamentos mensais, semanais ou anuais
+- Definir limite de gastos por categoria ou cartão
+- Acompanhamento em tempo real do progresso
+- Alertas automáticos quando atingir 80% do orçamento
+- Alertas quando orçamento for excedido
+- Histórico de alertas enviados
+
+### Lembretes de Pagamento
+- Criar lembretes para pagamentos recorrentes
+- Notificações por email automáticas
+- Configurar dias de antecedência paraavisos
+- Histórico de lembretes enviados
+- Sistema automatizado via CRON
+
+### Sistema de Notificações
+- Notificações dentro da aplicação
+- Alertas de limites de cartões
+- Alertas de orçamentos
+- Lembretes de pagamentos
+- Marcar como lido
+- Painel de notificações
 
 ### Dashboard Intuitivo
 - Resumo mensal de gastos com tendência vs. mês anterior
@@ -43,6 +71,17 @@ Link: http://freecard.infinityfreeapp.com/
 - Top 5 maiores gastos
 - Estatísticas detalhadas (total gasto, média, número de transações)
 - Filtros por ano e cartão
+- Exportação de relatórios em PDF
+
+### Sistema de Emails
+- Email de boas-vindas após verificação
+- Email de verificação de conta com código
+- Email de recuperação de palavra-passe
+- Email de confirmação de alteração de email
+- Email de notificação de alteração de password
+- Emails de lembretes de pagamento
+- Emails de alertas de orçamento
+- Template profissional com branding
 
 ### Personalização
 - **Tema Claro/Escuro**: Sistema completo de temas com transições suaves
@@ -54,12 +93,15 @@ Link: http://freecard.infinityfreeapp.com/
 - **Backend:** PHP 8+ com PDO
 - **Base de Dados:** MySQL/MariaDB
 - **Frontend:** Bootstrap 5, Bootstrap Icons
+- **Gráficos:** Chart.js
+- **Email:** Brevo API (anteriormente Sendinblue)
 - **Servidor:** PHP Built-in Server (desenvolvimento)
 
 ## Instalação
 
 ### 1. Clonar o Repositório
-```bash
+```
+bash
 git clone https://github.com/diogofreire-dev/FreeCard.git
 cd FreeCard
 ```
@@ -67,21 +109,29 @@ cd FreeCard
 ### 2. Configurar Base de Dados
 
 Cria a base de dados executando o schema:
-```bash
+```
+bash
 mysql -u root -p < database/schema.sql
 ```
 
 Ou importa manualmente através do phpMyAdmin/Adminer.
 
+O schema inclui todas as tabelas:
+- users
+- cards
+- transactions
+- user_settings
+- budgets
+- budget_alerts
+- payment_reminders
+- reminder_history
+- notifications
+
 ### 3. Configurar Ligação à BD
 
-Copia o ficheiro de exemplo e edita com as tuas credenciais:
-```bash
-cp config/db.example.php config/db.php
+Edita `config/db.php` com as tuas credenciais:
 ```
-
-Edita `config/db.php`:
-```php
+php
 <?php
 return [
     'host' => '127.0.0.1',
@@ -92,9 +142,28 @@ return [
 ];
 ```
 
-### 4. Iniciar Servidor
+### 4. Configurar Email (Opcional)
 
-```bash
+O sistema de emails já vem pré-configurado com a API Brevo. Para alterar, edita `config/EmailService.php`:
+```
+php
+private $apiKey = 'tua_api_key_aqui';
+private $fromEmail = 'teu_email@dominio.com';
+```
+
+### 5. Configurar Lembretes Automáticos (Opcional)
+
+Para enviar lembretes automaticamente, configura uma tarefa CRON:
+```
+bash
+# Executar a cada hora
+0 * * * * php /caminho/para/FreeCard/cron/send_reminders.php
+```
+
+### 6. Iniciar Servidor
+
+```
+bash
 php -S localhost:8000 -t site
 ```
 
@@ -106,30 +175,44 @@ Acede a: http://localhost:8000
 FreeCard/
 ├── config/
 │   ├── db.php              # Ligação à BD (não incluído no Git)
-│   └── db.example.php      # Template de configuração
+│   └── EmailService.php    # Serviço de emails (Brevo API)
+├── cron/
+│   └── send_reminders.php # Script para envio automático de lembretes
 ├── database/
-│   └── schema.sql          # Schema completo da base de dados
+│   ├── schema.sql          # Schema completo da base de dados
+│   ├── sample_data.sql    # Dados de exemplo
+│   └── tables/             # Tabelas individuais
+├── docs/
+│   └── email/              # Documentação do sistema de emails
+├── imgs/                   # Imagens para README
 ├── site/
 │   ├── assets/             # Imagens e recursos
-│   │   ├── logo.png
-│   │   └── logo2.png
-│   ├── css/
-│   │   └── theme.css       # Sistema de temas claro/escuro
+│   ├── auth/               # Scripts de autenticação
+│   │   ├── login.php
+│   │   ├── logout.php
+│   │   ├── register.php
+│   │   ├── verify.php
+│   │   ├── verify_email_change.php
+│   │   ├── forgot_password.php
+│   │   └── reset_password.php
+│   ├── components/         # Componentes reutilizáveis
+│   ├── css/                # Stylesheets (temas)
+│   ├── helpers/            # Funções auxiliares
+│   ├── pages/              # Páginas principais
+│   │   ├── dashboard.php
+│   │   ├── cards.php
+│   │   ├── add_card.php
+│   │   ├── edit_card.php
+│   │   ├── transactions.php
+│   │   ├── create_transaction.php
+│   │   ├── edit_transaction.php
+│   │   ├── analytics.php
+│   │   ├── budgets.php
+│   │   ├── reminders.php
+│   │   ├── settings.php
+│   │   └── export_pdf.php
 │   ├── index.php           # Homepage
-│   ├── auth.php            # Middleware de autenticação
-│   ├── theme_helper.php    # Helper para gestão de temas
-│   ├── register.php        # Registo de utilizadores
-│   ├── login.php           # Login
-│   ├── logout.php          # Logout
-│   ├── dashboard.php       # Dashboard principal
-│   ├── cards.php           # Listagem de cartões
-│   ├── add_card.php        # Adicionar cartão
-│   ├── edit_card.php       # Editar cartão
-│   ├── transactions.php    # Listagem de transações
-│   ├── create_transaction.php  # Criar transação
-│   ├── edit_transaction.php    # Editar transação
-│   ├── analytics.php       # Página de análise e gráficos
-│   └── settings.php        # Configurações do utilizador
+│   └── dashboard.php       # Dashboard principal
 ├── .gitignore
 ├── LICENSE
 └── README.md
@@ -145,6 +228,11 @@ FreeCard/
 - `email` - Email (VARCHAR, único)
 - `password_hash` - Password encriptada (VARCHAR)
 - `role` - Papel do utilizador (ENUM: user/admin)
+- `email_verified` - Email verificado (TINYINT)
+- `verification_code` - Código de verificação (VARCHAR)
+- `verification_expires` - Expira do código (DATETIME)
+- `password_reset_token` - Token de recuperação (VARCHAR)
+- `password_reset_expires` - Expira do token (DATETIME)
 - `created_at` - Data de registo (DATETIME)
 
 **cards**
@@ -177,12 +265,66 @@ FreeCard/
 - `created_at` - Data de criação (DATETIME)
 - `updated_at` - Última atualização (DATETIME)
 
+**budgets**
+- `id` - Identificador único (INT)
+- `user_id` - Referência ao utilizador (INT)
+- `name` - Nome do orçamento (VARCHAR)
+- `amount` - Valor limite (DECIMAL)
+- `period` - Período (ENUM: monthly, weekly, yearly)
+- `category` - Categoria associada (VARCHAR, opcional)
+- `card_id` - Cartão associado (INT, opcional)
+- `start_date` - Data de início (DATE)
+- `end_date` - Data de fim (DATE, opcional)
+- `active` - Estado ativo (TINYINT)
+- `created_at` - Data de criação (DATETIME)
+- `updated_at` - Última atualização (DATETIME)
+
+**budget_alerts**
+- `id` - Identificador único (INT)
+- `budget_id` - Referência ao orçamento (INT)
+- `user_id` - Referência ao utilizador (INT)
+- `percentage` - Percentagem atingida (INT)
+- `alert_type` - Tipo de alerta (VARCHAR)
+- `sent_email` - Email enviado (TINYINT)
+- `created_at` - Data de criação (DATETIME)
+
+**payment_reminders**
+- `id` - Identificador único (INT)
+- `user_id` - Referência ao utilizador (INT)
+- `name` - Nome do pagamento (VARCHAR)
+- `amount` - Valor esperado (DECIMAL)
+- `due_date` - Data de vencimento (DATE)
+- `days_before` - Dias de antecedência (INT)
+- `last_reminder` - Último lembrete enviado (DATETIME)
+- `active` - Estado ativo (TINYINT)
+- `created_at` - Data de criação (DATETIME)
+
+**reminder_history**
+- `id` - Identificador único (INT)
+- `reminder_id` - Referência ao lembrete (INT)
+- `user_id` - Referência ao utilizador (INT)
+- `sent_at` - Data de envio (DATETIME)
+
+**notifications**
+- `id` - Identificador único (INT)
+- `user_id` - Referência ao utilizador (INT)
+- `type` - Tipo de notificação (VARCHAR)
+- `title` - Título (VARCHAR)
+- `message` - Mensagem (TEXT)
+- `read` - Marcada como lida (TINYINT)
+- `created_at` - Data de criação (DATETIME)
+
 ### Relacionamentos
 
 - Um utilizador pode ter múltiplos cartões (1:N)
 - Um utilizador pode ter múltiplas transações (1:N)
 - Uma transação pode estar associada a um cartão ou ser paga em dinheiro (N:1 opcional)
 - Um utilizador tem uma configuração de settings (1:1)
+- Um utilizador pode ter múltiplos orçamentos (1:N)
+- Um orçamento pode ter múltiplos alertas (1:N)
+- Um utilizador pode ter múltiplos lembretes (1:N)
+- Um lembrete tem histórico de envios (1:N)
+- Um utilizador pode ter múltiplas notificações (1:N)
 
 ## Funcionalidades de UI/UX
 
@@ -227,6 +369,8 @@ FreeCard/
 - **XSS Prevention**: Uso de `htmlspecialchars()` em todas as saídas
 - **Input Validation**: Validação server-side rigorosa
 - **Sensitive Data**: Configurações fora do controlo de versão (.gitignore)
+- **Email Verification**: Verificação de identidade por código
+- **Password Reset Tokens**: Tokens com tempo de expiração
 
 ## Capturas de Ecrã
 
@@ -257,14 +401,33 @@ FreeCard/
 - MySQL 5.7+ ou MariaDB 10.3+
 - Extensão PDO MySQL habilitada
 - Extensão JSON habilitada
+- Extensão CURL habilitada (para emails)
 
 ### Configuração para Desenvolvimento
-```bash
+```
+bash
 # Iniciar servidor de desenvolvimento
 php -S localhost:8000 -t site
 
 # Ou com porta personalizada
 php -S localhost:3000 -t site
+```
+
+### Configurar Tarefa CRON (Linux/macOS)
+```
+bash
+# Abrir crontab
+crontab -e
+
+# Adicionar linha para executar a cada hora
+0 * * * * php /caminho/completo/para/FreeCard/cron/send_reminders.php > /dev/null 2>&1
+```
+
+### Configurar Tarefa CRON (Windows - Task Scheduler)
+```
+Program: php.exe
+Arguments: "C:\caminho\para\FreeCard\cron\send_reminders.php"
+Trigger: Hourly
 ```
 
 ### Estrutura de Dados de Exemplo
@@ -276,15 +439,14 @@ O ficheiro `schema.sql` já inclui:
 
 ## Funcionalidades Futuras (Roadmap)
 
-- [ ] Exportação de relatórios em PDF
-- [ ] Definição de metas de gastos mensais
-- [ ] Notificações por email
 - [ ] Importação de transações via CSV
 - [ ] Gestão de múltiplas moedas
 - [ ] Dashboard com mais gráficos (comparações anuais)
 - [ ] Sistema de tags para transações
 - [ ] Previsões de gastos baseadas no histórico
 - [ ] API REST para integrações externas
+- [ ] App móvil (React Native/Flutter)
+- [ ] Exportação para Excel/CSV
 
 ## Contribuir
 
@@ -303,6 +465,29 @@ Contribuições são bem-vindas! Sente-te à vontade para:
 - Atualiza o README se necessário
 
 ## Changelog
+
+### Versão 1.2.0 (Janeiro 2025)
+- Sistema completo de emails com API Brevo
+  - Email de boas-vindas
+  - Verificação de conta por código
+  - Recuperação de palavra-passe
+  - Alteração de email com verificação
+  - Notificação de alteração de password
+  - Templates profissionais com branding
+- Sistema de orçamentos completo
+  - Orçamentos mensais, semanais, anuais
+  - Alertas automáticos (80% e 100%)
+  - Emails de alertas de orçamento
+- Sistema de lembretes de pagamento
+  - Lembretes personalizáveis
+  - Envio automático via CRON
+  - Histórico de lembretes enviados
+- Sistema de notificações interno
+  - Notificações em tempo real
+  - Marcar como lido
+  - Múltiplos tipos de notificação
+- Exportação de transações para PDF
+- Melhorias na安全管理
 
 ### Versão 1.1.2 (Dezembro 2024)
 - Sistema completo de autenticação
@@ -326,7 +511,7 @@ Este projeto está sob a licença MIT - vê o ficheiro [LICENSE](LICENSE) para m
 - GitHub: [@diogofreire-dev](https://github.com/diogofreire-dev)
 
 **Jandro Antunes** - Colaborador
-- GitHub: [@Jandtoantunes](https://github.com/Jandroantunes)
+- GitHub: [@Jandroantunes](https://github.com/Jandroantunes)
 
 ## Suporte
 
@@ -339,6 +524,7 @@ Se encontrares algum problema ou tiveres sugestões:
 - Bootstrap 5 pela framework CSS
 - Bootstrap Icons pelo conjunto de ícones
 - Chart.js pela biblioteca de gráficos
+- Brevo (Sendinblue) pelo serviço de emails
 - Comunidade PHP pela documentação e recursos
 
 ---
