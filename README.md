@@ -90,14 +90,42 @@ Link: http://freecard.infinityfreeapp.com/
 
 ## Tecnologias
 
-- **Backend:** PHP 8+ com PDO
-- **Base de Dados:** MySQL/MariaDB
-- **Frontend:** HTML5, CSS3, JavaScript
-- **Framework CSS:** Bootstrap 5, Bootstrap Icons
-- **Gráficos:** Chart.js
-- **Email:** Brevo API (anteriormente Sendinblue) + PHPMailer
-- **PDF:** TCPDF
-- **Servidor:** PHP Built-in Server (desenvolvimento)
+### Backend
+- **PHP 8+** - Linguagem de programação server-side
+- **PDO (PHP Data Objects)** - Acesso unificado à base de dados
+- **bcrypt** - Encriptação de passwords segura
+
+### Base de Dados
+- **MySQL** - Sistema de gestão de base de dados relacional
+
+### Frontend
+- **HTML5** - Linguagem de marcação
+- **CSS3** - Estilos e design responsivo
+- **JavaScript (Vanilla)** - Interatividade client-side (validação, animações, preview, Chart.js)
+- **Bootstrap JS** - Componentes interativos (modais, dropdowns, tooltips)
+
+### Frameworks & Bibliotecas
+- **Bootstrap 5** - Framework CSS para design responsivo
+- **Bootstrap Icons** - Biblioteca de ícones
+- **Chart.js** - Biblioteca para gráficos interativos
+
+### APIs & Serviços
+- **Brevo API** (anteriormente Sendinblue) - Serviço de emails transacionais
+- **PHPMailer** - Biblioteca para envio de emails via SMTP
+
+### Bibliotecas PHP
+- **TCPDF** - Geração de documentos PDF
+
+### Segurança
+- **Prepared Statements (PDO)** - Prevenção de SQL Injection
+- **Session Security** - Gestão segura de sessões
+- **CSRF Protection** - Proteção contra ataques CSRF
+- **XSS Prevention** - Proteção contra Cross-Site Scripting
+
+### Ferramentas de Desenvolvimento
+- **PHP Built-in Server** - Servidor de desenvolvimento
+- **CRON** - Automação de tarefas (lembretes)
+- **phpMyAdmin** (opcional) - Gestão da base de dados
 
 ## Instalação
 
