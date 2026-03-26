@@ -483,6 +483,9 @@ foreach ($transactions as $t) {
       <a href="create_transaction.php" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nova Transação
       </a>
+      <a href="invoices.php" class="btn btn-outline-success ms-2">
+        <i class="bi bi-upc-scan"></i> Faturas (QR/OCR)
+      </a>
     </div>
   </div>
 
@@ -493,6 +496,24 @@ foreach ($transactions as $t) {
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
   <?php endif; ?>
+
+  <!-- Card Exportar PDF -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body py-3 px-4">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center gap-3">
+          <i class="bi bi-file-earmark-pdf" style="font-size: 24px; color: #e74c3c;"></i>
+          <div>
+            <small class="text-muted d-block" style="font-size: 12px;">Relatórios</small>
+            <strong>Exporta os teus dados em PDF</strong>
+          </div>
+        </div>
+        <a href="export_pdf.php" class="btn btn-sm btn-danger">
+          <i class="bi bi-download"></i> Exportar PDF
+        </a>
+      </div>
+    </div>
+  </div>
 
   <!-- Resumo -->
   <?php if (!empty($transactions)): ?>
