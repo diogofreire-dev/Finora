@@ -467,7 +467,8 @@ function setCategoriaById(id) {
 // NIF → EMPRESA (BD)
 // ─────────────────────────────────────────────────────────────────────────────
 function fetchCompanyByNif(nif) {
-  console.log('🚀 fetchCompanyByNif chamada com:', nif);
+  console.log('🚀 ===== INÍCIO fetchCompanyByNif =====');
+  console.log('🚀 Parâmetro nif recebido:', nif);
 
   if (!/^\d{9}$/.test(nif)) {
     console.warn('❌ NIF inválido:', nif);
@@ -514,7 +515,12 @@ function fetchCompanyByNif(nif) {
         console.log('✅ Categoria auto-detectada');
       }
     })
-    .catch(err => console.error('❌ Erro get_company_by_nif:', err));
+    })
+    .catch(err => {
+      console.error('❌ Erro fetchCompanyByNif:', err);
+    });
+
+  console.log('🚀 ===== FIM fetchCompanyByNif =====');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -550,9 +556,12 @@ document.addEventListener('DOMContentLoaded', function () {
   const testButton = document.createElement('button');
   testButton.textContent = '🔍 Testar Lookup';
   testButton.className = 'btn btn-sm btn-outline-info ms-2';
+  testButton.type = 'button'; // Importante: type="button" para não submeter form
   testButton.onclick = function() {
     console.log('🧪 Teste manual chamado');
-    fetchCompanyByNif(nifInput.value.trim());
+    const nifValue = nifInput.value.trim();
+    console.log('🧪 NIF a testar:', nifValue);
+    fetchCompanyByNif(nifValue);
   };
   nifInput.parentNode.appendChild(testButton);
 
