@@ -361,6 +361,12 @@ function preencherForm(dados) {
 // SCANNER QR
 // ─────────────────────────────────────────────────────────────────────────────
 let scanner;
+// ─────────────────────────────────────────────────────────────────────────────
+// QR CODE — usando Html5QrcodeScanner (mais confiável)
+// ─────────────────────────────────────────────────────────────────────────────
+let html5QrcodeScanner = null;
+let scanner = null; // fallback
+
 function startQR() {
   console.log('🚀 ===== INÍCIO startQR =====');
 
@@ -371,16 +377,94 @@ function startQR() {
     console.log('📐 Dimensões do reader:', readerElement.offsetWidth, 'x', readerElement.offsetHeight);
   }
 
+  // Verificar se Html5Qrcode está disponível
+  console.log('📷 Html5Qrcode disponível:', typeof Html5Qrcode);
+  console.log('📷 Html5QrcodeScanner disponível:', typeof Html5QrcodeScanner);
+  if (typeof Html5Qrcode === 'undefined' && typeof Html5QrcodeScanner === 'undefined') {
+    console.error('❌ ERRO: Html5Qrcode não carregou!');
+    alert('Erro: Biblioteca QR não carregou. Verifique sua conexão com internet.');
+    return;
+  }
+
+  // Tentar usar Html5QrcodeScanner primeiro (mais confiável)
+  if (typeof Html5QrcodeScanner !== 'undefined') {
+    console.log('📷 Usando Html5QrcodeScanner (recomendado)');
+    startQRWithScanner();
+  } else if (typeof Html5Qrcode !== 'undefined') {
+    console.log('📷 Usando Html5Qrcode (fallback)');
+    startQRWithDirect();
+  } else {
+    console.error('❌ ERRO: Nenhuma implementação QR disponível!');
+    alert('Erro: Scanner QR não disponível.');
+  }
+
+  console.log('🚀 ===== FIM startQR =====');
+}
+
+function startQRWithScanner() {
+  // Limpar scanner anterior se existir
+  if (html5QrcodeScanner) {
+    console.log('🧹 Limpando scanner anterior...');
+    html5QrcodeScanner.clear().catch(err => console.log('⚠️ Erro ao limpar scanner:', err));
+    html5QrcodeScanner = null;
+  }
+
+  console.log('📷 Criando novo Html5QrcodeScanner...');
+
+  // Configuração mais simples e confiável
+  const config = {
+    fps: 10,
+    qrbox: { width: 250, height: 250 },
+    aspectRatio: 1.0,
+    showTorchButtonIfSupported: false,
+    showZoomSliderIfSupported: false,
+    defaultZoomValueIfSupported: 2
+  };
+
+  html5QrcodeScanner = new Html5QrcodeScanner("reader", config, false);
+
+  console.log('▶️ Iniciando scanner...');
+
+  html5QrcodeScanner.render(
+    (decodedText) => {
+      console.log('✅ QR detectado:', decodedText);
+      const dados = parseQR(decodedText);
+      console.log('📋 Dados parseados:', dados);
+      preencherForm(dados);
+      // Após QR, busca nome pela BD via NIF (QR não tem nome)
+      if (dados.nif) fetchCompanyByNif(dados.nif);
+
+      // Parar scanner após sucesso
+      if (html5QrcodeScanner) {
+        html5QrcodeScanner.clear().then(() => {
+          console.log('🛑 Scanner parado após sucesso');
+          html5QrcodeScanner = null;
+        });
+      }
+    },
+    (errorMessage) => {
+      // Log de erros de frame (normal, não é erro crítico)
+      console.log('📷 Frame processado:', errorMessage);
+    }
+  ).then(() => {
+    console.log('✅ Scanner iniciado com sucesso!');
+  }).catch(err => {
+    console.error('❌ Erro ao iniciar scanner:', err);
+    alert('Erro ao iniciar câmera: ' + err.message);
+  });
+}
+
+function startQRWithDirect() {
   // Limpar scanner anterior se existir
   if (scanner) {
     console.log('🧹 Limpando scanner anterior...');
     scanner.clear().catch(err => console.log('⚠️ Erro ao limpar scanner:', err));
   }
 
-  console.log('📷 Criando novo scanner...');
+  console.log('📷 Criando novo Html5Qrcode (fallback)...');
   scanner = new Html5Qrcode("reader");
 
-  console.log('▶️ Iniciando scanner...');
+  console.log('▶️ Iniciando scanner (fallback)...');
   scanner.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
@@ -403,8 +487,6 @@ function startQR() {
     console.error('❌ Erro ao iniciar scanner:', err);
     alert('Erro ao iniciar câmera: ' + err.message);
   });
-
-  console.log('🚀 ===== FIM startQR =====');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -597,8 +679,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Verificar se Html5Qrcode está disponível
   console.log('📷 Html5Qrcode disponível:', typeof Html5Qrcode);
-  if (typeof Html5Qrcode === 'undefined') {
+  console.log('📷 Html5QrcodeScanner disponível:', typeof Html5QrcodeScanner);
+  if (typeof Html5Qrcode === 'undefined' && typeof Html5QrcodeScanner === 'undefined') {
     console.error('❌ ERRO: Html5Qrcode não carregou!');
+    alert('Erro: Biblioteca QR não carregou. Verifique sua conexão com internet.');
+    return;
+  }
+
+  // Tentar usar Html5QrcodeScanner primeiro (mais confiável)
+  if (typeof Html5QrcodeScanner !== 'undefined') {
+    console.log('📷 Usando Html5QrcodeScanner (recomendado)');
+    startQRWithScanner();
+  } else if (typeof Html5Qrcode !== 'undefined') {
+    console.log('📷 Usando Html5Qrcode (fallback)');
+    startQRWithDirect();
+  } else {
+    console.error('❌ ERRO: Nenhuma implementação QR disponível!');
+    alert('Erro: Scanner QR não disponível.');
   }
 
   // Verificar suporte à câmera
