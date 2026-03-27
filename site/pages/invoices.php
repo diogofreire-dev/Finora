@@ -150,14 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="form-label">Categoria</label>
                 <select id="categoria" name="id_categoria" class="form-select">
                   <option value="">— Selecionar —</option>
-                  <option value="">Compras</option>
-                  <option value="">Alimentação</option>
-                  <option value="">Transporte</option>
-                  <option value="">Saúde</option>
-                  <option value="">Entretenimento</option>
-                  <option value="">Educação</option>
-                  <option value="">Casa</option>
-                  <option value="">Outros</option>
+                  <option value="1">Compras</option>
+                  <option value="2">Alimentação</option>
+                  <option value="3">Transporte</option>
+                  <option value="4">Saúde</option>
+                  <option value="5">Entretenimento</option>
+                  <option value="6">Educação</option>
+                  <option value="7">Casa</option>
+                  <option value="8">Outros</option>
                 </select>
               </div>
               <div class="col-md-2">
@@ -424,23 +424,23 @@ async function uploadImagem() {
 // AUTO-CATEGORIA POR KEYWORDS
 // ─────────────────────────────────────────────────────────────────────────────
 const keywordCategorias = {
-  'mcdonald': 'Alimentação', 'mcdonalds': 'Alimentação', 'kfc': 'Alimentação',
-  'burger king': 'Alimentação', 'subway': 'Alimentação', 'pizza': 'Alimentação',
-  'nando': 'Alimentação', 'pingo doce': 'Alimentação', 'continente': 'Alimentação',
-  'lidl': 'Alimentação', 'aldi': 'Alimentação', 'mercadona': 'Alimentação',
-  'jumbo': 'Alimentação', 'intermarché': 'Alimentação', 'minipreço': 'Alimentação',
-  'galp': 'Transporte', 'bp': 'Transporte', 'repsol': 'Transporte',
-  'vodafone': 'Entretenimento', 'nos': 'Entretenimento', 'meo': 'Entretenimento',
-  'edp': 'Casa', 'endesa': 'Casa', 'tap': 'Transporte',
-  'farmácia': 'Saúde', 'clínica': 'Saúde', 'hospital': 'Saúde'
+  'mcdonald': 2, 'mcdonalds': 2, 'kfc': 2,
+  'burger king': 2, 'subway': 2, 'pizza': 2,
+  'nando': 2, 'pingo doce': 2, 'continente': 2,
+  'lidl': 2, 'aldi': 2, 'mercadona': 2,
+  'jumbo': 2, 'intermarché': 2, 'minipreço': 2,
+  'galp': 3, 'bp': 3, 'repsol': 3,
+  'vodafone': 5, 'nos': 5, 'meo': 5,
+  'edp': 7, 'endesa': 7, 'tap': 3,
+  'farmácia': 4, 'clínica': 4, 'hospital': 4
 };
 
 function autoCategoria(nomeEmpresa) {
   if (!nomeEmpresa) return;
   const nome = nomeEmpresa.toLowerCase();
-  for (const [keyword, categoria] of Object.entries(keywordCategorias)) {
+  for (const [keyword, idCategoria] of Object.entries(keywordCategorias)) {
     if (nome.includes(keyword)) {
-      setCategoriaByNome(categoria);
+      setCategoriaById(idCategoria);
       return;
     }
   }
@@ -451,7 +451,7 @@ function setCategoriaByNome(nomeCategoria) {
   if (!sel) return;
   for (const opt of sel.options) {
     if (opt.text.toLowerCase().includes(nomeCategoria.toLowerCase())) {
-      sel.value = opt.text;
+      sel.value = opt.value;
       return;
     }
   }
@@ -460,37 +460,54 @@ function setCategoriaByNome(nomeCategoria) {
 function setCategoriaById(id) {
   const sel = document.getElementById('categoria');
   if (!sel || !id) return;
-  sel.value = id;
+  sel.value = String(id);  // Converter para string para compatibilidade
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // NIF → EMPRESA (BD)
 // ─────────────────────────────────────────────────────────────────────────────
 function fetchCompanyByNif(nif) {
-  if (!/^\d{9}$/.test(nif)) return;
+  if (!/^\d{9}$/.test(nif)) {
+    console.warn('❌ NIF inválido:', nif);
+    return;
+  }
+  
   const empresaInput = document.getElementById('empresa');
+  console.log('🔍 Procurando empresa para NIF:', nif);
 
   fetch(`get_company_by_nif.php?nif=${encodeURIComponent(nif)}`)
-    .then(res => res.json())
+    .then(res => {
+      console.log('📡 Resposta HTTP:', res.status, res.statusText);
+      return res.json();
+    })
     .then(json => {
-      if (!json.found || !json.nome_empresa) return;
+      console.log('📋 Dados recebidos:', json);
+      
+      if (!json.found || !json.nome_empresa) {
+        console.warn('⚠️ Empresa não encontrada para NIF:', nif);
+        return;
+      }
 
       if (!empresaInput.value.trim()) {
         empresaInput.value = json.nome_empresa;
+        console.log('✅ Empresa preenchida:', json.nome_empresa);
       } else if (empresaInput.value.trim() !== json.nome_empresa) {
         if (confirm(`Nome na BD: "${json.nome_empresa}"\nAtual: "${empresaInput.value.trim()}"\n\nSubstituir?`)) {
           empresaInput.value = json.nome_empresa;
+          console.log('✅ Empresa atualizada para:', json.nome_empresa);
         }
       }
 
       // Categoria: usa a guardada na BD, senão tenta keywords
       if (json.id_categoria) {
         setCategoriaById(json.id_categoria);
+        console.log('✅ Categoria guardada encontrada:', json.id_categoria);
       } else {
         autoCategoria(json.nome_empresa);
+        console.log('✅ Categoria auto-detectada');
       }
     })
-    .catch(err => console.error('Erro get_company_by_nif:', err));
+    .catch(err => console.error('❌ Erro get_company_by_nif:', err));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -505,18 +522,34 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchCompanyByNif(this.value.trim());
   });
 
-  form.addEventListener('submit', function () {
+  form.addEventListener('submit', function (e) {
     const nif    = nifInput.value.trim();
     const empresa = empresaInput.value.trim();
-    if (!/^\d{9}$/.test(nif) || !empresa) return;
+    const categoria = document.getElementById('categoria')?.value || '';
+    
+    console.log('📤 Tentando guardar fatura:', { nif, empresa, categoria });
+    
+    if (!/^\d{9}$/.test(nif) || !empresa) {
+      console.warn('⚠️ Formulário inválido: NIF ou Empresa em branco');
+      return;
+    }
 
     const payload = new FormData();
     payload.append('nif', nif);
     payload.append('nome_empresa', empresa);
-    payload.append('id_categoria', document.getElementById('categoria')?.value || '');
+    payload.append('id_categoria', categoria);
 
+    console.log('📡 Enviando para save_company_nif.php:', { nif, empresa, id_categoria: categoria });
+    
     fetch('save_company_nif.php', { method: 'POST', body: payload })
-      .catch(err => console.error('Erro save_company_nif:', err));
+      .then(res => res.json())
+      .then(data => {
+        console.log('✅ Resposta save_company_nif:', data);
+        if (!data.success) console.error('❌ Erro:', data.error);
+      })
+      .catch(err => {
+        console.error('❌ Erro save_company_nif:', err);
+      });
   });
 });
 </script>
