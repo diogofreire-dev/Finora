@@ -48,8 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if (preg_match('/^\d{9}$/', $nif) && !empty($description)) {
-                $stmt = $pdo->prepare("INSERT INTO nif_empresas (nif, nome_empresa) VALUES (:nif, :nome) ON DUPLICATE KEY UPDATE nome_empresa = VALUES(nome_empresa)");
-                $stmt->execute([':nif' => $nif, ':nome' => $description]);
+                $id_cat = !empty($_POST['id_categoria']) ? intval($_POST['id_categoria']) : null;
+                $stmt = $pdo->prepare("
+                    INSERT INTO nif_empresas (nif, nome_empresa, id_categoria)
+                    VALUES (:nif, :nome, :cat)
+                    ON DUPLICATE KEY UPDATE 
+                        nome_empresa  = VALUES(nome_empresa),
+                        id_categoria  = VALUES(id_categoria)
+                ");
+                $stmt->execute([':nif' => $nif, ':nome' => $description, ':cat' => $id_cat]);
             }
 
             $pdo->commit();
@@ -138,6 +145,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div class="col-md-4">
                 <label class="form-label">Empresa</label>
                 <input id="empresa" name="empresa" class="form-control" placeholder="Nome da empresa" required>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Categoria</label>
+                <select id="categoria" name="id_categoria" class="form-select">
+                  <option value="">— Selecionar —</option>
+                  <option value="">Compras</option>
+                  <option value="">Alimentação</option>
+                  <option value="">Transporte</option>
+                  <option value="">Saúde</option>
+                  <option value="">Entretenimento</option>
+                  <option value="">Educação</option>
+                  <option value="">Casa</option>
+                  <option value="">Outros</option>
+                </select>
               </div>
               <div class="col-md-2">
                 <label class="form-label">Total</label>
@@ -400,11 +421,53 @@ async function uploadImagem() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AUTO-CATEGORIA POR KEYWORDS
+// ─────────────────────────────────────────────────────────────────────────────
+const keywordCategorias = {
+  'mcdonald': 'Alimentação', 'mcdonalds': 'Alimentação', 'kfc': 'Alimentação',
+  'burger king': 'Alimentação', 'subway': 'Alimentação', 'pizza': 'Alimentação',
+  'nando': 'Alimentação', 'pingo doce': 'Alimentação', 'continente': 'Alimentação',
+  'lidl': 'Alimentação', 'aldi': 'Alimentação', 'mercadona': 'Alimentação',
+  'jumbo': 'Alimentação', 'intermarché': 'Alimentação', 'minipreço': 'Alimentação',
+  'galp': 'Transporte', 'bp': 'Transporte', 'repsol': 'Transporte',
+  'vodafone': 'Entretenimento', 'nos': 'Entretenimento', 'meo': 'Entretenimento',
+  'edp': 'Casa', 'endesa': 'Casa', 'tap': 'Transporte',
+  'farmácia': 'Saúde', 'clínica': 'Saúde', 'hospital': 'Saúde'
+};
+
+function autoCategoria(nomeEmpresa) {
+  if (!nomeEmpresa) return;
+  const nome = nomeEmpresa.toLowerCase();
+  for (const [keyword, categoria] of Object.entries(keywordCategorias)) {
+    if (nome.includes(keyword)) {
+      setCategoriaByNome(categoria);
+      return;
+    }
+  }
+}
+
+function setCategoriaByNome(nomeCategoria) {
+  const sel = document.getElementById('categoria');
+  if (!sel) return;
+  for (const opt of sel.options) {
+    if (opt.text.toLowerCase().includes(nomeCategoria.toLowerCase())) {
+      sel.value = opt.text;
+      return;
+    }
+  }
+}
+
+function setCategoriaById(id) {
+  const sel = document.getElementById('categoria');
+  if (!sel || !id) return;
+  sel.value = id;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // NIF → EMPRESA (BD)
 // ─────────────────────────────────────────────────────────────────────────────
 function fetchCompanyByNif(nif) {
   if (!/^\d{9}$/.test(nif)) return;
-
   const empresaInput = document.getElementById('empresa');
 
   fetch(`get_company_by_nif.php?nif=${encodeURIComponent(nif)}`)
@@ -413,15 +476,18 @@ function fetchCompanyByNif(nif) {
       if (!json.found || !json.nome_empresa) return;
 
       if (!empresaInput.value.trim()) {
-        // Campo vazio — preenche diretamente
         empresaInput.value = json.nome_empresa;
-        return;
-      }
-      if (empresaInput.value.trim() !== json.nome_empresa) {
-        // Já tem valor diferente — pergunta
-        if (confirm(`Nome na base de dados: "${json.nome_empresa}"\nNome atual: "${empresaInput.value.trim()}"\n\nSubstituir?`)) {
+      } else if (empresaInput.value.trim() !== json.nome_empresa) {
+        if (confirm(`Nome na BD: "${json.nome_empresa}"\nAtual: "${empresaInput.value.trim()}"\n\nSubstituir?`)) {
           empresaInput.value = json.nome_empresa;
         }
+      }
+
+      // Categoria: usa a guardada na BD, senão tenta keywords
+      if (json.id_categoria) {
+        setCategoriaById(json.id_categoria);
+      } else {
+        autoCategoria(json.nome_empresa);
       }
     })
     .catch(err => console.error('Erro get_company_by_nif:', err));
@@ -435,12 +501,10 @@ document.addEventListener('DOMContentLoaded', function () {
   const empresaInput = document.getElementById('empresa');
   const form        = document.getElementById('faturaForm');
 
-  // Blur no NIF → consulta BD
   nifInput.addEventListener('blur', function () {
     fetchCompanyByNif(this.value.trim());
   });
 
-  // Submit → guarda NIF+Empresa na BD em background
   form.addEventListener('submit', function () {
     const nif    = nifInput.value.trim();
     const empresa = empresaInput.value.trim();
@@ -449,10 +513,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const payload = new FormData();
     payload.append('nif', nif);
     payload.append('nome_empresa', empresa);
+    payload.append('id_categoria', document.getElementById('categoria')?.value || '');
 
     fetch('save_company_nif.php', { method: 'POST', body: payload })
-      .then(res => res.json())
-      .then(data => { if (!data.success) console.error('Erro save_company_nif:', data.error); })
       .catch(err => console.error('Erro save_company_nif:', err));
   });
 });
