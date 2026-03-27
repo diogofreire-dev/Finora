@@ -362,20 +362,49 @@ function preencherForm(dados) {
 // ─────────────────────────────────────────────────────────────────────────────
 let scanner;
 function startQR() {
-  if (scanner) scanner.clear().catch(() => {});
+  console.log('🚀 ===== INÍCIO startQR =====');
+
+  // Verificar se o elemento reader existe
+  const readerElement = document.getElementById('reader');
+  console.log('🔍 Elemento reader encontrado:', !!readerElement);
+  if (readerElement) {
+    console.log('📐 Dimensões do reader:', readerElement.offsetWidth, 'x', readerElement.offsetHeight);
+  }
+
+  // Limpar scanner anterior se existir
+  if (scanner) {
+    console.log('🧹 Limpando scanner anterior...');
+    scanner.clear().catch(err => console.log('⚠️ Erro ao limpar scanner:', err));
+  }
+
+  console.log('📷 Criando novo scanner...');
   scanner = new Html5Qrcode("reader");
+
+  console.log('▶️ Iniciando scanner...');
   scanner.start(
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     (decodedText) => {
+      console.log('✅ QR detectado:', decodedText);
       const dados = parseQR(decodedText);
+      console.log('📋 Dados parseados:', dados);
       preencherForm(dados);
       // Após QR, busca nome pela BD via NIF (QR não tem nome)
       if (dados.nif) fetchCompanyByNif(dados.nif);
       scanner.stop().then(() => scanner.clear());
     },
-    () => {} // ignorar erros de frame
-  ).catch(err => console.error('QR scanner error:', err));
+    (errorMessage) => {
+      // Log de erros de frame (normal, não é erro)
+      console.log('📷 Frame processado (erro normal):', errorMessage);
+    }
+  ).then(() => {
+    console.log('✅ Scanner iniciado com sucesso!');
+  }).catch(err => {
+    console.error('❌ Erro ao iniciar scanner:', err);
+    alert('Erro ao iniciar câmera: ' + err.message);
+  });
+
+  console.log('🚀 ===== FIM startQR =====');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -536,7 +565,8 @@ document.addEventListener('DOMContentLoaded', function () {
   console.log('🔍 Elementos encontrados:', {
     nif: !!nifInput,
     empresa: !!empresaInput,
-    form: !!form
+    form: !!form,
+    reader: !!document.getElementById('reader')
   });
 
   if (!nifInput) {
@@ -564,6 +594,27 @@ document.addEventListener('DOMContentLoaded', function () {
     fetchCompanyByNif(nifValue);
   };
   nifInput.parentNode.appendChild(testButton);
+
+  // Verificar se Html5Qrcode está disponível
+  console.log('📷 Html5Qrcode disponível:', typeof Html5Qrcode);
+  if (typeof Html5Qrcode === 'undefined') {
+    console.error('❌ ERRO: Html5Qrcode não carregou!');
+  }
+
+  // Verificar suporte à câmera
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+    console.log('📷 getUserMedia suportado');
+  } else {
+    console.warn('⚠️ getUserMedia não suportado - câmera pode não funcionar');
+  }
+
+  // Verificar se está em HTTPS (necessário para câmera)
+  const isHttps = location.protocol === 'https:';
+  const isLocalhost = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+  console.log('🔒 HTTPS:', isHttps, '| Localhost:', isLocalhost);
+  if (!isHttps && !isLocalhost) {
+    console.warn('⚠️ Câmera pode não funcionar em HTTP não-localhost');
+  }
 
   form.addEventListener('submit', function (e) {
     const nif    = nifInput.value.trim();
