@@ -514,11 +514,25 @@ function fetchCompanyByNif(nif) {
 // EVENTOS
 // ─────────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function () {
+  console.log('✅ DOMContentLoaded executado');
+  
   const nifInput    = document.getElementById('nif');
   const empresaInput = document.getElementById('empresa');
   const form        = document.getElementById('faturaForm');
 
+  console.log('🔍 Elementos encontrados:', {
+    nif: !!nifInput,
+    empresa: !!empresaInput,
+    form: !!form
+  });
+
+  if (!nifInput) {
+    console.error('❌ ERRO: input#nif não encontrado!');
+    return;
+  }
+
   nifInput.addEventListener('blur', function () {
+    console.log('👁️ Blur event no NIF:', this.value);
     fetchCompanyByNif(this.value.trim());
   });
 
