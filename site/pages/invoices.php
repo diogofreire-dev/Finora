@@ -467,15 +467,22 @@ function setCategoriaById(id) {
 // NIF → EMPRESA (BD)
 // ─────────────────────────────────────────────────────────────────────────────
 function fetchCompanyByNif(nif) {
+  console.log('🚀 fetchCompanyByNif chamada com:', nif);
+
   if (!/^\d{9}$/.test(nif)) {
     console.warn('❌ NIF inválido:', nif);
     return;
   }
   
+  console.log('✅ NIF válido, procurando empresa...');
   const empresaInput = document.getElementById('empresa');
+  console.log('🔍 empresaInput encontrado:', !!empresaInput);
   console.log('🔍 Procurando empresa para NIF:', nif);
 
-  fetch(`get_company_by_nif.php?nif=${encodeURIComponent(nif)}`)
+  const url = `get_company_by_nif.php?nif=${encodeURIComponent(nif)}`;
+  console.log('📡 Fazendo fetch para:', url);
+
+  fetch(url)
     .then(res => {
       console.log('📡 Resposta HTTP:', res.status, res.statusText);
       return res.json();
@@ -531,10 +538,23 @@ document.addEventListener('DOMContentLoaded', function () {
     return;
   }
 
+  console.log('✅ Event listener adicionado ao NIF');
   nifInput.addEventListener('blur', function () {
     console.log('👁️ Blur event no NIF:', this.value);
-    fetchCompanyByNif(this.value.trim());
+    const nifValue = this.value.trim();
+    console.log('🔄 Chamando fetchCompanyByNif com:', nifValue);
+    fetchCompanyByNif(nifValue);
   });
+
+  // Teste direto - adicionar botão de teste
+  const testButton = document.createElement('button');
+  testButton.textContent = '🔍 Testar Lookup';
+  testButton.className = 'btn btn-sm btn-outline-info ms-2';
+  testButton.onclick = function() {
+    console.log('🧪 Teste manual chamado');
+    fetchCompanyByNif(nifInput.value.trim());
+  };
+  nifInput.parentNode.appendChild(testButton);
 
   form.addEventListener('submit', function (e) {
     const nif    = nifInput.value.trim();
