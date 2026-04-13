@@ -194,20 +194,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-let qrScanner = null; // única variável de scanner — sem duplicados
+/**
+ * invoices_camera_fix.js  (v2)
+ * ────────────────────────────
+ * FIX CRÍTICO: startQR() deve ser SÍNCRONO até ao qrScanner.start()
+ * Os browsers bloqueiam getUserMedia se houver qualquer await antes da chamada.
+ */
 
-// ─── ESTADO GLOBAL ────────────────────────────────────────────────────────────
+let qrScanner = null;
 
-// ─── QR CODE — Formato AT Portugal ──────────────────────────────────────────
-// Campos: A=NIF emitente, F=data(YYYYMMDD), G=nº doc, O=total a pagar
+// ─── PARSE QR AT Portugal ────────────────────────────────────────────────────
 function parseQR(qr) {
   const fields = {};
   qr.split('*').forEach(segment => {
     const idx = segment.indexOf(':');
     if (idx === -1) return;
-    const key   = segment.substring(0, idx).trim();
-    const value = segment.substring(idx + 1).trim();
-    if (key) fields[key] = value;
+    fields[segment.substring(0, idx).trim()] = segment.substring(idx + 1).trim();
   });
 
   let dataFormatada = '';
@@ -216,38 +218,48 @@ function parseQR(qr) {
     dataFormatada = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
   }
 
-  const totalRaw = fields['O'] || fields['N'] || '';
-
   return {
-    nif:    fields['A'] || '',
+    nif:     fields['A'] || '',
     empresa: '',
-    data:   dataFormatada,
-    numero: fields['G'] || '',
-    total:  totalRaw.replace(',', '.')
+    data:    dataFormatada,
+    numero:  fields['G'] || '',
+    total:   (fields['O'] || fields['N'] || '').replace(',', '.')
   };
 }
 
-// ─── QR SCANNER FAST & RELIABLE ─────────────────────────────────────────────
+// ─── PARAR SCANNER ────────────────────────────────────────────────────────────
+// Retorna uma Promise mas NAO deve ser awaited antes de startQR()
+function stopQR() {
+  const old = qrScanner;
+  qrScanner = null;
+
+  document.getElementById('btnIniciarQR').style.display = 'inline-block';
+  document.getElementById('btnPararQR').style.display   = 'none';
+
+  if (!old) return Promise.resolve();
+
+  return old.stop()
+    .catch(() => {})
+    .then(() => { try { old.clear(); } catch (_) {} });
+}
+
+// ─── INICIAR SCANNER ──────────────────────────────────────────────────────────
+// !! NAO pode ser async nem ter await antes de qrScanner.start() !!
+// O browser exige que getUserMedia seja chamado directamente no handler do clique.
 function startQR() {
+  // Se ja existe um scanner activo, para-o em background (fire and forget)
   if (qrScanner) {
-    qrScanner.clear().catch(() => {});
-    qrScanner = null;
+    stopQR();
   }
 
   document.getElementById('btnIniciarQR').style.display = 'none';
-  document.getElementById('btnPararQR').style.display = 'inline-block';
+  document.getElementById('btnPararQR').style.display   = 'inline-block';
 
   qrScanner = new Html5Qrcode('reader');
 
-  const config = {
-    fps: 10,
-    qrbox: { width: 250, height: 250 },
-    disableFlip: true
-  };
-
   qrScanner.start(
     { facingMode: 'environment' },
-    config,
+    { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: true },
     (decodedText) => {
       const dados = parseQR(decodedText);
       preencherForm(dados);
@@ -255,55 +267,47 @@ function startQR() {
       stopQR();
     },
     () => {}
-  ).catch(() => {
-    alert('Câmara não disponível. Usa QR de imagem.');
+  ).catch((err) => {
+    console.warn('Camera nao disponivel:', err);
+    alert('Camera nao disponivel. Usa o botao "QR de imagem".');
     stopQR();
   });
 }
 
-function stopQR() {
-  if (qrScanner) {
-    qrScanner.stop().then(() => {
-      qrScanner.clear();
-      qrScanner = null;
-    }).catch(() => {
-      qrScanner = null;
-    });
-  }
-  document.getElementById('btnIniciarQR').style.display = 'inline-block';
-  document.getElementById('btnPararQR').style.display = 'none';
-}
-
-// ─── LER QR DE IMAGEM FAST ──────────────────────────────────────────────────
-function lerQRDeImagem(input) {
+// ─── LER QR DE IMAGEM ─────────────────────────────────────────────────────────
+// scanFile() nao precisa de camera -> async/await e seguro aqui
+async function lerQRDeImagem(input) {
   const file = input.files[0];
   if (!file) return;
 
   const status = document.getElementById('qrImageStatus');
-  status.textContent = '⏳ A ler QR da imagem...';
+  status.textContent = 'A ler QR da imagem...';
+
+  // Para camera ao vivo se estiver activa
+  await stopQR();
 
   const tempScanner = new Html5Qrcode('reader');
 
-  tempScanner.scanFile(file, true)
-    .then(decodedText => {
-      status.textContent = '✅ QR lido!';
-      const dados = parseQR(decodedText);
-      preencherForm(dados);
-      if (dados.nif) fetchCompanyByNif(dados.nif);
-      input.value = '';
-    })
-    .catch(() => {
-      status.textContent = '⚠️ QR não encontrado. OCR...';
-      const uploadInput = document.getElementById('upload');
-      const dt = new DataTransfer();
-      dt.items.add(file);
-      uploadInput.files = dt.files;
-      uploadImagem();
-      input.value = '';
-    });
+  try {
+    const decodedText = await tempScanner.scanFile(file, false);
+    status.textContent = 'QR lido com sucesso!';
+    const dados = parseQR(decodedText);
+    preencherForm(dados);
+    if (dados.nif) fetchCompanyByNif(dados.nif);
+  } catch (_) {
+    status.textContent = 'QR nao encontrado - a tentar OCR...';
+    const uploadInput = document.getElementById('upload');
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    uploadInput.files = dt.files;
+    uploadImagem();
+  } finally {
+    try { tempScanner.clear(); } catch (_) {}
+    input.value = '';
+  }
 }
 
-// ─── TODAS AS FUNÇÕES ORIGINAIS (OCR, etc) ──────────────────────────────────
+// ─── OCR ─────────────────────────────────────────────────────────────────────
 function extractTotal(text) {
   const patterns = [
     /(?:total\s*a\s*pagar|a\s*pagar)\s*[:\-]?\s*(\d{1,6}[.,]\d{2})\s*€?/i,
@@ -320,23 +324,142 @@ function extractTotal(text) {
   return null;
 }
 
-// [ALL OTHER ORIGINAL FUNCTIONS: normalizeDate, extractNif, extractEmpresa, etc EXACT SAME]
-
-async function uploadImagem() {
-  // [ORIGINAL EXACT]
+function extractNif(text) {
+  const matches = text.match(/\b\d{9}\b/g);
+  if (!matches) return null;
+  return matches.find(n => /^5/.test(n)) || matches[0];
 }
 
-// [preencherForm, autoCategoria, fetchCompanyByNif, events EXACT SAME with ./ paths]
+function normalizeDate(text) {
+  const m =
+    text.match(/(\d{2})\/(\d{2})\/(\d{4})/) ||
+    text.match(/(\d{2})-(\d{2})-(\d{4})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  return null;
+}
+
+async function uploadImagem() {
+  const input  = document.getElementById('upload');
+  const status = document.getElementById('ocrStatus');
+  if (!input.files[0]) return;
+
+  status.textContent = 'A processar OCR...';
+
+  try {
+    const { data: { text } } = await Tesseract.recognize(input.files[0], 'por', {
+      logger: m => {
+        if (m.status === 'recognizing text')
+          status.textContent = `OCR: ${Math.round(m.progress * 100)}%`;
+      }
+    });
+
+    const dados = {
+      nif:    extractNif(text)    || '',
+      empresa:'',
+      data:   normalizeDate(text) || '',
+      numero: '',
+      total:  (extractTotal(text) || '').replace(',', '.')
+    };
+
+    preencherForm(dados);
+    if (dados.nif) fetchCompanyByNif(dados.nif);
+    status.textContent = 'OCR concluido!';
+  } catch (err) {
+    status.textContent = 'Erro no OCR.';
+    console.error(err);
+  }
+}
+
+// ─── PREENCHER FORMULARIO ─────────────────────────────────────────────────────
+function preencherForm(dados) {
+  if (dados.nif)     document.getElementById('nif').value     = dados.nif;
+  if (dados.empresa) document.getElementById('empresa').value = dados.empresa;
+  if (dados.data)    document.getElementById('data').value    = dados.data;
+  if (dados.numero)  document.getElementById('numero').value  = dados.numero;
+  if (dados.total)   document.getElementById('total').value   = dados.total;
+}
+
+// ─── BUSCAR EMPRESA POR NIF ───────────────────────────────────────────────────
 function fetchCompanyByNif(nif) {
   if (!/^\d{9}$/.test(nif)) return;
+
+  const empresaInput = document.getElementById('empresa');
+  const original     = empresaInput.placeholder;
+  empresaInput.placeholder = 'A procurar empresa...';
+  empresaInput.disabled    = true;
+
   fetch(`./get_company_by_nif.php?nif=${encodeURIComponent(nif)}`)
     .then(res => res.json())
     .then(json => {
-      // [ORIGINAL LOGIC]
+      empresaInput.disabled    = false;
+      empresaInput.placeholder = original;
+
+      if (json.found && json.nome_empresa) {
+        empresaInput.value = json.nome_empresa;
+
+        if (json.id_categoria) {
+          const sel = document.getElementById('categoria');
+          if (sel) sel.value = json.id_categoria;
+        }
+
+        if (json.source && json.source !== 'cache') {
+          const prev = document.getElementById('nifSourceBadge');
+          if (prev) prev.remove();
+          const badge = document.createElement('small');
+          badge.id          = 'nifSourceBadge';
+          badge.className   = 'text-success d-block mt-1';
+          badge.textContent = 'Encontrado via ' + (json.fonte || json.source);
+          empresaInput.parentNode.appendChild(badge);
+        }
+      } else {
+        empresaInput.placeholder = 'Empresa nao encontrada - preenche manualmente';
+      }
+    })
+    .catch(() => {
+      empresaInput.disabled    = false;
+      empresaInput.placeholder = original;
     });
 }
 
-// DOMContentLoaded [ORIGINAL EXACT with ./save_company_nif.php]
+// ─── GUARDAR NIF MANUALMENTE ─────────────────────────────────────────────────
+function saveCompanyNif(nif, nome, idCategoria) {
+  if (!/^\d{9}$/.test(nif) || !nome) return;
+  fetch('./save_company_nif.php', {
+    method: 'POST',
+    body: new URLSearchParams({ nif, nome_empresa: nome, id_categoria: idCategoria || '' })
+  }).catch(() => {});
+}
+
+// ─── EVENTOS ──────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('btnIniciarQR').addEventListener('click', startQR);
+  document.getElementById('btnPararQR').addEventListener('click', stopQR);
+
+  const nifInput = document.getElementById('nif');
+  if (nifInput) {
+    let nifTimer;
+    nifInput.addEventListener('input', () => {
+      clearTimeout(nifTimer);
+      if (nifInput.value.length === 9) {
+        nifTimer = setTimeout(() => fetchCompanyByNif(nifInput.value), 400);
+      }
+    });
+    nifInput.addEventListener('blur', () => {
+      if (nifInput.value.length === 9) fetchCompanyByNif(nifInput.value);
+    });
+  }
+
+  const form = document.getElementById('faturaForm');
+  if (form) {
+    form.addEventListener('submit', () => {
+      saveCompanyNif(
+        document.getElementById('nif')?.value,
+        document.getElementById('empresa')?.value,
+        document.getElementById('categoria')?.value
+      );
+    });
+  }
+});
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
