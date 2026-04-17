@@ -181,7 +181,21 @@ private $apiKey = 'tua_api_key_aqui';
 private $fromEmail = 'teu_email@dominio.com';
 ```
 
-### 5. Configurar Lembretes Automáticos (Opcional)
+### 5. OCR de Faturas (Gratuito)
+
+O sistema inclui OCR automático para extrair dados de faturas:
+
+- **QR Code**: Detecção prioritária de códigos QR (instantâneo)
+- **Fallback OCR**: Tesseract.js para texto quando não há QR
+- **Suporte PDF**: Renderização automática da primeira página
+- **100% Browser**: Sem custos, sem servidor, sem APIs externas
+
+Funciona com faturas portuguesas (JPG, PNG, PDF) e extrai automaticamente:
+- NIF da empresa
+- Valor total
+- Data da fatura
+
+### 6. Configurar Lembretes Automáticos (Opcional)
 
 Para enviar lembretes automaticamente, configura uma tarefa CRON:
 ```
@@ -190,7 +204,7 @@ bash
 0 * * * * php /caminho/para/FreeCard/cron/send_reminders.php
 ```
 
-### 6. Iniciar Servidor
+### 7. Iniciar Servidor
 
 ```
 bash

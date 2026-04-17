@@ -331,7 +331,7 @@ async function checkCameraSupport() {
   try {
     // Check HTTPS
     if (!window.isSecureContext) {
-      showStatus('alert-warning', '⚠️ <strong>HTTPS necessário</strong> para usar a câmara. Use ngrok ou SSL local.');
+      showStatus('alert-warning', '<strong>HTTPS necessário</strong> para usar a câmara. Use ngrok ou SSL local.');
       troubleshootEl.style.display = 'block';
       new bootstrap.Modal(document.getElementById('troubleshootModal')).show();
       return false;
@@ -341,7 +341,7 @@ async function checkCameraSupport() {
     availableCameras = await Html5Qrcode.getCameras();
     
     if (availableCameras.length === 0) {
-      showStatus('alert-danger', '❌ Nenhuma câmara encontrada');
+      showStatus('alert-danger', 'Nenhuma câmara encontrada');
       troubleshootEl.style.display = 'block';
       return false;
     }
@@ -361,13 +361,13 @@ async function checkCameraSupport() {
     }
 
     deviceSelect.style.display = 'block';
-    showStatus('alert-success', `✅ ${availableCameras.length} câmaras encontradas. Selecione e inicie.`);
+    showStatus('alert-success', `${availableCameras.length} câmaras encontradas. Selecione e inicie.`);
     startBtn.innerHTML = '<i class="bi bi-camera"></i> Iniciar Câmara Selecionada';
     
     return true;
   } catch (err) {
     console.error('Camera check failed:', err);
-    showStatus('alert-danger', '❌ Erro ao verificar câmaras: ' + err.message);
+    showStatus('alert-danger', 'Erro ao verificar câmaras: ' + err.message);
     troubleshootEl.style.display = 'block';
     return false;
   }
@@ -375,7 +375,7 @@ async function checkCameraSupport() {
 
 function checkHTTPS() {
   const status = document.getElementById('httpsStatus');
-  status.innerHTML = window.isSecureContext ? '✅ HTTPS OK' : '❌ HTTP (bloqueia câmara)';
+  status.innerHTML = window.isSecureContext ? 'HTTPS OK' : 'HTTP (bloqueia câmara)';
 }
 
 async function startScanner() {
@@ -400,14 +400,14 @@ async function startScanner() {
       onScanSuccess,
       onScanError
     );
-    showStatus('alert-success', '✅ Câmara ativa! Aponte para QR Code...');
+    showStatus('alert-success', 'Câmara ativa! Aponte para QR Code...');
     document.getElementById('qrScanner').style.display = 'block';
     startBtn.style.display = 'none';
     stopBtn.style.display = 'inline-block';
     deviceSelect.style.display = 'none';
   } catch (err) {
     console.error('Erro ao iniciar scanner:', err);
-    showStatus('alert-danger', '❌ Erro ao iniciar câmara: ' + err.message);
+    showStatus('alert-danger', 'Erro ao iniciar câmara: ' + err.message);
     new bootstrap.Modal(document.getElementById('troubleshootModal')).show();
   }
 }
