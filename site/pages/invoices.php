@@ -65,13 +65,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
-    body { position: relative; min-height: 100vh; }
-    .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; }
-    [data-theme="light"] body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%); z-index: -1; }
-    [data-theme="dark"] body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%); z-index: -1; }
-    .floating-shape { position: absolute; border-radius: 50%; animation: float 20s infinite ease-in-out; }
-    [data-theme="light"] .floating-shape { background: rgba(46, 88, 204, 0.15); }
-    [data-theme="dark"] .floating-shape { background: rgba(46, 88, 204, 0.2); }
+    /* ========== BACKGROUND ANIMADO ========== */
+    body {
+      position: relative;
+      min-height: 100vh;
+    }
+    .bg-animation {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    [data-theme="light"] body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%);
+      z-index: -1;
+    }
+    [data-theme="dark"] body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
+      z-index: -1;
+    }
+    .floating-shape {
+      position: absolute;
+      border-radius: 50%;
+      animation: float 20s infinite ease-in-out;
+    }
+    [data-theme="light"] .floating-shape {
+      background: rgba(46, 88, 204, 0.15);
+    }
+    [data-theme="dark"] .floating-shape {
+      background: rgba(46, 88, 204, 0.2);
+    }
     .shape1 { width:300px;height:300px;top:-100px;left:-100px;animation-delay:0s; }
     .shape2 { width:200px;height:200px;bottom:-50px;right:-50px;animation-delay:5s; }
     .shape3 { width:150px;height:150px;top:50%;right:10%;animation-delay:2s; }
@@ -84,10 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [data-theme="dark"] .particle { background:rgba(46,88,204,.5); }
     @keyframes rise { 0%{transform:translateY(0) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{transform:translateY(-100vh) translateX(50px);opacity:0} }
     .navbar,.container{position:relative;z-index:1;}
-    .card{border:none;border-radius:16px;box-shadow:0 4px 20px var(--shadow);background:var(--bg-secondary);color:var(--text-primary);}
-    [data-theme="dark"] .form-control,[data-theme="dark"] .form-select{background:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);}
     @media(prefers-reduced-motion:reduce){.floating-shape,.particle{animation:none;opacity:.2}}
     #ocrTextoBox{font-size:10px;max-height:160px;overflow:auto;background:#f8f9fa;color:#333;padding:8px;border-radius:4px;margin-top:6px;white-space:pre-wrap;display:none}
+    :root {
+      --primary-blue: #3498db;
+      --dark-blue: #2980b9;
+    }
   </style>
 
   <!-- !! ORDEM IMPORTA: html5-qrcode, depois tesseract, depois pdf.js !! -->
@@ -119,7 +160,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
   <div class="container">
-    <a class="navbar-brand fw-bold" href="../dashboard.php">
+          <a class="navbar-brand fw-bold" href="../../dashboard.php">
       <img src="../assets/logo2.png" alt="Freecard" style="height:35px;margin-right:8px;">
       FreeCard
     </a>
@@ -128,7 +169,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="../../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
         <li class="nav-item"><a class="nav-link" href="cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
         <li class="nav-item"><a class="nav-link active" href="transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
         <li class="nav-item"><a class="nav-link" href="budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
@@ -139,9 +180,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
           </a>
           <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
+            <li><a class="dropdown-item" href="../../pages/settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
+            <li><a class="dropdown-item" href="../../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
           </ul>
         </li>
       </ul>
@@ -179,10 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnPararQR" style="display:none;">
                   <i class="bi bi-stop-circle"></i> Parar
                 </button>
-                <label class="btn btn-outline-primary btn-sm mb-0">
-                  <i class="bi bi-image"></i> QR de imagem
-                  <input type="file" id="qrImageInput" accept="image/*" style="display:none;" onchange="lerQRDeImagem(this)">
-                </label>
+
               </div>
               <div id="qrImageStatus" class="small text-muted mt-2"></div>
             </div>
@@ -359,29 +397,7 @@ async function tentarLerQR(blob) {
 // ═══════════════════════════════════════════════════════════════════════════
 // BOTÃO "QR de imagem" (só imagens, sem PDF)
 // ═══════════════════════════════════════════════════════════════════════════
-async function lerQRDeImagem(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const status = document.getElementById('qrImageStatus');
-  status.textContent = 'A ler QR da imagem...';
-  await stopQR();
-  try {
-    const txt   = await tentarLerQR(file);
-    const dados = parseQR(txt);
-    status.textContent = 'QR lido com sucesso!';
-    preencherForm(dados);
-    if (dados.nif) fetchCompanyByNif(dados.nif);
-  } catch (_) {
-    // sem QR → envia para OCR
-    status.textContent = 'QR não encontrado — a tentar OCR...';
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    document.getElementById('upload').files = dt.files;
-    await uploadImagem();
-  } finally {
-    input.value = '';
-  }
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DATA EXTRACTION HELPERS
