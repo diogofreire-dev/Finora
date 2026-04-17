@@ -1,5 +1,4 @@
 <?php
-// ORIGINAL invoices.php style + ALL fixes (NIF lookup, QR fast, paths)
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../../config/db.php';
 $uid = $_SESSION['user_id'] ?? null;
@@ -65,35 +64,99 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <style>
+    body { position: relative; min-height: 100vh; }
+    .bg-animation { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; overflow: hidden; }
+    [data-theme="light"] body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%); z-index: -1; }
+    [data-theme="dark"] body::before { content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%); z-index: -1; }
+    .floating-shape { position: absolute; border-radius: 50%; animation: float 20s infinite ease-in-out; }
+    [data-theme="light"] .floating-shape { background: rgba(46, 88, 204, 0.15); }
+    [data-theme="dark"] .floating-shape { background: rgba(46, 88, 204, 0.2); }
+    .shape1 { width:300px;height:300px;top:-100px;left:-100px;animation-delay:0s; }
+    .shape2 { width:200px;height:200px;bottom:-50px;right:-50px;animation-delay:5s; }
+    .shape3 { width:150px;height:150px;top:50%;right:10%;animation-delay:2s; }
+    .shape4 { width:100px;height:100px;bottom:20%;left:15%;animation-delay:7s; }
+    .shape5 { width:250px;height:250px;top:30%;left:50%;animation-delay:3s; }
+    .shape6 { width:250px;height:300px;top:-100px;right:-100px;animation-delay:6s; }
+    @keyframes float { 0%,100%{transform:translateY(0) rotate(0deg);opacity:.3} 50%{transform:translateY(-30px) rotate(180deg);opacity:.6} }
+    .particle { position:absolute;width:4px;height:4px;border-radius:50%;animation:rise 15s infinite ease-in; }
+    [data-theme="light"] .particle { background:rgba(46,88,204,.4); }
+    [data-theme="dark"] .particle { background:rgba(46,88,204,.5); }
+    @keyframes rise { 0%{transform:translateY(0) translateX(0);opacity:0} 10%{opacity:1} 90%{opacity:1} 100%{transform:translateY(-100vh) translateX(50px);opacity:0} }
+    .navbar,.container{position:relative;z-index:1;}
+    .card{border:none;border-radius:16px;box-shadow:0 4px 20px var(--shadow);background:var(--bg-secondary);color:var(--text-primary);}
+    [data-theme="dark"] .form-control,[data-theme="dark"] .form-select{background:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);}
+    @media(prefers-reduced-motion:reduce){.floating-shape,.particle{animation:none;opacity:.2}}
+    #ocrTextoBox{font-size:10px;max-height:160px;overflow:auto;background:#f8f9fa;color:#333;padding:8px;border-radius:4px;margin-top:6px;white-space:pre-wrap;display:none}
+  </style>
+
+  <!-- !! ORDEM IMPORTA: html5-qrcode, depois tesseract, depois pdf.js !! -->
   <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
   <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    pdfjsLib.GlobalWorkerOptions.workerSrc =
+      'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
 </head>
 <body>
+<div class="bg-animation">
+  <div class="floating-shape shape1"></div>
+  <div class="floating-shape shape2"></div>
+  <div class="floating-shape shape3"></div>
+  <div class="floating-shape shape4"></div>
+  <div class="floating-shape shape5"></div>
+  <div class="floating-shape shape6"></div>
+</div>
+
+<!--
+  Container SEPARADO para scanFile() de ficheiros.
+  NUNCA usar #reader — interfere com a câmara ao vivo.
+  NÃO chamar scanner.stop() depois de scanFile() — scanFile não "inicia" o scanner,
+  stop() lançaria erro e corromperia o fluxo silenciosamente.
+-->
+<div id="qrFileContainer" style="display:none;width:1px;height:1px;overflow:hidden;position:absolute;"></div>
+
 <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
   <div class="container">
-    <a class="navbar-brand" href="../dashboard.php"><i class="bi bi-credit-card-fill"></i> FreeCard</a>
-    <div class="collapse navbar-collapse">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item"><a class="nav-link" href="transactions.php">Transações</a></li>
-        <li class="nav-item"><a class="nav-link active" href="invoices.php">Faturas</a></li>
+    <a class="navbar-brand fw-bold" href="../dashboard.php">
+      <img src="../assets/logo2.png" alt="Freecard" style="height:35px;margin-right:8px;">
+      FreeCard
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+        <li class="nav-item"><a class="nav-link" href="cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
+        <li class="nav-item"><a class="nav-link active" href="transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
+        <li class="nav-item"><a class="nav-link" href="budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
+        <li class="nav-item"><a class="nav-link" href="reminders.php"><i class="bi bi-calendar-check"></i> Lembretes</a></li>
+        <li class="nav-item"><a class="nav-link" href="analytics.php"><i class="bi bi-graph-up"></i> Análise</a></li>
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+            <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
+          </ul>
+        </li>
       </ul>
     </div>
   </div>
 </nav>
 
+<!--
+  DIV OCULTO para QR scanning de ficheiros.
+  NUNCA usar #reader para isto — causa conflito com a câmara ao vivo.
+-->
+
 <div class="container mt-4 mb-5">
   <div class="row">
     <div class="col-12">
-
-      <div class="card p-3 mb-3">
-        <div class="d-flex justify-content-between align-items-center">
-          <div>
-            <h2 class="mb-1"><i class="bi bi-upc-scan"></i> Faturas</h2>
-            <p class="text-muted mb-0">Leitura QR + OCR + confirmação manual</p>
-          </div>
-          <a href="transactions.php" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-left"></i> Voltar às Transações</a>
-        </div>
-      </div>
 
       <?php if ($message): ?>
         <div class="alert alert-<?=$messageType?> alert-dismissible fade show">
@@ -101,13 +164,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       <?php endif; ?>
 
-      <!-- EXACT ORIGINAL QR/OCR CARD -->
       <div class="card mb-4">
         <div class="card-body">
           <div class="row gy-3">
+
+            <!-- CÂMARA AO VIVO -->
             <div class="col-md-6">
-              <h5>📷 Ler QR Code</h5>
-              <div id="reader" style="width:100%;max-width:400px;min-height:250px;background:#f8f9fa;border-radius:12px;padding:6px;"></div>
+              <h5>Ler QR-code da Fatura</h5>
+              <div id="reader" style="width:100%;max-width:400px;min-height:250px;background:#0b0f1a;border-radius:12px;padding:6px;"></div>
               <div class="mt-2 d-flex gap-2 flex-wrap">
                 <button type="button" class="btn btn-primary btn-sm" id="btnIniciarQR">
                   <i class="bi bi-camera"></i> Iniciar câmara
@@ -115,7 +179,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <button type="button" class="btn btn-outline-secondary btn-sm" id="btnPararQR" style="display:none;">
                   <i class="bi bi-stop-circle"></i> Parar
                 </button>
-                <!-- NEW FAST QR IMAGE -->
                 <label class="btn btn-outline-primary btn-sm mb-0">
                   <i class="bi bi-image"></i> QR de imagem
                   <input type="file" id="qrImageInput" accept="image/*" style="display:none;" onchange="lerQRDeImagem(this)">
@@ -123,19 +186,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               </div>
               <div id="qrImageStatus" class="small text-muted mt-2"></div>
             </div>
+
+            <!-- OCR / PDF -->
             <div class="col-md-6">
-              <h5>🧾 OCR da imagem</h5>
-              <p class="text-muted small">Carrega uma foto de fatura para extrair texto automaticamente.</p>
-              <input id="upload" type="file" class="form-control form-control-sm" accept="image/*" onchange="uploadImagem()">
+              <h5>🧾 OCR / PDF da fatura</h5>
+              <p class="text-muted small">
+                Carrega uma imagem (JPG, PNG) ou PDF.<br>
+                Tenta ler o QR automaticamente. Se não encontrar, extrai por OCR.
+              </p>
+              <input id="upload" type="file" class="form-control form-control-sm"
+                     accept="image/*,.pdf" onchange="uploadImagem()">
               <div id="ocrStatus" class="small text-muted mt-2"></div>
+              <!-- botão para ver texto OCR (aparece após OCR) -->
+              <a href="#" id="btnVerTexto" style="display:none;font-size:12px;" onclick="document.getElementById('ocrTextoBox').style.display='block';this.style.display='none';return false;">
+                Ver texto extraído pelo OCR
+              </a>
+              <div id="ocrTextoBox"></div>
+              <canvas id="pdfCanvas" style="display:none;max-width:100%;border-radius:8px;margin-top:8px;"></canvas>
             </div>
+
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-body">
-          <h5 class="mb-3">📝 Confirma e guarda</h5>
+          <h5 class="mb-3">Confirmar os dados da fatura</h5>
           <form method="post" id="faturaForm">
             <div class="row g-3">
               <div class="col-md-4">
@@ -194,234 +270,236 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
-/**
- * invoices_camera_fix.js  (v2)
- * ────────────────────────────
- * FIX CRÍTICO: startQR() deve ser SÍNCRONO até ao qrScanner.start()
- * Os browsers bloqueiam getUserMedia se houver qualquer await antes da chamada.
- */
+'use strict';
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CÂMARA AO VIVO  (usa #reader — nunca misturar com scanFile)
+// ═══════════════════════════════════════════════════════════════════════════
 let qrScanner = null;
 
-// ─── PARSE QR AT Portugal ────────────────────────────────────────────────────
-function parseQR(qr) {
-  const fields = {};
-  qr.split('*').forEach(segment => {
-    const idx = segment.indexOf(':');
-    if (idx === -1) return;
-    fields[segment.substring(0, idx).trim()] = segment.substring(idx + 1).trim();
-  });
-
-  let dataFormatada = '';
-  if (fields['F'] && /^\d{8}$/.test(fields['F'])) {
-    const d = fields['F'];
-    dataFormatada = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
-  }
-
-  return {
-    nif:     fields['A'] || '',
-    empresa: '',
-    data:    dataFormatada,
-    numero:  fields['G'] || '',
-    total:   (fields['O'] || fields['N'] || '').replace(',', '.')
-  };
-}
-
-// ─── PARAR SCANNER ────────────────────────────────────────────────────────────
-// Retorna uma Promise mas NAO deve ser awaited antes de startQR()
 function stopQR() {
   const old = qrScanner;
   qrScanner = null;
-
   document.getElementById('btnIniciarQR').style.display = 'inline-block';
   document.getElementById('btnPararQR').style.display   = 'none';
-
   if (!old) return Promise.resolve();
-
-  return old.stop()
-    .catch(() => {})
-    .then(() => { try { old.clear(); } catch (_) {} });
+  return old.stop().catch(() => {}).then(() => { try { old.clear(); } catch(_){} });
 }
 
-// ─── INICIAR SCANNER ──────────────────────────────────────────────────────────
-// !! NAO pode ser async nem ter await antes de qrScanner.start() !!
-// O browser exige que getUserMedia seja chamado directamente no handler do clique.
+// NÃO pode ser async — getUserMedia tem de ser chamado direto no click
 function startQR() {
-  // Se ja existe um scanner activo, para-o em background (fire and forget)
-  if (qrScanner) {
-    stopQR();
-  }
-
+  if (qrScanner) stopQR();
   document.getElementById('btnIniciarQR').style.display = 'none';
   document.getElementById('btnPararQR').style.display   = 'inline-block';
-
   qrScanner = new Html5Qrcode('reader');
-
   qrScanner.start(
     { facingMode: 'environment' },
     { fps: 10, qrbox: { width: 250, height: 250 }, disableFlip: true },
-    (decodedText) => {
-      const dados = parseQR(decodedText);
+    (txt) => {
+      const dados = parseQR(txt);
       preencherForm(dados);
       if (dados.nif) fetchCompanyByNif(dados.nif);
       stopQR();
     },
     () => {}
-  ).catch((err) => {
-    console.warn('Camera nao disponivel:', err);
-    alert('Camera nao disponivel. Usa o botao "QR de imagem".');
+  ).catch(err => {
+    console.warn('Câmara indisponível:', err);
+    alert('Câmara não disponível. Usa o botão "QR de imagem".');
     stopQR();
   });
 }
 
-// ─── LER QR DE IMAGEM ─────────────────────────────────────────────────────────
-// scanFile() nao precisa de camera -> async/await e seguro aqui
+// ═══════════════════════════════════════════════════════════════════════════
+// PARSE QR Portugal AT
+// ═══════════════════════════════════════════════════════════════════════════
+function parseQR(qr) {
+  const fields = {};
+  qr.split('*').forEach(seg => {
+    const i = seg.indexOf(':');
+    if (i === -1) return;
+    fields[seg.substring(0, i).trim()] = seg.substring(i + 1).trim();
+  });
+  let data = '';
+  if (fields['F'] && /^\d{8}$/.test(fields['F'])) {
+    const d = fields['F'];
+    data = `${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6,8)}`;
+  }
+  return {
+    nif:    fields['A'] || '',
+    empresa: '',
+    data,
+    numero: fields['G'] || '',
+    total:  (fields['O'] || fields['N'] || '').replace(',', '.')
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPER: scanFile num container oculto SEPARADO do #reader
+//
+// !! CRÍTICO: NÃO chamar scanner.stop() depois de scanFile()
+//    scanFile() NÃO usa start(), por isso stop() lança erro interno
+//    que corrompe o fluxo silenciosamente mesmo dentro de try/catch.
+//    Só usar scanner.clear() para limpar o DOM.
+// ═══════════════════════════════════════════════════════════════════════════
+async function tentarLerQR(blob) {
+  const container = document.getElementById('qrFileContainer');
+  container.innerHTML = ''; // limpa instâncias anteriores
+  const scanner = new Html5Qrcode('qrFileContainer');
+  try {
+    // scanFile devolve o texto do QR ou lança erro se não encontrar
+    const txt = await scanner.scanFile(blob, false);
+    return txt;
+  } finally {
+    // APENAS clear() — NÃO stop() — scanFile nunca "inicia" o scanner
+    try { scanner.clear(); } catch(_) {}
+    container.innerHTML = '';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BOTÃO "QR de imagem" (só imagens, sem PDF)
+// ═══════════════════════════════════════════════════════════════════════════
 async function lerQRDeImagem(input) {
   const file = input.files[0];
   if (!file) return;
-
   const status = document.getElementById('qrImageStatus');
   status.textContent = 'A ler QR da imagem...';
-
-  // Para camera ao vivo se estiver activa
   await stopQR();
-
-  const tempScanner = new Html5Qrcode('reader');
-
   try {
-    const decodedText = await tempScanner.scanFile(file, false);
+    const txt   = await tentarLerQR(file);
+    const dados = parseQR(txt);
     status.textContent = 'QR lido com sucesso!';
-    const dados = parseQR(decodedText);
     preencherForm(dados);
     if (dados.nif) fetchCompanyByNif(dados.nif);
   } catch (_) {
-    status.textContent = 'QR nao encontrado - a tentar OCR...';
-    const uploadInput = document.getElementById('upload');
+    // sem QR → envia para OCR
+    status.textContent = 'QR não encontrado — a tentar OCR...';
     const dt = new DataTransfer();
     dt.items.add(file);
-    uploadInput.files = dt.files;
-    uploadImagem();
+    document.getElementById('upload').files = dt.files;
+    await uploadImagem();
   } finally {
-    try { tempScanner.clear(); } catch (_) {}
     input.value = '';
   }
 }
 
-// ─── OCR ─────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// DATA EXTRACTION HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 function extractTotal(text) {
-  const patterns = [
-    /(?:total\s*a\s*pagar|a\s*pagar)\s*[:\-]?\s*(\d{1,6}[.,]\d{2})\s*€?/i,
-    /total\s*[:\-]?\s*€\s*(\d{1,6}[.,]\d{2})/i,
-    /total\s*[:\-]?\s*(\d{1,6}[.,]\d{2})\s*€/i,
+  const padroes = [
+    /(?:total\s+a\s+pagar|valor\s+a\s+pagar|total\s+com\s+iva|total\s+c\/iva)\s*[:\-]?\s*€?\s*(\d{1,6}[.,]\d{2})/i,
+    /total\s*[:\-]\s*€?\s*(\d{1,6}[.,]\d{2})/i,
+    /total\s*€?\s*(\d{1,6}[.,]\d{2})/i,
     /€\s*(\d{1,6}[.,]\d{2})(?!\d)/,
     /(?<!\d)(\d{1,6}[.,]\d{2})\s*€/,
     /EUR\s*(\d{1,6}[.,]\d{2})/i
   ];
-  for (const p of patterns) {
+  for (const p of padroes) {
     const m = text.match(p);
     if (m) return m[1];
   }
-  return null;
+  // fallback: maior valor numérico com decimais > 0.50
+  const todos = [...text.matchAll(/(\d{1,6}[.,]\d{2})/g)]
+    .map(m => ({ raw: m[1], val: parseFloat(m[1].replace(',', '.')) }))
+    .filter(x => x.val > 0.5);
+  if (!todos.length) return null;
+  todos.sort((a, b) => b.val - a.val);
+  return todos[0].raw;
 }
 
 function extractNif(text) {
-  const matches = text.match(/\b\d{9}\b/g);
+  // PT 123456789 ou PT123456789
+  const pt = text.match(/PT\s*(\d{9})/i);
+  if (pt) return pt[1];
+  // remove espaços que o OCR insere entre dígitos (aplica 2x para duplos espaços)
+  let cleaned = text.replace(/(\d)\s+(\d)/g, '$1$2').replace(/(\d)\s+(\d)/g, '$1$2');
+  const matches = cleaned.match(/\b\d{9}\b/g);
   if (!matches) return null;
-  return matches.find(n => /^5/.test(n)) || matches[0];
+  return matches.find(n => /^[5-8]/.test(n)) || matches[0];
 }
 
 function normalizeDate(text) {
-  const m =
-    text.match(/(\d{2})\/(\d{2})\/(\d{4})/) ||
-    text.match(/(\d{2})-(\d{2})-(\d{4})/);
+  // "Data de emissão: DD/MM/YYYY"
+  let m = text.match(/data\s*de\s*emiss[aã]o\s*[:\-]?\s*(\d{2})[.\/\-](\d{2})[.\/\-](\d{4})/i);
   if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  // DD/MM/YYYY  DD-MM-YYYY  DD.MM.YYYY
+  m = text.match(/(\d{2})[.\/\-](\d{2})[.\/\-](\d{4})/);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+  // YYYY-MM-DD já correto
+  m = text.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
   return null;
 }
 
-async function uploadImagem() {
-  const input  = document.getElementById('upload');
-  const status = document.getElementById('ocrStatus');
-  if (!input.files[0]) return;
-
-  status.textContent = 'A processar OCR...';
-
-  try {
-    const { data: { text } } = await Tesseract.recognize(input.files[0], 'por', {
-      logger: m => {
-        if (m.status === 'recognizing text')
-          status.textContent = `OCR: ${Math.round(m.progress * 100)}%`;
-      }
-    });
-
-    const dados = {
-      nif:    extractNif(text)    || '',
-      empresa:'',
-      data:   normalizeDate(text) || '',
-      numero: '',
-      total:  (extractTotal(text) || '').replace(',', '.')
-    };
-
-    preencherForm(dados);
-    if (dados.nif) fetchCompanyByNif(dados.nif);
-    status.textContent = 'OCR concluido!';
-  } catch (err) {
-    status.textContent = 'Erro no OCR.';
-    console.error(err);
+function extractEmpresa(text) {
+  const linhas = text.split('\n').map(l => l.trim()).filter(Boolean);
+  for (let i = 0; i < Math.min(12, linhas.length); i++) {
+    if (/S\.A\.|, LDA|LDA\.|UNIPESSOAL/i.test(linhas[i]) && linhas[i].length > 4)
+      return linhas[i];
   }
+  return '';
 }
 
-// ─── PREENCHER FORMULARIO ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// PREENCHER FORMULÁRIO
+// ─────────────────────────────────────────────────────────────────────────────
 function preencherForm(dados) {
-  if (dados.nif)     document.getElementById('nif').value     = dados.nif;
-  if (dados.empresa) document.getElementById('empresa').value = dados.empresa;
-  if (dados.data)    document.getElementById('data').value    = dados.data;
-  if (dados.numero)  document.getElementById('numero').value  = dados.numero;
-  if (dados.total)   document.getElementById('total').value   = dados.total;
+  console.log('preencherForm chamado com:', dados);
+  if (typeof dados !== 'object' || !dados) return;
+  
+  const nifEl = document.getElementById('nif');
+  const empresaEl = document.getElementById('empresa');
+  const dataEl = document.getElementById('data');
+  const numeroEl = document.getElementById('numero');
+  const totalEl = document.getElementById('total');
+  
+  if (nifEl) nifEl.value = dados.nif || '';
+  if (empresaEl) empresaEl.value = dados.empresa || '';
+  if (dataEl) dataEl.value = dados.data || '';
+  if (numeroEl) numeroEl.value = dados.numero || '';
+  if (totalEl) totalEl.value = dados.total || '';
+  
+  console.log('Valores após preencher:', {
+    nif: nifEl?.value,
+    empresa: empresaEl?.value,
+    data: dataEl?.value,
+    numero: numeroEl?.value,
+    total: totalEl?.value
+  });
 }
 
-// ─── BUSCAR EMPRESA POR NIF ───────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// NIF → EMPRESA
+// ═══════════════════════════════════════════════════════════════════════════
 function fetchCompanyByNif(nif) {
   if (!/^\d{9}$/.test(nif)) return;
-
-  const empresaInput = document.getElementById('empresa');
-  const original     = empresaInput.placeholder;
-  empresaInput.placeholder = 'A procurar empresa...';
-  empresaInput.disabled    = true;
-
+  const el   = document.getElementById('empresa');
+  const orig = el.placeholder;
+  el.placeholder = 'A procurar empresa...';
+  el.disabled    = true;
   fetch(`./get_company_by_nif.php?nif=${encodeURIComponent(nif)}`)
-    .then(res => res.json())
+    .then(r => r.json())
     .then(json => {
-      empresaInput.disabled    = false;
-      empresaInput.placeholder = original;
-
+      el.disabled    = false;
+      el.placeholder = orig;
       if (json.found && json.nome_empresa) {
-        empresaInput.value = json.nome_empresa;
-
-        if (json.id_categoria) {
-          const sel = document.getElementById('categoria');
-          if (sel) sel.value = json.id_categoria;
-        }
-
+        el.value = json.nome_empresa;
+        if (json.id_categoria) document.getElementById('categoria').value = json.id_categoria;
         if (json.source && json.source !== 'cache') {
-          const prev = document.getElementById('nifSourceBadge');
-          if (prev) prev.remove();
-          const badge = document.createElement('small');
-          badge.id          = 'nifSourceBadge';
-          badge.className   = 'text-success d-block mt-1';
-          badge.textContent = 'Encontrado via ' + (json.fonte || json.source);
-          empresaInput.parentNode.appendChild(badge);
+          document.getElementById('nifSourceBadge')?.remove();
+          const b = document.createElement('small');
+          b.id = 'nifSourceBadge'; b.className = 'text-success d-block mt-1';
+          b.textContent = 'Encontrado via ' + (json.fonte || json.source);
+          el.parentNode.appendChild(b);
         }
       } else {
-        empresaInput.placeholder = 'Empresa nao encontrada - preenche manualmente';
+        el.placeholder = 'Empresa não encontrada — preenche manualmente';
       }
     })
-    .catch(() => {
-      empresaInput.disabled    = false;
-      empresaInput.placeholder = original;
-    });
+    .catch(() => { el.disabled = false; el.placeholder = orig; });
 }
 
-// ─── GUARDAR NIF MANUALMENTE ─────────────────────────────────────────────────
 function saveCompanyNif(nif, nome, idCategoria) {
   if (!/^\d{9}$/.test(nif) || !nome) return;
   fetch('./save_company_nif.php', {
@@ -430,39 +508,193 @@ function saveCompanyNif(nif, nome, idCategoria) {
   }).catch(() => {});
 }
 
-// ─── EVENTOS ──────────────────────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════════════════════
+// RENDERIZAR PÁGINA PDF → Blob PNG
+// ═══════════════════════════════════════════════════════════════════════════
+async function pdfPaginaParaBlob(pdfDoc, numPagina, escala) {
+  escala = escala || 2.5;
+  const page     = await pdfDoc.getPage(numPagina);
+  const viewport = page.getViewport({ scale: escala });
+  const canvas   = document.createElement('canvas');
+  canvas.width   = viewport.width;
+  canvas.height  = viewport.height;
+  await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+  return new Promise(r => canvas.toBlob(r, 'image/png'));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MOSTRAR TEXTO OCR (para debug)
+// ═══════════════════════════════════════════════════════════════════════════
+function mostrarTextoOCR(texto) {
+  const box = document.getElementById('ocrTextoBox');
+  const btn = document.getElementById('btnVerTexto');
+  box.textContent = texto.substring(0, 3000);
+  box.style.display = 'none';
+  btn.style.display = 'inline';
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// UPLOAD PRINCIPAL: QR primeiro → Tesseract OCR como fallback
+// ═══════════════════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════════════════
+// UPLOAD PRINCIPAL: QR primeiro → Tesseract OCR como fallback
+// ═══════════════════════════════════════════════════════════════════════════
+async function uploadImagem() {
+  const input  = document.getElementById('upload');
+  const status = document.getElementById('ocrStatus');
+  // esconde o botão de texto anterior
+  document.getElementById('btnVerTexto').style.display = 'none';
+  document.getElementById('ocrTextoBox').style.display = 'none';
+
+  if (!input.files[0]) return;
+
+  const file  = input.files[0];
+  const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+  let   pdfDoc = null;
+
+  status.innerHTML = 'A preparar ficheiro...';
+
+  try {
+
+    // ── PASSO 1: tenta ler QR ──────────────────────────────────────────────
+    status.innerHTML = 'A procurar QR code...';
+    let blobParaQR = file;
+
+    if (isPdf) {
+      status.innerHTML = 'A renderizar PDF para leitura de QR...';
+      const ab = await file.arrayBuffer();
+      pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+      // última página costuma ter o QR nas faturas AT
+      blobParaQR = await pdfPaginaParaBlob(pdfDoc, pdfDoc.numPages);
+    }
+
+    try {
+      const txt   = await tentarLerQR(blobParaQR);
+      const dados = parseQR(txt);
+      status.innerHTML = 'QR code encontrado e lido!';
+      console.log('QR lido:', txt, '→', dados);
+      preencherForm(dados);
+      if (dados.nif) fetchCompanyByNif(dados.nif);
+      return; // não precisa de OCR
+    } catch (_) {
+      status.innerHTML = 'QR não encontrado. A correr OCR...';
+    }
+
+    // ── PASSO 2: OCR ───────────────────────────────────────────────────────
+    let textoCompleto = '';
+
+    if (isPdf) {
+      if (!pdfDoc) {
+        const ab = await file.arrayBuffer();
+        pdfDoc = await pdfjsLib.getDocument({ data: ab }).promise;
+      }
+
+      // mostra preview da 1ª página
+      const prevBlob = await pdfPaginaParaBlob(pdfDoc, 1, 1.0);
+      const previewUrl = URL.createObjectURL(prevBlob);
+      const cvs = document.getElementById('pdfCanvas');
+      cvs.style.display = 'block';
+      const img = new Image();
+      img.onload = () => { cvs.width = img.width; cvs.height = img.height; cvs.getContext('2d').drawImage(img, 0, 0); URL.revokeObjectURL(previewUrl); };
+      img.src = previewUrl;
+
+      // OCR de todas as páginas
+      for (let i = 1; i <= pdfDoc.numPages; i++) {
+        status.innerHTML = `OCR página ${i}/${pdfDoc.numPages}...`;
+        const blob = await pdfPaginaParaBlob(pdfDoc, i);
+        const { data: { text } } = await Tesseract.recognize(blob, 'por', {
+          logger: m => {
+            if (m.status === 'recognizing text')
+              status.innerHTML = `OCR pág ${i}/${pdfDoc.numPages}: ${Math.round(m.progress * 100)}%`;
+          }
+        });
+        textoCompleto += '\n' + text;
+      }
+    } else {
+      const { data: { text } } = await Tesseract.recognize(file, 'por', {
+        logger: m => {
+          if (m.status === 'recognizing text')
+            status.innerHTML = `OCR: ${Math.round(m.progress * 100)}%`;
+        }
+      });
+      textoCompleto = text;
+    }
+
+    console.log('=== TEXTO OCR COMPLETO ===\n', textoCompleto);
+    mostrarTextoOCR(textoCompleto);
+
+    // ── PASSO 3: extrai e preenche ─────────────────────────────────────────
+    const nif     = extractNif(textoCompleto)     || '';
+    const empresa = extractEmpresa(textoCompleto) || '';
+    const data    = normalizeDate(textoCompleto)  || '';
+    const total   = (extractTotal(textoCompleto)  || '').replace(',', '.');
+
+    console.log('Campos extraídos →', { nif, empresa, data, total });
+
+    // preenche SEMPRE — mesmo que esteja vazio (utilizador corrige manualmente)
+    preencherForm({ nif, empresa, data, numero: '', total });
+    if (nif) fetchCompanyByNif(nif);
+
+    const resumo = [
+      nif     && `NIF: ${nif}`,
+      empresa && `Empresa: ${empresa}`,
+      total   && `Total: ${total}`,
+      data    && `Data: ${data}`,
+    ].filter(Boolean).join('  |  ');
+
+    status.innerHTML = resumo
+      ? `Extraído: <strong>${resumo}</strong>`
+      : `Nenhum campo reconhecido automaticamente — preenche manualmente.`;
+
+  } catch (err) {
+    status.innerHTML = `Erro: ${err.message}`;
+    console.error('uploadImagem erro:', err);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// EVENTOS
+// ═══════════════════════════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnIniciarQR').addEventListener('click', startQR);
   document.getElementById('btnPararQR').addEventListener('click', stopQR);
 
   const nifInput = document.getElementById('nif');
-  if (nifInput) {
-    let nifTimer;
-    nifInput.addEventListener('input', () => {
-      clearTimeout(nifTimer);
-      if (nifInput.value.length === 9) {
-        nifTimer = setTimeout(() => fetchCompanyByNif(nifInput.value), 400);
-      }
-    });
-    nifInput.addEventListener('blur', () => {
-      if (nifInput.value.length === 9) fetchCompanyByNif(nifInput.value);
-    });
-  }
+  let nifTimer;
+  nifInput.addEventListener('input', () => {
+    clearTimeout(nifTimer);
+    if (nifInput.value.length === 9)
+      nifTimer = setTimeout(() => fetchCompanyByNif(nifInput.value), 400);
+  });
+  nifInput.addEventListener('blur', () => {
+    if (nifInput.value.length === 9) fetchCompanyByNif(nifInput.value);
+  });
 
-  const form = document.getElementById('faturaForm');
-  if (form) {
-    form.addEventListener('submit', () => {
-      saveCompanyNif(
-        document.getElementById('nif')?.value,
-        document.getElementById('empresa')?.value,
-        document.getElementById('categoria')?.value
-      );
-    });
-  }
+  document.getElementById('faturaForm').addEventListener('submit', () => {
+    saveCompanyNif(
+      document.getElementById('nif').value,
+      document.getElementById('empresa').value,
+      document.getElementById('categoria').value
+    );
+  });
 });
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+  if (window.innerWidth <= 768) return;
+  const c = document.querySelector('.bg-animation');
+  if (!c) return;
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.animationDelay = Math.random() * 15 + 's';
+    p.style.animationDuration = (15 + Math.random() * 10) + 's';
+    c.appendChild(p);
+  }
+})();
+</script>
 </body>
 </html>
-
