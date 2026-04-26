@@ -187,26 +187,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($errors)) {
             try {
-                // Criar imagem a partir do upload
-                $src = match($mime) {
-                    'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
-                    'image/png'  => imagecreatefrompng($file['tmp_name']),
-                    'image/gif'  => imagecreatefromgif($file['tmp_name']),
-                    'image/webp' => imagecreatefromwebp($file['tmp_name']),
+                // Determinar extensão a partir do MIME
+                $ext = match($mime) {
+                    'image/jpeg' => 'jpg',
+                    'image/png'  => 'png',
+                    'image/gif'  => 'gif',
+                    'image/webp' => 'webp',
+                    default      => 'jpg',
                 };
-                $srcW = imagesx($src); $srcH = imagesy($src);
-                $size = 300;
-                // Crop quadrado centrado
-                $minDim = min($srcW, $srcH);
-                $cropX = intval(($srcW - $minDim) / 2);
-                $cropY = intval(($srcH - $minDim) / 2);
-                $dst = imagecreatetruecolor($size, $size);
-                imagecopyresampled($dst, $src, 0, 0, $cropX, $cropY, $size, $size, $minDim, $minDim);
-                $savePath = $avatarDir . $uid . '.jpg';
-                imagejpeg($dst, $savePath, 88);
-                imagedestroy($src); imagedestroy($dst);
+                $savePath = $avatarDir . $uid . '.' . $ext;
+
+                // Se GD estiver disponível, faz crop e resize
+                if (extension_loaded('gd')) {
+                    $src = match($mime) {
+                        'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+                        'image/png'  => imagecreatefrompng($file['tmp_name']),
+                        'image/gif'  => imagecreatefromgif($file['tmp_name']),
+                        'image/webp' => imagecreatefromwebp($file['tmp_name']),
+                    };
+                    $srcW = imagesx($src); $srcH = imagesy($src);
+                    $size = 300;
+                    $minDim = min($srcW, $srcH);
+                    $cropX = intval(($srcW - $minDim) / 2);
+                    $cropY = intval(($srcH - $minDim) / 2);
+                    $dst = imagecreatetruecolor($size, $size);
+                    imagecopyresampled($dst, $src, 0, 0, $cropX, $cropY, $size, $size, $minDim, $minDim);
+                    $savePath = $avatarDir . $uid . '.jpg';
+                    imagejpeg($dst, $savePath, 88);
+                    imagedestroy($src); imagedestroy($dst);
+                    $ext = 'jpg';
+                } else {
+                    // Sem GD: guardar ficheiro diretamente
+                    move_uploaded_file($file['tmp_name'], $savePath);
+                }
+
                 // Guardar na BD
-                $avatarRel = 'assets/avatars/' . $uid . '.jpg';
+                $avatarRel = 'assets/avatars/' . $uid . '.' . $ext;
                 $stmt = $pdo->prepare("UPDATE users SET avatar_path = :av WHERE id = :uid");
                 $stmt->execute([':av' => $avatarRel, ':uid' => $uid]);
                 $user['avatar_path'] = $avatarRel;
