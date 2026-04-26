@@ -1,5 +1,6 @@
 <?php
 // config/EmailService.php
+// Versao para InfinityFree - usa Brevo API (HTTP) em vez de SMTP
 
 class EmailService {
     private $apiKey = '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';
@@ -8,7 +9,7 @@ class EmailService {
     private $fromName = 'FreeCard';
 
     // URL base do site
-    private $baseUrl = 'http://localhost:8000'; // Ajusta para o URL do teu site
+    private $baseUrl = 'http://freecard.infinityfreeapp.com/site';
 
     public function __construct() {
         // Nao precisa de configuracao

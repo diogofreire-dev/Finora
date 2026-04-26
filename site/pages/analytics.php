@@ -6,903 +6,613 @@ $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
-
-// Filtros
-$year = !empty($_GET['year']) ? intval($_GET['year']) : date('Y');
+$year    = !empty($_GET['year'])    ? intval($_GET['year'])    : date('Y');
 $card_id = !empty($_GET['card_id']) ? intval($_GET['card_id']) : null;
 
-// Buscar anos disponíveis
-$stmt = $pdo->prepare("
-    SELECT DISTINCT YEAR(created_at) as year 
-    FROM transactions 
-    WHERE user_id = :uid 
-    ORDER BY year DESC
-");
+// Anos disponíveis
+$stmt = $pdo->prepare("SELECT DISTINCT YEAR(transaction_date) as year FROM transactions WHERE user_id = :uid ORDER BY year DESC");
 $stmt->execute([':uid' => $uid]);
 $availableYears = $stmt->fetchAll(PDO::FETCH_COLUMN);
+if (empty($availableYears)) $availableYears = [date('Y')];
 
-// Buscar cartões
+// Cartões
 $stmt = $pdo->prepare("SELECT id, name FROM cards WHERE user_id = :uid ORDER BY name");
 $stmt->execute([':uid' => $uid]);
 $cards = $stmt->fetchAll();
 
-// Dados por mês (para o gráfico de linhas)
-$monthlyData = [];
-$categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimento', 'Educação', 'Casa', 'Outros'];
-
-// Inicializar array para cada categoria com 12 meses (índice 0-11)
-foreach ($categories as $cat) {
-    $monthlyData[$cat] = array_fill(0, 12, 0);
-}
-
-$sql = "
-    SELECT 
-        MONTH(transaction_date) as month,
-        COALESCE(category, 'Outros') as category,
-        SUM(amount) as total
-    FROM transactions 
-    WHERE user_id = :uid 
-    AND YEAR(transaction_date) = :year
-";
 $params = [':uid' => $uid, ':year' => $year];
-
-if ($card_id) {
-    $sql .= " AND card_id = :cid";
-    $params[':cid'] = $card_id;
-}
-
-$sql .= " GROUP BY MONTH(transaction_date), category";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute($params);
-$results = $stmt->fetchAll();
-
-foreach ($results as $row) {
-    $month = intval($row['month']) - 1;
-    $category = $row['category'];
-    $total = floatval($row['total']);
-    
-    if (isset($monthlyData[$category])) {
-        $monthlyData[$category][$month] = $total;
-    } else {
-        $monthlyData['Outros'][$month] += $total;
-    }
-}
+$cardFilter = $card_id ? " AND card_id = :cid" : "";
+if ($card_id) $params[':cid'] = $card_id;
 
 // Total por categoria
 $stmt = $pdo->prepare("
-    SELECT 
-        COALESCE(category, 'Outros') as category,
-        SUM(amount) as total,
-        COUNT(*) as count
-    FROM transactions 
-    WHERE user_id = :uid 
-    AND YEAR(transaction_date) = :year
-    " . ($card_id ? "AND card_id = :cid" : "") . "
-    GROUP BY category
-    ORDER BY total DESC
+    SELECT COALESCE(category,'Outros') as category, SUM(amount) as total, COUNT(*) as count
+    FROM transactions WHERE user_id=:uid AND YEAR(transaction_date)=:year $cardFilter
+    GROUP BY category ORDER BY total DESC
 ");
 $stmt->execute($params);
 $categoryTotals = $stmt->fetchAll();
-
-// Total do ano
 $totalYear = array_sum(array_column($categoryTotals, 'total'));
-
-// Estatísticas
+// Estatísticas gerais
 $stmt = $pdo->prepare("
-    SELECT 
-        COUNT(*) as total_transactions,
-        AVG(amount) as avg_amount,
-        MAX(amount) as max_amount,
-        MIN(amount) as min_amount
-    FROM transactions 
-    WHERE user_id = :uid 
-    AND YEAR(transaction_date) = :year
-    " . ($card_id ? "AND card_id = :cid" : "")
-);
+    SELECT COUNT(*) as total_transactions, AVG(amount) as avg_amount,
+           MAX(amount) as max_amount, MIN(amount) as min_amount
+    FROM transactions WHERE user_id=:uid AND YEAR(transaction_date)=:year $cardFilter
+");
 $stmt->execute($params);
 $stats = $stmt->fetch();
 
-// Cores para categorias
-$categoryColors = [
-    'Compras' => '#3498db',
-    'Alimentação' => '#e74c3c',
-    'Transporte' => '#f39c12',
-    'Saúde' => '#1abc9c',
-    'Entretenimento' => '#9b59b6',
-    'Educação' => '#34495e',
-    'Casa' => '#e67e22',
-    'Outros' => '#95a5a6'
-];
+// Gastos por mês (totais simples)
+$stmt = $pdo->prepare("
+    SELECT MONTH(transaction_date) as month, SUM(amount) as total
+    FROM transactions WHERE user_id=:uid AND YEAR(transaction_date)=:year $cardFilter
+    GROUP BY MONTH(transaction_date) ORDER BY month
+");
+$stmt->execute($params);
+$monthlyRows = $stmt->fetchAll();
+$monthlyTotals = array_fill(1, 12, 0);
+foreach ($monthlyRows as $r) $monthlyTotals[intval($r['month'])] = floatval($r['total']);
 
-$months = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+// Gastos mensais por categoria (gráfico de linhas)
+$stmt = $pdo->prepare("
+    SELECT MONTH(transaction_date) as month, COALESCE(category,'Outros') as category, SUM(amount) as total
+    FROM transactions WHERE user_id=:uid AND YEAR(transaction_date)=:year $cardFilter
+    GROUP BY MONTH(transaction_date), category ORDER BY month
+");
+$stmt->execute($params);
+$catMonthlyData = [];
+foreach ($stmt->fetchAll() as $r) {
+    $cat = $r['category'];
+    if (!isset($catMonthlyData[$cat])) $catMonthlyData[$cat] = array_fill(1, 12, 0);
+    $catMonthlyData[$cat][intval($r['month'])] = floatval($r['total']);
+}
+// Ordenar pelas categorias com mais gasto total
+$catMonthlyOrdered = [];
+foreach (array_column($categoryTotals, 'category') as $cat) {
+    if (isset($catMonthlyData[$cat])) {
+        $catMonthlyOrdered[$cat] = array_values($catMonthlyData[$cat]);
+    }
+}
+
+// Gastos por cartão
+$stmt = $pdo->prepare("
+    SELECT c.name, COALESCE(SUM(t.amount),0) as total
+    FROM cards c LEFT JOIN transactions t ON t.card_id=c.id AND YEAR(t.transaction_date)=:year " . ($card_id ? "AND c.id=:cid " : "") . "
+    WHERE c.user_id=:uid GROUP BY c.id HAVING total>0 ORDER BY total DESC
+");
+$stmt->execute($params);
+$cardSpending = $stmt->fetchAll();
+
+// Top 5 transações
+$stmt = $pdo->prepare("
+    SELECT t.*, c.name as card_name FROM transactions t
+    LEFT JOIN cards c ON c.id=t.card_id
+    WHERE t.user_id=:uid AND YEAR(t.transaction_date)=:year $cardFilter
+    ORDER BY t.amount DESC LIMIT 5
+");
+$stmt->execute($params);
+$topTransactions = $stmt->fetchAll();
+
+// Mês com mais gastos
+$maxMonthVal = max($monthlyTotals);
+$maxMonth = array_search($maxMonthVal, $monthlyTotals);
+
+$categoryColors = [
+    'Compras'=>'#3498db','Alimentação'=>'#e74c3c','Transporte'=>'#f39c12',
+    'Saúde'=>'#1abc9c','Entretenimento'=>'#9b59b6','Educação'=>'#34495e',
+    'Casa'=>'#e67e22','Outros'=>'#95a5a6'
+];
+$monthNames = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+$monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 ?>
 <!doctype html>
 <html lang="pt-PT" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Análise de Gastos - FreeCard</title>
+  <title>Análise - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
-    /* ========== BACKGROUND ANIMADO ========== */
-    body {
-      position: relative;
-      min-height: 100vh;
-    }
-    .bg-animation {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    [data-theme="light"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%);
-      z-index: -1;
-    }
-    [data-theme="dark"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
-      z-index: -1;
-    }
-    .floating-shape {
-      position: absolute;
-      border-radius: 50%;
-      animation: float 20s infinite ease-in-out;
-    }
-    [data-theme="light"] .floating-shape {
-      background: rgba(46, 88, 204);
-    }
-    [data-theme="dark"] .floating-shape {
-      background: rgba(46, 88, 204);
-    }
-    .shape1 { width: 300px; height: 300px; top: -100px; left: -100px; animation-delay: 0s; }
-    .shape2 { width: 200px; height: 200px; bottom: -50px; right: -50px; animation-delay: 5s; }
-    .shape3 { width: 150px; height: 150px; top: 50%; right: 10%; animation-delay: 2s; }
-    .shape4 { width: 100px; height: 100px; bottom: 20%; left: 15%; animation-delay: 7s; }
-    .shape5 { width: 250px; height: 250px; top: 30%; left: 50%; animation-delay: 3s; }
-    .shape6 { width: 250px; height: 300px; top: -100px; right: -100px; animation-delay: 6s; }
-    .shape7 { width: 180px; height: 180px; top: 10%; left: 70%; animation-delay: 1s; }
-    .shape8 { width: 120px; height: 120px; bottom: 10%; right: 30%; animation-delay: 4s; }
-    .shape9 { width: 220px; height: 220px; top: 60%; left: -80px; animation-delay: 8s; }
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-      50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
-    }
-    .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      animation: rise 15s infinite ease-in;
-    }
-    [data-theme="light"] .particle { background: rgba(46, 88, 204); }
-    [data-theme="dark"] .particle { background: rgba(46, 88, 204); }
-    @keyframes rise {
-      0% { transform: translateY(0) translateX(0); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
-    }
-    .navbar, .container { position: relative; z-index: 1; }
-    @media (max-width: 768px) {
-      .floating-shape { opacity: 0.4; animation-duration: 25s; }
-      .particle { display: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .floating-shape, .particle { animation: none; opacity: 0.2; }
-    }
-    :root {
-      --primary-blue: #3498db;
-      --dark-blue: #2980b9;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .navbar { 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-      background: var(--navbar-bg);
-    }
-    .navbar-brand img { height: 35px; margin-right: 8px; }
-    .btn-primary {
-      background: var(--primary-blue);
-      border-color: var(--primary-blue);
-    }
-    .btn-primary:hover {
-      background: var(--dark-blue);
-      border-color: var(--dark-blue);
-    }
-    .card {
-      border: none;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px var(--shadow);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-    
-    .chart-container {
-      position: relative;
-      height: 400px;
-      padding: 20px;
-      background: var(--bg-secondary);
-      border-radius: 16px;
-    }
-    
-    .legend {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      margin-top: 20px;
-      justify-content: center;
-    }
-    
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    
-    .legend-item:hover {
-      opacity: 0.7;
-    }
-    
-    .legend-color {
-      width: 20px;
-      height: 3px;
-      border-radius: 2px;
-    }
-    
-    .bar-chart {
-      padding: 20px 0;
-    }
-    
-    .bar-item {
-      margin-bottom: 20px;
-    }
-    
-    .bar-label {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-      font-size: 14px;
-    }
-    
-    .bar-container {
-      background: var(--bg-hover);
-      border-radius: 10px;
-      height: 32px;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .bar-fill {
-      height: 100%;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: flex-end;
-      padding-right: 12px;
-      color: white;
-      font-weight: 600;
-      font-size: 13px;
-      transition: width 1s ease-out;
-    }
-    
-    .summary-card {
-      background: var(--bg-secondary);
-      border-radius: 16px;
-      padding: 24px;
-      box-shadow: 0 4px 20px var(--shadow);
-    }
-    .stat-item {
-      text-align: center;
-      padding: 16px;
-    }
-    .stat-item h3 {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 4px;
-      color: var(--text-primary);
-    }
-    .stat-item p {
-      font-size: 13px;
-      margin: 0;
-      color: var(--text-secondary);
-    }
-    .stat-item:not(:last-child) {
-      border-right: 1px solid var(--border-color);
-    }
-    
-    .card-usage-item {
-      padding: 12px;
-      background: var(--bg-primary);
-      border-radius: 8px;
-    }
-    
-    .card-usage-item .progress-bar {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: width 1s ease-out;
-    }
-    
-    /* Tema escuro */
-    [data-theme="dark"] .text-muted {
-      color: var(--text-secondary) !important;
-    }
-    
-    .form-select {
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      border-color: var(--border-color);
-      transition: all 0.3s;
-    }
-    
-    .form-select:focus {
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-      border-color: var(--primary-blue);
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-    }
-    
-    /* Tema escuro - Selects */
-    [data-theme="dark"] .form-select {
-      background-color: #2b3035;
-      color: #ecf0f1;
-      border-color: #34495e;
-      /* Seta do dropdown em branco */
-      background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ecf0f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-    }
-    
-    [data-theme="dark"] .form-select option {
-      background-color: #323844;
-      color: #ecf0f1;
-    }
-    
-    [data-theme="dark"] .form-select:focus {
-      background-color: #2b3035;
-      color: #ecf0f1;
-      border-color: #2ecc71;
-      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
-    }
-    
-    /* Labels dos filtros */
-    [data-theme="dark"] .form-label {
-      color: #ecf0f1;
-    }
-    
-    [data-theme="dark"] .small.fw-semibold {
-      color: #ecf0f1;
-    }
-    
-    /* Card dos filtros */
-    [data-theme="dark"] .card .card-body {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-    
-    /* Garantir que os ícones também seguem a cor */
-    [data-theme="dark"] .form-label .bi {
-      color: #ecf0f1;
-    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
 
-    /* Estilização da scrollbar para listas roláveis */
-    .scrollable-list::-webkit-scrollbar {
-      width: 8px;
-    }
+    /* ===== LAYOUT ===== */
+    .analytics-wrapper { max-width: 1000px; margin: 0 auto; padding: 0 16px 60px; }
 
-    .scrollable-list::-webkit-scrollbar-track {
-      background: var(--bg-primary);
-    }
+    /* ===== CABEÇALHO ===== */
+    .page-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; padding-top:8px; }
+    .page-header-icon { width:42px; height:42px; border-radius:12px; background:var(--bg-secondary); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+    .page-header h2 { font-size:20px; font-weight:600; margin:0 0 2px; }
+    .page-header p { font-size:13px; color:var(--text-secondary); margin:0; }
 
-    .scrollable-list::-webkit-scrollbar-thumb {
-      background: var(--border-color);
-      border-radius: 4px;
-    }
+    /* ===== GRUPOS ===== */
+    .a-group { margin-bottom:20px; }
+    .group-label { font-size:11px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--text-secondary); margin:0 0 8px 4px; }
 
-    .scrollable-list::-webkit-scrollbar-thumb:hover {
-      background: var(--text-secondary);
-    }
+    /* ===== CARDS ===== */
+    .a-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
+    .a-card-body { padding:20px; }
+    .a-card-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 16px; display:flex; align-items:center; gap:8px; }
+    .a-card-title i { color:#3498db; font-size:16px; }
 
-    /* Firefox */
-    .scrollable-list {
-      scrollbar-color: var(--border-color) var(--bg-primary);
-      padding-right: 5px;
+    /* ===== MÉTRICAS ===== */
+    .metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+    .metric { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:16px; }
+    .metric-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
+    .metric-value { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
+    .metric-value.blue { color:#3498db; }
+    .metric-value.green { color:#1abc9c; }
+    .metric-value.amber { color:#f39c12; }
+    .metric-value.red { color:#e74c3c; }
+    .metric-sub { font-size:11px; color:var(--text-secondary); margin-top:4px; }
+
+    /* ===== FILTROS ===== */
+    .filter-row { display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap; padding:16px 20px; }
+    .filter-group { display:flex; flex-direction:column; gap:5px; }
+    .filter-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; }
+    .filter-select { font-size:13px; padding:8px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); cursor:pointer; min-width:140px; }
+    .filter-select:focus { outline:none; border-color:#3498db; }
+    .btn-filter { font-size:13px; font-weight:500; padding:8px 18px; border-radius:9px; border:none; background:#3498db; color:#fff; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .btn-filter:hover { background:#2980b9; }
+
+    /* ===== GRÁFICOS ===== */
+    .chart-wrap { position:relative; }
+
+    /* ===== BARRAS CATEGORIA ===== */
+    .cat-bar-item { margin-bottom:14px; }
+    .cat-bar-header { display:flex; justify-content:space-between; margin-bottom:5px; font-size:13px; }
+    .cat-bar-name { font-weight:500; color:var(--text-primary); }
+    .cat-bar-val { color:var(--text-secondary); font-size:12px; }
+    .cat-bar-track { height:8px; background:var(--border-color); border-radius:4px; overflow:hidden; }
+    .cat-bar-fill { height:100%; border-radius:4px; transition:width 1s ease-out; }
+
+    /* ===== TOP 5 ===== */
+    .top-item { display:flex; align-items:center; gap:12px; padding:12px 0; }
+    .top-item:not(:last-child) { border-bottom:1px solid var(--border-color); }
+    .top-rank { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0; }
+    .top-desc { flex:1; min-width:0; }
+    .top-desc-name { font-size:13px; font-weight:500; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .top-desc-meta { font-size:11px; color:var(--text-secondary); margin-top:2px; }
+    .top-amount { font-size:14px; font-weight:700; color:#e74c3c; white-space:nowrap; }
+    .top-pct { font-size:11px; color:var(--text-secondary); text-align:right; margin-top:1px; }
+
+    /* ===== ESTADO VAZIO ===== */
+    .empty-state { text-align:center; padding:48px 20px; }
+    .empty-state i { font-size:48px; color:var(--border-color); display:block; margin-bottom:12px; }
+    .empty-state h5 { font-size:15px; color:var(--text-secondary); margin-bottom:6px; }
+    .empty-state p { font-size:13px; color:var(--text-secondary); margin-bottom:20px; }
+    .btn-primary-s { font-size:13px; font-weight:500; padding:9px 20px; border-radius:9px; border:none; background:#3498db; color:#fff; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .btn-primary-s:hover { background:#2980b9; color:#fff; }
+
+    /* ===== DARK MODE SELECTS ===== */
+    [data-theme="dark"] .filter-select { background:#1a1d29; color:#ecf0f1; border-color:#34495e; background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23ecf0f1' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e"); background-repeat:no-repeat; background-position:right 10px center; background-size:12px; padding-right:30px; appearance:none; -webkit-appearance:none; }
+    [data-theme="dark"] .filter-select option { background:#252936; }
+
+    @media(max-width:768px) {
+      .metrics-grid { grid-template-columns:repeat(2,1fr); }
+      .two-col { grid-template-columns:1fr !important; }
+    }
+    @media(max-width:480px) {
+      .metrics-grid { grid-template-columns:1fr 1fr; }
     }
   </style>
 </head>
 <body>
-<!-- Background animado -->
-<div class="bg-animation">
-  <div class="floating-shape shape1"></div>
-  <div class="floating-shape shape2"></div>
-  <div class="floating-shape shape3"></div>
-  <div class="floating-shape shape4"></div>
-  <div class="floating-shape shape5"></div>
-  <div class="floating-shape shape6"></div>
-  <div class="floating-shape shape7"></div>
-  <div class="floating-shape shape8"></div>  
-  <div class="floating-shape shape9"></div>
-</div>
-<nav class="navbar navbar-expand-lg navbar-light">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../dashboard.php">
-      <img src="../assets/logo2.png" alt="Freecard">
-      FreeCard
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
-        <li class="nav-item"><a class="nav-link" href="transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
-        <li class="nav-item"><a class="nav-link" href="budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="reminders.php"><i class="bi bi-calendar-check"></i> Lembretes</a></li>
-        <li class="nav-item"><a class="nav-link active" href="analytics.php"><i class="bi bi-graph-up"></i> Análise</a></li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
+<div class="app-layout">
+<?php $activePage='analytics'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
+<main class="main-content">
+<div class="page-content">
+<div class="analytics-wrapper">
 
-<div class="container mt-4 mb-5">
-  <div class="d-flex justify-content-between align-items-center mb-4">
+  <!-- CABEÇALHO -->
+  <div class="page-header">
+    <div class="page-header-icon"><i class="bi bi-graph-up"></i></div>
     <div>
-      <h2><i class="bi bi-graph-up"></i> Análise de Gastos</h2>
-      <p class="text-muted mb-0">Visualiza os teus padrões de gastos ao longo do tempo</p>
+      <h2>Análise de Gastos</h2>
+      <p>Visualiza os teus padrões de gastos ao longo do tempo</p>
     </div>
   </div>
 
-  <!-- Filtros -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-6">
-          <label class="form-label small fw-semibold">
-            <i class="bi bi-calendar"></i> Ano
-          </label>
-          <select name="year" class="form-select">
-            <?php if (empty($availableYears)): ?>
-              <option value="<?=date('Y')?>"><?=date('Y')?></option>
-            <?php else: ?>
+  <!-- FILTROS -->
+  <div class="a-group">
+    <p class="group-label">Filtros</p>
+    <div class="a-card">
+      <form method="get">
+        <div class="filter-row">
+          <div class="filter-group">
+            <span class="filter-label"><i class="bi bi-calendar3"></i> Ano</span>
+            <select name="year" class="filter-select">
               <?php foreach($availableYears as $y): ?>
-                <option value="<?=$y?>" <?=$year == $y ? 'selected' : ''?>><?=$y?></option>
+                <option value="<?=$y?>" <?=$year==$y?'selected':''?>><?=$y?></option>
               <?php endforeach; ?>
-            <?php endif; ?>
-          </select>
-        </div>
-        <div class="col-md-4">
-          <label class="form-label small fw-semibold">
-            <i class="bi bi-credit-card"></i> Cartão
-          </label>
-          <select name="card_id" class="form-select">
-            <option value="">Todos os cartões</option>
-            <?php foreach($cards as $c): ?>
-            <option value="<?=$c['id']?>" <?=$card_id == $c['id'] ? 'selected' : ''?>>
-                <?=htmlspecialchars($c['name'])?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-md-2">
-          <button type="submit" class="btn btn-primary w-100">
-            <i class="bi bi-search"></i> Filtrar
-          </button>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label"><i class="bi bi-credit-card"></i> Cartão</span>
+            <select name="card_id" class="filter-select">
+              <option value="">Todos os cartões</option>
+              <?php foreach($cards as $c): ?>
+                <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>><?=htmlspecialchars($c['name'])?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <button type="submit" class="btn-filter"><i class="bi bi-funnel"></i> Aplicar</button>
         </div>
       </form>
     </div>
   </div>
 
   <?php if (empty($categoryTotals)): ?>
-    <div class="card">
-      <div class="card-body text-center py-5">
-        <div class="mb-4">
-          <i class="bi bi-graph-up" style="font-size: 80px; color: #e0e0e0;"></i>
-        </div>
-        <h4 class="text-muted mb-3">Sem dados para análise</h4>
-        <p class="text-muted mb-4">Ainda não tens transações registadas para este período</p>
-        <a href="create_transaction.php" class="btn btn-primary">
-          <i class="bi bi-plus-circle"></i> Criar Transação
-        </a>
+    <div class="a-card">
+      <div class="empty-state">
+        <i class="bi bi-graph-up"></i>
+        <h5>Sem dados para este período</h5>
+        <p>Ainda não tens transações registadas em <?=$year?></p>
+        <a href="create_transaction.php" class="btn-primary-s"><i class="bi bi-plus-circle"></i> Criar transação</a>
       </div>
     </div>
   <?php else: ?>
 
-  <!-- Estatísticas -->
-  <div class="summary-card mb-4">
-    <div class="row">
-      <div class="col-md-3">
-        <div class="stat-item">
-          <h3 class="text-success">€<?=number_format($totalYear, 2)?></h3>
-          <p>Total Gasto</p>
+  <!-- MÉTRICAS -->
+  <div class="a-group">
+    <p class="group-label">Resumo <?=$year?></p>
+    <div class="metrics-grid">
+      <div class="metric">
+        <p class="metric-label">Total gasto</p>
+        <p class="metric-value blue">€<?=number_format($totalYear,2,'.','')?></p>
+        <p class="metric-sub"><?=count($categoryTotals)?> categorias</p>
+      </div>
+      <div class="metric">
+        <p class="metric-label">Transações</p>
+        <p class="metric-value"><?=$stats['total_transactions']?></p>
+        <p class="metric-sub">em <?=$year?></p>
+      </div>
+      <div class="metric">
+        <p class="metric-label">Média / transação</p>
+        <p class="metric-value amber">€<?=number_format($stats['avg_amount'],2,'.','')?></p>
+        <p class="metric-sub">por despesa</p>
+      </div>
+      <div class="metric">
+        <p class="metric-label">Maior gasto</p>
+        <p class="metric-value red">€<?=number_format($stats['max_amount'],2,'.','')?></p>
+        <p class="metric-sub">transação única</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICO MENSAL + TOP 5 -->
+  <div class="a-group">
+    <p class="group-label">Mensal</p>
+    <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:12px" class="two-col">
+
+      <!-- Gráfico de linhas por categoria -->
+      <div class="a-card" style="display:flex;flex-direction:column">
+        <div class="a-card-body" style="display:flex;flex-direction:column;flex:1;justify-content:center">
+          <p class="a-card-title"><i class="bi bi-graph-up"></i> Gastos mensais por categoria</p>
+          <div class="chart-wrap" style="height:260px">
+            <canvas id="monthlyChart"></canvas>
+          </div>
         </div>
       </div>
-      <div class="col-md-3">
-        <div class="stat-item">
-          <h3 style="color: #3498db;"><?=$stats['total_transactions']?></h3>
-          <p>Transações</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stat-item">
-          <h3 style="color: #f39c12;">€<?=number_format($stats['avg_amount'], 2)?></h3>
-          <p>Média por Transação</p>
-        </div>
-      </div>
-      <div class="col-md-3">
-        <div class="stat-item">
-          <h3 class="text-danger">€<?=number_format($stats['max_amount'], 2)?></h3>
-          <p>Maior Gasto</p>
+
+      <!-- Top 5 -->
+      <div class="a-card">
+        <div class="a-card-body">
+          <p class="a-card-title"><i class="bi bi-trophy-fill"></i> Top 5 maiores gastos</p>
+          <?php
+          $medals = ['#FFD700','#C0C0C0','#CD7F32','#95a5a6','#95a5a6'];
+          foreach($topTransactions as $i => $t):
+            $pct = $totalYear > 0 ? round(($t['amount']/$totalYear)*100,1) : 0;
+          ?>
+          <div class="top-item">
+            <div class="top-rank" style="background:<?=$medals[$i]?>22;color:<?=$medals[$i]?>"><?=$i+1?></div>
+            <div class="top-desc">
+              <p class="top-desc-name"><?=htmlspecialchars($t['description'])?></p>
+              <p class="top-desc-meta">
+                <?=htmlspecialchars($t['category']??'Outros')?>
+                <?php if($t['card_name']): ?> · <?=htmlspecialchars($t['card_name'])?><?php endif; ?>
+              </p>
+            </div>
+            <div>
+              <p class="top-amount">€<?=number_format($t['amount'],2)?></p>
+              <p class="top-pct"><?=$pct?>%</p>
+            </div>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Gráficos de Cartões e Insights -->
-  <div class="row mb-4">
-    <div class="col-lg-6">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title mb-4">
-            <i class="bi bi-pie-chart"></i> Distribuição de Gastos por Cartão
-          </h5>
+  <!-- COMPARAÇÃO MÊS A MÊS -->
+  <?php
+    // Buscar dados do mesmo período do ano anterior
+    $prevYear = $year - 1;
+    $paramsPrev = [':uid' => $uid, ':year' => $prevYear];
+    if ($card_id) $paramsPrev[':cid'] = $card_id;
+
+    $stmtPrev = $pdo->prepare("
+        SELECT MONTH(transaction_date) as month, SUM(amount) as total
+        FROM transactions WHERE user_id=:uid AND YEAR(transaction_date)=:year $cardFilter
+        GROUP BY MONTH(transaction_date) ORDER BY month
+    ");
+    $stmtPrev->execute($paramsPrev);
+    $prevMonthlyRows = $stmtPrev->fetchAll();
+    $prevMonthlyTotals = array_fill(1, 12, 0);
+    foreach ($prevMonthlyRows as $r) $prevMonthlyTotals[intval($r['month'])] = floatval($r['total']);
+
+    // Calcular variação total e meses com dados
+    $currentMonthNum = date('n');
+    $totalCurrent = array_sum($monthlyTotals);
+    $totalPrev    = array_sum($prevMonthlyTotals);
+    $hasPrevData  = $totalPrev > 0;
+
+    // Mês atual com mais variação
+    // Só comparar meses que já passaram (excluir meses futuros onde o ano atual tem €0 naturalmente)
+    $biggestDrop = null; $biggestRise = null;
+    for ($m = 1; $m <= $currentMonthNum; $m++) {
+        $cur = $monthlyTotals[$m]; $prv = $prevMonthlyTotals[$m];
+        if ($cur == 0 && $prv == 0) continue;
+        $diff = $cur - $prv;
+
+        if ($prv > 0 && $cur > 0) {
+            $pctChange = (($cur - $prv) / $prv) * 100;
+            $isNew = false;
+        } elseif ($prv == 0 && $cur > 0) {
+            $pctChange = PHP_FLOAT_MAX;
+            $isNew = true;
+        } elseif ($prv > 0 && $cur == 0) {
+            $pctChange = -100.0;
+            $isNew = false;
+        } else {
+            continue;
+        }
+
+        if ($pctChange > 0 || $isNew) {
+            if ($biggestRise === null || $pctChange > $biggestRise['pct'] || ($pctChange == $biggestRise['pct'] && $diff > $biggestRise['diff'])) {
+                $biggestRise = ['month' => $m, 'pct' => $pctChange, 'diff' => $diff, 'new' => $isNew];
+            }
+        }
+
+        if (!$isNew && $pctChange < 0) {
+            if ($biggestDrop === null || $pctChange < $biggestDrop['pct']) {
+                $biggestDrop = ['month' => $m, 'pct' => $pctChange, 'diff' => $diff];
+            }
+        }
+    }
+  ?>
+  <div class="a-group">
+    <p class="group-label">Comparação com <?=$prevYear?></p>
+    <div class="a-card">
+      <div class="a-card-body">
+        <p class="a-card-title"><i class="bi bi-arrow-left-right"></i> <?=$year?> vs <?=$prevYear?></p>
+
+        <?php if (!$hasPrevData): ?>
+          <div style="text-align:center;padding:24px 0;color:var(--text-secondary);font-size:13px">
+            <i class="bi bi-calendar-x" style="font-size:32px;display:block;margin-bottom:8px;color:var(--border-color)"></i>
+            Sem dados de <?=$prevYear?> para comparar
+          </div>
+        <?php else: ?>
+
+        <!-- Resumo rápido -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:20px">
           <?php
-          $stmtCardSpending = $pdo->prepare("
-            SELECT c.name, COALESCE(SUM(t.amount), 0) as total
-            FROM cards c
-            LEFT JOIN transactions t ON t.card_id = c.id
-              AND YEAR(t.transaction_date) = :year
-              " . ($card_id ? "AND c.id = :cid" : "") . "
-            WHERE c.user_id = :uid
-            GROUP BY c.id
-            HAVING total > 0
-            ORDER BY total DESC
-          ");
-          $cardSpendParams = [':uid' => $uid, ':year' => $year];
-          if ($card_id) {
-            $cardSpendParams[':cid'] = $card_id;
-          }
-          $stmtCardSpending->execute($cardSpendParams);
-          $cardSpending = $stmtCardSpending->fetchAll();
-          
-          if (empty($cardSpending)): ?>
-            <div class="text-center py-5">
-              <i class="bi bi-credit-card-2-front" style="font-size: 64px; color: #e0e0e0;"></i>
-              <h6 class="text-muted mt-3 mb-2">Sem transações por cartão</h6>
-              <p class="text-muted small mb-0">
-                Nenhum dos teus cartões tem transações registadas neste período.
-              </p>
+            $totalDiff = $totalCurrent - $totalPrev;
+            $totalPct  = round(($totalDiff / $totalPrev) * 100, 1);
+            $isUp = $totalDiff >= 0;
+          ?>
+          <div style="background:var(--bg-primary);padding:14px;text-align:center">
+            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px"><?=$year?></div>
+            <div style="font-size:20px;font-weight:700;color:#3498db">€<?=number_format($totalCurrent,2)?></div>
+          </div>
+          <div style="background:var(--bg-primary);padding:14px;text-align:center;border-left:1px solid var(--border-color);border-right:1px solid var(--border-color)">
+            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Variação</div>
+            <div style="font-size:20px;font-weight:700;color:<?=$isUp?'#e74c3c':'#22c55e'?>">
+              <?=$isUp?'+':''?><?=$totalPct?>%
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:2px"><?=$isUp?'+':''?>€<?=number_format(abs($totalDiff),2)?></div>
+          </div>
+          <div style="background:var(--bg-primary);padding:14px;text-align:center">
+            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px"><?=$prevYear?></div>
+            <div style="font-size:20px;font-weight:700;color:var(--text-secondary)">€<?=number_format($totalPrev,2)?></div>
+          </div>
+        </div>
+
+        <!-- Gráfico comparativo mês a mês -->
+        <div class="chart-wrap" style="height:200px;margin-bottom:20px">
+          <canvas id="compareChart"></canvas>
+        </div>
+
+        <!-- Destaques -->
+        <?php if ($biggestRise || $biggestDrop): ?>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <?php if ($biggestRise && $biggestRise['pct'] > 0): ?>
+          <div style="background:rgba(231,76,60,.07);border:1px solid rgba(231,76,60,.2);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;font-weight:600;color:#e74c3c;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
+              <i class="bi bi-arrow-up-circle"></i> Maior subida
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--text-primary)"><?=$monthNames[$biggestRise['month']]?></div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px">
+              <?php if (!empty($biggestRise['new'])): ?>
+                Sem gasto em <?=$prevYear?>
+              <?php else: ?>
+                +<?=round($biggestRise['pct'],1)?>% vs <?=$prevYear?>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endif; ?>
+          <?php if ($biggestDrop && $biggestDrop['pct'] < 0): ?>
+          <div style="background:rgba(34,197,94,.07);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:12px 14px">
+            <div style="font-size:11px;font-weight:600;color:#16a34a;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">
+              <i class="bi bi-arrow-down-circle"></i> Maior poupança
+            </div>
+            <div style="font-size:15px;font-weight:700;color:var(--text-primary)"><?=$monthNames[$biggestDrop['month']]?></div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px"><?=round($biggestDrop['pct'],1)?>% vs <?=$prevYear?></div>
+          </div>
+          <?php endif; ?>
+        </div>
+        <?php endif; ?>
+
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORIAS + CARTÕES -->
+  <div class="a-group">
+    <p class="group-label">Distribuição</p>
+    <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:12px" class="two-col">
+
+      <!-- Barras por categoria -->
+      <div class="a-card">
+        <div class="a-card-body">
+          <p class="a-card-title"><i class="bi bi-tag-fill"></i> Por categoria</p>
+          <?php
+          $maxCat = max(array_column($categoryTotals,'total'));
+          foreach($categoryTotals as $cat):
+            $pct = ($cat['total']/$maxCat)*100;
+            $color = $categoryColors[$cat['category']] ?? '#95a5a6';
+            $share = $totalYear > 0 ? round(($cat['total']/$totalYear)*100,1) : 0;
+          ?>
+          <div class="cat-bar-item">
+            <div class="cat-bar-header">
+              <span class="cat-bar-name"><?=htmlspecialchars($cat['category'])?></span>
+              <span class="cat-bar-val">€<?=number_format($cat['total'],2)?> · <?=$share?>%</span>
+            </div>
+            <div class="cat-bar-track">
+              <div class="cat-bar-fill" style="width:0%;background:<?=$color?>" data-w="<?=$pct?>%"></div>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+
+      <!-- Doughnut por cartão -->
+      <div class="a-card">
+        <div class="a-card-body">
+          <p class="a-card-title"><i class="bi bi-pie-chart-fill"></i> Por cartão</p>
+          <?php if(empty($cardSpending)): ?>
+            <div class="empty-state" style="padding:24px 0">
+              <i class="bi bi-credit-card-2-front" style="font-size:32px"></i>
+              <p style="margin:8px 0 0">Sem dados por cartão</p>
             </div>
           <?php else: ?>
-            <div class="chart-container" style="height: 300px;">
-              <canvas id="cardPieChart"></canvas>
-            </div>
-            <div class="mt-3 text-center">
-              <small class="text-muted">Mostra a distribuição percentual de gastos entre os teus cartões</small>
+            <div class="chart-wrap" style="height:200px">
+              <canvas id="cardChart"></canvas>
             </div>
           <?php endif; ?>
         </div>
       </div>
-    </div>
-    
-    <div class="col-lg-6">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title mb-4">
-            <i class="bi bi-trophy"></i> Top 5 Maiores Gastos
-          </h5>
-          <div class="scrollable-list" style="max-height: 350px; overflow-y: auto;">
-            <?php
-            $stmtTopTransactions = $pdo->prepare("
-              SELECT t.*, c.name as card_name
-              FROM transactions t
-              LEFT JOIN cards c ON c.id = t.card_id
-              WHERE t.user_id = :uid
-              AND YEAR(t.transaction_date) = :year
-              " . ($card_id ? "AND t.card_id = :cid" : "") . "
-              ORDER BY t.amount DESC
-              LIMIT 5
-            ");
-            $topParams = [':uid' => $uid, ':year' => $year];
-            if ($card_id) {
-              $topParams[':cid'] = $card_id;
-            }
-            $stmtTopTransactions->execute($topParams);
-            $topTransactions = $stmtTopTransactions->fetchAll();
-            
-            if (empty($topTransactions)): ?>
-              <div class="text-center py-4">
-                <i class="bi bi-receipt" style="font-size: 48px; color: #e0e0e0;"></i>
-                <p class="text-muted mt-3 mb-0">Sem transações registadas</p>
-              </div>
-            <?php else:
-              $position = 1;
-              foreach($topTransactions as $topT):
-                $medalColor = match($position) {
-                  1 => '#FFD700',
-                  2 => '#C0C0C0',
-                  3 => '#CD7F32',
-                  default => '#95a5a6'
-                };
-            ?>
-              <div class="card-usage-item mb-3" <?=$medalColor?>;">
-                <div class="d-flex align-items-center gap-3">
-                  <div class="flex-shrink-0 text-center" style="width: 40px;">
-                    <div style="font-size: 24px; font-weight: 800; color: <?=$medalColor?>;">
-                      #<?=$position?>
-                    </div>
-                  </div>
-                  <div class="flex-grow-1">
-                    <div class="fw-semibold mb-1"><?=htmlspecialchars($topT['description'])?></div>
-                    <div class="d-flex gap-2 align-items-center flex-wrap">
-                      <?php if($topT['category']): ?>
-                        <small class="badge bg-secondary"><?=htmlspecialchars($topT['category'])?></small>
-                      <?php endif; ?>
-                      <?php if($topT['card_name']): ?>
-                        <small class="text-muted">
-                          <i class="bi bi-credit-card"></i> <?=htmlspecialchars($topT['card_name'])?>
-                        </small>
-                      <?php endif; ?>
-                      <small class="text-muted">
-                        <i class="bi bi-calendar"></i> <?=date('d/m/Y', strtotime($topT['created_at']))?>
-                      </small>
-                    </div>
-                  </div>
-                  <div class="flex-shrink-0 text-end">
-                    <div class="fw-bold text-danger" style="font-size: 18px;">
-                      €<?=number_format($topT['amount'], 2)?>
-                    </div>
-                    <?php if ($totalYear > 0): ?>
-                      <small class="text-muted">
-                        <?=round(($topT['amount'] / $totalYear) * 100, 1)?>% do total
-                      </small>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </div>
-            <?php 
-                $position++;
-              endforeach; 
-            endif; ?>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Gráfico de Linhas -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title mb-4">
-        <i class="bi bi-graph-up"></i> Evolução Mensal por Categoria (<?=$year?>)
-      </h5>
-      
-      <div class="chart-container">
-        <canvas id="lineChart" width="800" height="400"></canvas>
-      </div>
-      
-      <div class="legend" id="legend">
-        <?php foreach($categories as $cat): ?>
-          <div class="legend-item" data-category="<?=$cat?>">
-            <div class="legend-color" style="background: <?=$categoryColors[$cat]?>;"></div>
-            <span><?=$cat?></span>
-          </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-  </div>
-
-  <!-- Gráfico de Barras -->
-  <div class="card">
-    <div class="card-body">
-      <h5 class="card-title mb-4">
-        <i class="bi bi-bar-chart"></i> Total por Categoria (<?=$year?>)
-      </h5>
-      
-      <div class="bar-chart">
-        <?php 
-        $maxTotal = !empty($categoryTotals) ? max(array_column($categoryTotals, 'total')) : 1;
-        foreach($categoryTotals as $cat): 
-          $percentage = ($cat['total'] / $maxTotal) * 100;
-          $color = $categoryColors[$cat['category']] ?? '#95a5a6';
-        ?>
-        <div class="bar-item">
-          <div class="bar-label">
-            <span><strong><?=htmlspecialchars($cat['category'])?></strong> <small class="text-muted">(<?=$cat['count']?> transações)</small></span>
-            <span class="text-danger fw-bold">€<?=number_format($cat['total'], 2)?></span>
-          </div>
-          <div class="bar-container">
-            <div class="bar-fill" 
-                 style="background: <?=$color?>; width: 0%;"
-                 data-width="<?=$percentage?>%">
-              <?=round(($cat['total'] / $totalYear) * 100)?>%
-            </div>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
     </div>
   </div>
 
   <?php endif; ?>
-</div>
+
+</div><!-- /analytics-wrapper -->
+</div><!-- /page-content -->
+</main>
+</div><!-- /app-layout -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const monthlyData = <?=json_encode($monthlyData)?>;
-const categoryColors = <?=json_encode($categoryColors)?>;
-const months = <?=json_encode($months)?>;
+const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+const tickColor = isDark ? '#9ca3af' : '#6b7280';
+const tooltipBg = isDark ? '#1f2937' : '#111827';
 
-const ctx = document.getElementById('lineChart').getContext('2d');
+Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+Chart.defaults.font.size = 12;
 
-const datasets = Object.keys(monthlyData).map(category => ({
-  label: category,
-  data: Object.values(monthlyData[category]),
-  borderColor: categoryColors[category],
-  backgroundColor: categoryColors[category] + '20',
-  borderWidth: 3,
-  tension: 0.4,
-  pointRadius: 5,
-  pointHoverRadius: 7,
-  pointBackgroundColor: categoryColors[category],
-  pointBorderColor: '#fff',
-  pointBorderWidth: 2
-}));
+// ── Gráfico de Linhas por Categoria ──
+const allMonthLabels = <?=json_encode(array_values($monthNamesShort))?>;
+const catColors = <?=json_encode($categoryColors)?>;
+const catMonthly = <?=json_encode($catMonthlyOrdered)?>;
 
-const lineChart = new Chart(ctx, {
+// Cortar até ao último mês com dados (evitar meses em branco no fim)
+const allValues = Object.values(catMonthly);
+let lastActiveMonth = 0;
+allValues.forEach(vals => {
+  vals.forEach((v, i) => { if (v > 0 && i > lastActiveMonth) lastActiveMonth = i; });
+});
+const cutoff = Math.min(lastActiveMonth + 1, 11); // +1 para incluir o mês seguinte como contexto
+const monthLabels = allMonthLabels.slice(0, cutoff + 1);
+
+const lineDatasets = Object.entries(catMonthly).map(([cat, values]) => {
+  const sliced = values.slice(0, cutoff + 1);
+  return {
+    label: cat,
+    data: sliced,
+    borderColor: catColors[cat] || '#95a5a6',
+    backgroundColor: (catColors[cat] || '#95a5a6') + '18',
+    borderWidth: 2.5,
+    pointRadius: sliced.map(v => v > 0 ? 4 : 0),
+    pointHoverRadius: 6,
+    pointBackgroundColor: catColors[cat] || '#95a5a6',
+    tension: 0.35,
+    fill: false,
+  };
+});
+
+new Chart(document.getElementById('monthlyChart'), {
   type: 'line',
-  data: {
-    labels: months,
-    datasets: datasets
-  },
+  data: { labels: monthLabels, datasets: lineDatasets },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: {
-        display: false
+        position: 'bottom',
+        labels: { color: tickColor, padding: 14, boxWidth: 10, font: { size: 12 } }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
-        titleFont: {
-          size: 14,
-          weight: 'bold'
-        },
-        bodyFont: {
-          size: 13
-        },
-        filter: function(tooltipItem) {
-          return tooltipItem.parsed.y > 0;
-        },
+        backgroundColor: tooltipBg, padding: 10, cornerRadius: 8,
         callbacks: {
-          label: function(context) {
-            return context.dataset.label + ': €' + context.parsed.y.toFixed(2);
-          }
+          label: ctx => ' ' + ctx.dataset.label + ': €' + ctx.parsed.y.toFixed(2),
+          filter: item => item.parsed.y > 0
         }
       }
     },
     scales: {
       y: {
         beginAtZero: true,
-        grid: {
-          color: 'rgba(128, 128, 128, 0.1)'
-        },
-        ticks: {
-          callback: function(value) {
-            return '€' + value;
-          },
-          color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
-        }
+        grid: { color: gridColor },
+        ticks: { color: tickColor, callback: v => '€' + v }
       },
-      x: {
-        grid: {
-          display: false
-        },
-        ticks: {
-          color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')
-        }
-      }
+      x: { grid: { display: false }, ticks: { color: tickColor } }
     }
   }
 });
 
-<?php
-$cardLabels = array_map(function($c) {
-  return $c['name'];
-}, $cardSpending);
-$cardData = array_map(function($c) {
-  return floatval($c['total']);
-}, $cardSpending);
-?>
-
 <?php if (!empty($cardSpending)): ?>
-const cardPieCtx = document.getElementById('cardPieChart').getContext('2d');
+// ── Doughnut Cartões ──
+const cardLabels = <?=json_encode(array_column($cardSpending,'name'))?>;
+const cardData   = <?=json_encode(array_map(fn($c)=>floatval($c['total']),$cardSpending))?>;
 
-const cardPieData = {
-  labels: <?=json_encode($cardLabels)?>,
-  datasets: [{
-    data: <?=json_encode($cardData)?>,
-    backgroundColor: [
-      '#3498db',
-      '#e74c3c', 
-      '#f39c12',
-      '#1abc9c',
-      '#9b59b6',
-      '#34495e',
-      '#e67e22',
-      '#95a5a6'
-    ],
-    borderWidth: 2,
-    borderColor: getComputedStyle(document.documentElement).getPropertyValue('--bg-secondary')
-  }]
-};
-
-const cardPieChart = new Chart(cardPieCtx, {
+new Chart(document.getElementById('cardChart'), {
   type: 'doughnut',
-  data: cardPieData,
+  data: {
+    labels: cardLabels,
+    datasets: [{
+      data: cardData,
+      backgroundColor: ['#3498db','#1abc9c','#e74c3c','#f39c12','#9b59b6','#34495e'],
+      borderWidth: 2,
+      borderColor: isDark ? '#252936' : '#ffffff',
+    }]
+  },
   options: {
-    responsive: true,
-    maintainAspectRatio: false,
+    responsive: true, maintainAspectRatio: false, cutout: '65%',
     plugins: {
-      legend: {
-        position: 'bottom',
-        labels: {
-          padding: 15,
-          font: {
-            size: 12
-          },
-          color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary')
-        }
-      },
+      legend: { position: 'bottom', labels: { color: tickColor, padding: 12, boxWidth: 10, font: { size: 12 } } },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
-        padding: 12,
+        backgroundColor: tooltipBg, padding: 10, cornerRadius: 8,
         callbacks: {
-          label: function(context) {
-            const label = context.label || '';
-            const value = context.parsed || 0;
-            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-            const percentage = ((value / total) * 100).toFixed(1);
-            return label + ': €' + value.toFixed(2) + ' (' + percentage + '%)';
+          label: ctx => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            return ' €' + ctx.parsed.toFixed(2) + ' (' + ((ctx.parsed/total)*100).toFixed(1) + '%)';
           }
         }
       }
@@ -911,39 +621,62 @@ const cardPieChart = new Chart(cardPieCtx, {
 });
 <?php endif; ?>
 
-document.querySelectorAll('.legend-item').forEach((item, index) => {
-  item.addEventListener('click', function() {
-    const meta = lineChart.getDatasetMeta(index);
-    meta.hidden = !meta.hidden;
-    lineChart.update();
-    this.style.opacity = meta.hidden ? '0.3' : '1';
-  });
-});
+// ── Gráfico Comparação Anual ──
+<?php if ($hasPrevData): ?>
+const compareLabels  = <?=json_encode(array_values($monthNamesShort))?>;
+const compareCurrentData = <?=json_encode(array_values($monthlyTotals))?>;
+const comparePrevData    = <?=json_encode(array_values($prevMonthlyTotals))?>;
 
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(() => {
-    document.querySelectorAll('.bar-fill').forEach(bar => {
-      bar.style.width = bar.dataset.width;
-    });
-  }, 100);
-});
-
-<!-- Gerar partículas (apenas desktop) -->
-
-(function() {
-  if (window.innerWidth <= 768) return;
-  const container = document.querySelector('.bg-animation');
-  if (!container) return;
-  for (let i = 0; i < 15; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'particle';
-    particle.style.left = Math.random() * 100 + '%';
-    particle.style.animationDelay = Math.random() * 15 + 's';
-    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-    container.appendChild(particle);
+new Chart(document.getElementById('compareChart'), {
+  type: 'bar',
+  data: {
+    labels: compareLabels,
+    datasets: [
+      {
+        label: '<?=$year?>',
+        data: compareCurrentData,
+        backgroundColor: '#3498db',
+        borderRadius: 5,
+        borderSkipped: false,
+      },
+      {
+        label: '<?=$prevYear?>',
+        data: comparePrevData,
+        backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
+        borderRadius: 5,
+        borderSkipped: false,
+      }
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { color: tickColor, padding: 14, boxWidth: 10, font: { size: 12 } } },
+      tooltip: {
+        backgroundColor: tooltipBg, padding: 10, cornerRadius: 8,
+        callbacks: { label: ctx => ' ' + ctx.dataset.label + ': €' + ctx.parsed.y.toFixed(2) }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: gridColor },
+        ticks: { color: tickColor, callback: v => '€' + v }
+      },
+      x: { grid: { display: false }, ticks: { color: tickColor } }
+    }
   }
-})();
+});
+<?php endif; ?>
 
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.cat-bar-fill').forEach(b => {
+      b.style.width = b.dataset.w;
+    });
+  }, 150);
+});
 </script>
 </body>
 </html>

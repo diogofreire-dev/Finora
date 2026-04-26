@@ -11,7 +11,6 @@ $currentTheme = getUserTheme($pdo, $uid);
 $message = '';
 $messageType = 'info';
 
-// Função de validação de password
 function validatePassword($password) {
     if (strlen($password) < 8) return false;
     if (!preg_match('/[A-Z]/', $password)) return false;
@@ -21,7 +20,6 @@ function validatePassword($password) {
     return true;
 }
 
-// Buscar ou criar configurações do utilizador
 $stmt = $pdo->prepare("SELECT * FROM user_settings WHERE user_id = :uid");
 $stmt->execute([':uid' => $uid]);
 $settings = $stmt->fetch();
@@ -34,30 +32,35 @@ if (!$settings) {
     $settings = $stmt->fetch();
 }
 
-// Buscar informações do utilizador
+// Auto-migração: adicionar coluna avatar_path se não existir
+try {
+    $pdo->exec("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL DEFAULT NULL");
+} catch (PDOException $e) { /* coluna já existe */ }
+
+// Diretório de avatares
+$avatarDir = __DIR__ . '/../../site/assets/avatars/';
+if (!is_dir($avatarDir)) @mkdir($avatarDir, 0755, true);
+
 $stmt = $pdo->prepare("
     SELECT username, email, created_at, last_password_change,
-           last_email_change, two_factor_enabled, pending_email, pending_email_expires
-    FROM users
-    WHERE id = :uid
+           last_email_change, two_factor_enabled, pending_email, pending_email_expires,
+           avatar_path
+    FROM users WHERE id = :uid
 ");
 $stmt->execute([':uid' => $uid]);
 $user = $stmt->fetch();
 
-// Verificar se há email pendente de confirmação
 $hasPendingEmail = false;
 if ($user['pending_email'] && $user['pending_email_expires']) {
     if (strtotime($user['pending_email_expires']) > time()) {
         $hasPendingEmail = true;
     } else {
-        // Limpar email pendente expirado
         $stmt = $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $user['pending_email'] = null;
     }
 }
 
-// Verificar se pode alterar password/email (30 dias)
 $canChangePassword = true;
 $canChangeEmail = true;
 $daysUntilPasswordChange = 0;
@@ -66,50 +69,27 @@ $daysUntilEmailChange = 0;
 if ($user['last_password_change']) {
     $lastChange = new DateTime($user['last_password_change']);
     $now = new DateTime();
-    $diff = $now->diff($lastChange);
-    $daysSince = $diff->days;
-    
-    if ($daysSince < 30) {
-        $canChangePassword = false;
-        $daysUntilPasswordChange = 30 - $daysSince;
-    }
+    $daysSince = $now->diff($lastChange)->days;
+    if ($daysSince < 30) { $canChangePassword = false; $daysUntilPasswordChange = 30 - $daysSince; }
 }
-
 if ($user['last_email_change']) {
     $lastChange = new DateTime($user['last_email_change']);
     $now = new DateTime();
-    $diff = $now->diff($lastChange);
-    $daysSince = $diff->days;
-    
-    if ($daysSince < 30) {
-        $canChangeEmail = false;
-        $daysUntilEmailChange = 30 - $daysSince;
-    }
+    $daysSince = $now->diff($lastChange)->days;
+    if ($daysSince < 30) { $canChangeEmail = false; $daysUntilEmailChange = 30 - $daysSince; }
 }
 
-// Processar alterações
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    
+
     if ($action === 'update_theme') {
         $theme = $_POST['theme'] ?? 'light';
         $notifications = isset($_POST['notifications']) ? 1 : 0;
-
         try {
-            $stmt = $pdo->prepare("
-                UPDATE user_settings
-                SET theme = :theme, notifications = :notifications
-                WHERE user_id = :uid
-            ");
-            $stmt->execute([
-                ':theme' => $theme,
-                ':notifications' => $notifications,
-                ':uid' => $uid
-            ]);
-
+            $stmt = $pdo->prepare("UPDATE user_settings SET theme = :theme, notifications = :notifications WHERE user_id = :uid");
+            $stmt->execute([':theme' => $theme, ':notifications' => $notifications, ':uid' => $uid]);
             $settings['theme'] = $theme;
             $settings['notifications'] = $notifications;
-
             $message = 'Configurações atualizadas com sucesso!';
             $messageType = 'success';
         } catch (PDOException $e) {
@@ -117,132 +97,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'danger';
         }
     }
-    
+
     elseif ($action === 'change_password') {
         $currentPassword = $_POST['current_password'] ?? '';
         $newPassword = $_POST['new_password'] ?? '';
         $confirmPassword = $_POST['confirm_password'] ?? '';
-        
         $errors = [];
-        
-        if (!$canChangePassword) {
-            $errors[] = "Só podes alterar a password novamente daqui a {$daysUntilPasswordChange} dia(s).";
-        }
-        
-        // Verificar password atual
+        if (!$canChangePassword) $errors[] = "Só podes alterar a password novamente daqui a {$daysUntilPasswordChange} dia(s).";
         $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $userPass = $stmt->fetch();
-        
-        if (!password_verify($currentPassword, $userPass['password_hash'])) {
-            $errors[] = 'A password atual está incorreta.';
-        }
-        
-        if (!validatePassword($newPassword)) {
-            $errors[] = 'A nova password deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.';
-        }
-        
-        if ($newPassword !== $confirmPassword) {
-            $errors[] = 'As passwords não coincidem.';
-        }
-        
-        if (password_verify($newPassword, $userPass['password_hash'])) {
-            $errors[] = 'A nova password não pode ser igual à atual.';
-        }
-        
+        if (!password_verify($currentPassword, $userPass['password_hash'])) $errors[] = 'A password atual está incorreta.';
+        if (!validatePassword($newPassword)) $errors[] = 'A nova password deve ter pelo menos 8 caracteres, incluindo maiúsculas, minúsculas, números e caracteres especiais.';
+        if ($newPassword !== $confirmPassword) $errors[] = 'As passwords não coincidem.';
+        if (password_verify($newPassword, $userPass['password_hash'])) $errors[] = 'A nova password não pode ser igual à atual.';
         if (empty($errors)) {
             try {
                 $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-                $stmt = $pdo->prepare("
-                    UPDATE users
-                    SET password_hash = :hash, last_password_change = NOW()
-                    WHERE id = :uid
-                ");
+                $stmt = $pdo->prepare("UPDATE users SET password_hash = :hash, last_password_change = NOW() WHERE id = :uid");
                 $stmt->execute([':hash' => $hash, ':uid' => $uid]);
-
-                // Enviar notificação por email
-                try {
-                    $emailService = new EmailService();
-                    $emailService->sendPasswordChangedNotification($user['email'], $user['username']);
-                } catch (Exception $e) {
-                    error_log("Erro ao enviar notificacao de password: " . $e->getMessage());
-                }
-
+                try { $emailService = new EmailService(); $emailService->sendPasswordChangedNotification($user['email'], $user['username']); } catch (Exception $e) {}
                 $message = 'Password alterada com sucesso! Próxima alteração disponível em 30 dias.';
                 $messageType = 'success';
-
-                // Atualizar data
                 $user['last_password_change'] = date('Y-m-d H:i:s');
                 $canChangePassword = false;
                 $daysUntilPasswordChange = 30;
-            } catch (PDOException $e) {
-                $message = 'Erro ao alterar password.';
-                $messageType = 'danger';
-            }
-        } else {
-            $message = implode('<br>', $errors);
-            $messageType = 'danger';
-        }
+            } catch (PDOException $e) { $message = 'Erro ao alterar password.'; $messageType = 'danger'; }
+        } else { $message = implode('<br>', $errors); $messageType = 'danger'; }
     }
-    
+
     elseif ($action === 'change_email') {
         $currentPassword = $_POST['current_password_email'] ?? '';
         $newEmail = trim($_POST['new_email'] ?? '');
-
         $errors = [];
-
-        if (!$canChangeEmail) {
-            $errors[] = "Só podes alterar o email novamente daqui a {$daysUntilEmailChange} dia(s).";
-        }
-
-        if ($hasPendingEmail) {
-            $errors[] = "Já tens um pedido de alteração de email pendente. Verifica a tua caixa de entrada.";
-        }
-
-        // Verificar password atual
+        if (!$canChangeEmail) $errors[] = "Só podes alterar o email novamente daqui a {$daysUntilEmailChange} dia(s).";
+        if ($hasPendingEmail) $errors[] = "Já tens um pedido de alteração de email pendente.";
         $stmt = $pdo->prepare("SELECT password_hash FROM users WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $userPass = $stmt->fetch();
-
-        if (!password_verify($currentPassword, $userPass['password_hash'])) {
-            $errors[] = 'A password está incorreta.';
-        }
-
-        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Email inválido.';
-        }
-
-        if ($newEmail === $user['email']) {
-            $errors[] = 'O novo email não pode ser igual ao atual.';
-        }
-
-        // Verificar se email já está em uso
+        if (!password_verify($currentPassword, $userPass['password_hash'])) $errors[] = 'A password está incorreta.';
+        if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) $errors[] = 'Email inválido.';
+        if ($newEmail === $user['email']) $errors[] = 'O novo email não pode ser igual ao atual.';
         $stmt = $pdo->prepare("SELECT id FROM users WHERE email = :email AND id != :uid");
         $stmt->execute([':email' => $newEmail, ':uid' => $uid]);
-        if ($stmt->fetch()) {
-            $errors[] = 'Este email já está em uso por outra conta.';
-        }
-
+        if ($stmt->fetch()) $errors[] = 'Este email já está em uso por outra conta.';
         if (empty($errors)) {
             try {
-                // Gerar token de verificação
                 $token = bin2hex(random_bytes(32));
                 $tokenExpiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
-
-                // Guardar email pendente na BD
-                $stmt = $pdo->prepare("
-                    UPDATE users
-                    SET pending_email = :email, pending_email_token = :token, pending_email_expires = :expires
-                    WHERE id = :uid
-                ");
-                $stmt->execute([
-                    ':email' => $newEmail,
-                    ':token' => $token,
-                    ':expires' => $tokenExpiry,
-                    ':uid' => $uid
-                ]);
-
-                // Enviar email de verificação para o NOVO email
+                $stmt = $pdo->prepare("UPDATE users SET pending_email = :email, pending_email_token = :token, pending_email_expires = :expires WHERE id = :uid");
+                $stmt->execute([':email' => $newEmail, ':token' => $token, ':expires' => $tokenExpiry, ':uid' => $uid]);
                 $emailService = new EmailService();
                 if ($emailService->sendEmailChangeVerification($newEmail, $user['username'], $token)) {
                     $message = 'Enviamos um email de confirmação para <strong>' . htmlspecialchars($newEmail) . '</strong>. Clica no link para confirmar a alteração.';
@@ -250,33 +154,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $hasPendingEmail = true;
                     $user['pending_email'] = $newEmail;
                 } else {
-                    // Limpar dados se falhar envio
                     $stmt = $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid");
                     $stmt->execute([':uid' => $uid]);
                     $errors[] = 'Erro ao enviar email de verificação. Tenta novamente.';
                 }
-            } catch (Exception $e) {
-                $message = 'Erro ao processar pedido.';
-                $messageType = 'danger';
-            }
+            } catch (Exception $e) { $message = 'Erro ao processar pedido.'; $messageType = 'danger'; }
         }
-
-        if (!empty($errors)) {
-            $message = implode('<br>', $errors);
-            $messageType = 'danger';
-        }
+        if (!empty($errors)) { $message = implode('<br>', $errors); $messageType = 'danger'; }
     }
 
     elseif ($action === 'cancel_email_change') {
-        $stmt = $pdo->prepare("
-            UPDATE users
-            SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL
-            WHERE id = :uid
-        ");
+        $stmt = $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $hasPendingEmail = false;
         $user['pending_email'] = null;
         $message = 'Pedido de alteração de email cancelado.';
+        $messageType = 'info';
+    }
+
+    elseif ($action === 'upload_avatar') {
+        $file = $_FILES['avatar'] ?? null;
+        $errors = [];
+        if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
+            $errors[] = 'Erro ao receber o ficheiro.';
+        } else {
+            $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            if (!in_array($mime, $allowed)) $errors[] = 'Formato inválido. Usa JPEG, PNG, GIF ou WebP.';
+            if ($file['size'] > 3 * 1024 * 1024) $errors[] = 'A imagem não pode ter mais de 3MB.';
+        }
+        if (empty($errors)) {
+            try {
+                // Criar imagem a partir do upload
+                $src = match($mime) {
+                    'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
+                    'image/png'  => imagecreatefrompng($file['tmp_name']),
+                    'image/gif'  => imagecreatefromgif($file['tmp_name']),
+                    'image/webp' => imagecreatefromwebp($file['tmp_name']),
+                };
+                $srcW = imagesx($src); $srcH = imagesy($src);
+                $size = 300;
+                // Crop quadrado centrado
+                $minDim = min($srcW, $srcH);
+                $cropX = intval(($srcW - $minDim) / 2);
+                $cropY = intval(($srcH - $minDim) / 2);
+                $dst = imagecreatetruecolor($size, $size);
+                imagecopyresampled($dst, $src, 0, 0, $cropX, $cropY, $size, $size, $minDim, $minDim);
+                $savePath = $avatarDir . $uid . '.jpg';
+                imagejpeg($dst, $savePath, 88);
+                imagedestroy($src); imagedestroy($dst);
+                // Guardar na BD
+                $avatarRel = 'assets/avatars/' . $uid . '.jpg';
+                $stmt = $pdo->prepare("UPDATE users SET avatar_path = :av WHERE id = :uid");
+                $stmt->execute([':av' => $avatarRel, ':uid' => $uid]);
+                $user['avatar_path'] = $avatarRel;
+                $message = 'Foto de perfil atualizada!';
+                $messageType = 'success';
+            } catch (Exception $e) {
+                $message = 'Erro ao processar imagem.';
+                $messageType = 'danger';
+            }
+        } else { $message = implode('<br>', $errors); $messageType = 'danger'; }
+    }
+
+    elseif ($action === 'remove_avatar') {
+        $oldPath = $avatarDir . $uid . '.jpg';
+        if (file_exists($oldPath)) @unlink($oldPath);
+        $stmt = $pdo->prepare("UPDATE users SET avatar_path = NULL WHERE id = :uid");
+        $stmt->execute([':uid' => $uid]);
+        $user['avatar_path'] = null;
+        $message = 'Foto de perfil removida.';
         $messageType = 'info';
     }
 }
@@ -288,674 +237,639 @@ $currentTheme = $settings['theme'] ?? 'light';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Configurações - FreeCard</title>
+  <title>Definições - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
-    /* ========== BACKGROUND ANIMADO ========== */
-    body {
-      position: relative;
-      min-height: 100vh;
-    }
-    .bg-animation {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    [data-theme="light"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%);
-      z-index: -1;
-    }
-    [data-theme="dark"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
-      z-index: -1;
-    }
-    .floating-shape {
-      position: absolute;
-      border-radius: 50%;
-      animation: float 20s infinite ease-in-out;
-    }
-  [data-theme="light"] .floating-shape {
-    background: rgba(46, 88, 204);
-  }
-  [data-theme="dark"] .floating-shape {
-    background: rgba(46, 88, 204);
-  }
-    .shape1 { width: 300px; height: 300px; top: -100px; left: -100px; animation-delay: 0s; }
-    .shape2 { width: 200px; height: 200px; bottom: -50px; right: -50px; animation-delay: 5s; }
-    .shape3 { width: 150px; height: 150px; top: 50%; right: 10%; animation-delay: 2s; }
-    .shape4 { width: 100px; height: 100px; bottom: 20%; left: 15%; animation-delay: 7s; }
-    .shape5 { width: 250px; height: 250px; top: 30%; left: 50%; animation-delay: 3s; }
-    .shape6 { width: 250px; height: 300px; top: -100px; right: -100px; animation-delay: 6s; }
-    .shape7 { width: 180px; height: 180px; top: 10%; left: 70%; animation-delay: 1s; }
-    .shape8 { width: 120px; height: 120px; bottom: 10%; right: 30%; animation-delay: 4s; }
-    .shape9 { width: 220px; height: 220px; top: 60%; left: -80px; animation-delay: 8s; }
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-      50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
-    }
-    .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      animation: rise 15s infinite ease-in;
-    }
-  [data-theme="light"] .particle { background: rgba(46, 88, 204); }
-  [data-theme="dark"] .particle { background: rgba(46, 88, 204); }
-    @keyframes rise {
-      0% { transform: translateY(0) translateX(0); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
-    }
-    .navbar, .container { position: relative; z-index: 1; }
-    @media (max-width: 768px) {
-      .floating-shape { opacity: 0.4; animation-duration: 25s; }
-      .particle { display: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .floating-shape, .particle { animation: none; opacity: 0.2; }
-    }
-    :root {
-      --primary-blue: #3498db;
-      --dark-blue: #2980b9;
-    }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background-color: var(--bg-primary);
       color: var(--text-primary);
-      transition: background-color 0.3s, color 0.3s;
     }
-    .navbar { 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-      background: var(--navbar-bg);
+
+    /* ===== LAYOUT CENTRADO ===== */
+    .settings-wrapper {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 0 16px 60px;
     }
-    .navbar-brand img { height: 35px; margin-right: 8px; }
-    .btn-primary {
-      background: var(--primary-blue);
-      border-color: var(--primary-blue);
+
+    /* ===== CABEÇALHO DA PÁGINA ===== */
+    .page-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+      padding-top: 8px;
     }
-    .btn-primary:hover {
-      background: var(--dark-blue);
-      border-color: var(--dark-blue);
-    }
-    .card {
-      border: none;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px var(--shadow);
+    .page-header-icon {
+      width: 42px; height: 42px;
+      border-radius: 12px;
       background: var(--bg-secondary);
-      color: var(--text-primary);
-      transition: all 0.3s;
-      margin-bottom: 20px;
+      border: 1px solid var(--border-color);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
     }
-    .card-header-custom {
-      background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
-      border-radius: 16px 16px 0 0;
-      padding: 20px 24px;
-      color: white;
-    }
-    .form-label {
+    .page-header h2 {
+      font-size: 20px;
       font-weight: 600;
+      margin: 0 0 2px;
       color: var(--text-primary);
-      margin-bottom: 8px;
     }
-    .form-control, .form-select {
+    .page-header p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+
+    /* ===== GRUPOS ===== */
+    .settings-group {
+      margin-bottom: 24px;
+    }
+    .group-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .07em;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      margin: 0 0 8px 4px;
+    }
+
+    /* ===== CARD CLEAN ===== */
+    .settings-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    /* ===== ROWS ===== */
+    .s-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 16px 20px;
+      transition: background .15s;
+    }
+    .s-row:not(:last-child) {
+      border-bottom: 1px solid var(--border-color);
+    }
+    .s-row-text {}
+    .s-row-label {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin: 0 0 2px;
+    }
+    .s-row-sub {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin: 0;
+    }
+    .s-row-action { flex-shrink: 0; }
+
+    /* ===== AVATAR ===== */
+    .avatar-wrap {
+      position: relative;
+      width: 64px; height: 64px;
+      flex-shrink: 0;
+    }
+    .avatar-circle {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      background: #3498db;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 600;
+    }
+    .avatar-img {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
       border: 2px solid var(--border-color);
+    }
+    .avatar-edit-btn {
+      position: absolute;
+      bottom: 0; right: 0;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: #3498db;
+      color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px;
+      cursor: pointer;
+      border: 2px solid var(--bg-secondary);
+      transition: background .15s;
+      line-height: 1;
+    }
+    .avatar-edit-btn:hover { background: #2980b9; }
+    .avatar-preview-ring {
+      box-shadow: 0 0 0 3px #3498db44;
+    }
+
+    /* ===== BADGES ===== */
+    .s-badge {
+      font-size: 11px; font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 20px;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .s-badge-role { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
+    .s-badge-ok { background: rgba(16,185,129,.1); color: #059669; }
+    .s-badge-locked { background: rgba(239,68,68,.1); color: #dc2626; }
+    .s-badge-pending { background: rgba(245,158,11,.1); color: #d97706; }
+
+    /* ===== BOTÕES LIMPOS ===== */
+    .btn-s {
+      font-size: 13px; font-weight: 500;
+      padding: 7px 16px;
+      border-radius: 9px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all .15s;
+      text-decoration: none;
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .btn-s:hover { border-color: #999; background: var(--bg-hover); }
+    .btn-s-primary {
+      background: #3498db; color: #fff;
+      border-color: #3498db;
+    }
+    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-danger { border-color: #dc2626; color: #dc2626; }
+    .btn-s-danger:hover { background: rgba(239,68,68,.07); }
+    .btn-s:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+
+    /* ===== TEMA SELECTOR ===== */
+    .theme-options { display: flex; gap: 8px; }
+    .theme-opt {
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 14px;
+      border-radius: 9px;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      font-size: 13px; font-weight: 500;
+      color: var(--text-primary);
+      background: transparent;
+      transition: all .15s;
+    }
+    .theme-opt input { display: none; }
+    .theme-opt.active {
+      border-width: 2px;
+      border-color: #3498db;
+      background: var(--bg-primary);
+    }
+    [data-theme="dark"] .theme-opt.active { border-color: #3498db; }
+
+    /* ===== SWITCH ===== */
+    .s-switch {
+      width: 44px; height: 24px;
+      border-radius: 12px; border: none;
+      cursor: pointer; position: relative;
+      transition: background .2s; flex-shrink: 0; padding: 0;
+    }
+    .s-switch-thumb {
+      position: absolute; top: 3px;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; transition: left .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+    }
+
+    /* ===== FORMS ===== */
+    .s-form { padding: 0 20px 20px; }
+    .s-form .form-label {
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+      text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px;
+    }
+    .s-form .form-control {
+      font-size: 14px;
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      padding: 10px 14px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: border-color .15s;
+    }
+    .s-form .form-control:focus {
+      border-color: #3498db;
+      box-shadow: none;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+    [data-theme="dark"] .s-form .form-control:focus { border-color: #fff; }
+    .s-info-box {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-color);
+      border-radius: 9px;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+    .s-info-box.warning {
+      background: rgba(245,158,11,.07);
+      border-color: rgba(245,158,11,.3);
+      color: #92400e;
+    }
+    [data-theme="dark"] .s-info-box.warning { color: #fbbf24; }
+
+    /* ===== PASSWORD STRENGTH ===== */
+    .pw-strength { height: 4px; background: var(--border-color); border-radius: 2px; margin-top: 8px; overflow: hidden; }
+    .pw-bar { height: 100%; width: 0; transition: all .3s; border-radius: 2px; }
+    .pw-weak { width: 33%; background: #ef4444; }
+    .pw-medium { width: 66%; background: #f59e0b; }
+    .pw-strong { width: 100%; background: #10b981; }
+
+    /* ===== ALERT ===== */
+    .s-alert {
       border-radius: 10px;
       padding: 12px 16px;
-      transition: all 0.3s;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: var(--primary-blue);
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .setting-item {
-      padding: 24px;
-      border-bottom: 1px solid var(--border-color);
-      transition: background-color 0.3s;
-    }
-    .setting-item:last-child {
-      border-bottom: none;
-    }
-    .setting-item:hover {
-      background: var(--bg-hover);
-    }
-    .theme-preview {
-      width: 80px;
-      height: 50px;
-      border-radius: 8px;
-      border: 3px solid transparent;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-    }
-    .theme-preview:hover {
-      transform: scale(1.05);
-    }
-    .theme-preview.active {
-      border-color: var(--primary-blue);
-      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-    }
-    .theme-preview-light {
-      background: linear-gradient(135deg, #ffffff 50%, #f8f9fa 50%);
-    }
-    .theme-preview-dark {
-      background: linear-gradient(135deg, #2b3035 50%, #2c3e50 50%);
-    }
-    .theme-preview input[type="radio"] {
-      display: none;
-    }
-    .form-check-input:checked {
-      background-color: var(--primary-blue);
-      border-color: var(--primary-blue);
-    }
-    .security-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 6px 12px;
-      border-radius: 8px;
       font-size: 13px;
-      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex; align-items: flex-start; gap: 10px;
+      border: 1px solid transparent;
     }
-    .security-badge.available {
-      background: rgba(52, 152, 219, 0.1);
-      color: var(--primary-blue);
+    .s-alert-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #065f46; }
+    .s-alert-danger  { background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3);  color: #7f1d1d; }
+    .s-alert-info    { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.3); color: #1e3a8a; }
+    [data-theme="dark"] .s-alert-success { color: #6ee7b7; }
+    [data-theme="dark"] .s-alert-danger  { color: #fca5a5; }
+    [data-theme="dark"] .s-alert-info    { color: #93c5fd; }
+
+    /* ===== CONTA INFO ===== */
+    .account-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 0;
     }
-    .security-badge.locked {
-      background: rgba(231, 76, 60, 0.1);
-      color: #e74c3c;
+    .account-cell {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-color);
     }
-    .security-badge.coming-soon {
-      background: rgba(52, 152, 219, 0.1);
-      color: #3498db;
-    }
-    .info-box {
-      background: var(--bg-primary);
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-top: 12px;
-    }
-    .password-strength {
-      height: 6px;
-      background: var(--bg-hover);
-      border-radius: 3px;
-      margin-top: 10px;
-      overflow: hidden;
-    }
-    .password-strength-bar {
-      height: 100%;
-      width: 0;
-      transition: all 0.4s;
-      border-radius: 3px;
-    }
-    .strength-weak { width: 33%; background: #e74c3c; }
-    .strength-medium { width: 66%; background: #f39c12; }
-    .strength-strong { width: 100%; background: var(--primary-blue); }
-    
-    [data-theme="dark"] .form-control,
-    [data-theme="dark"] .form-select {
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-    [data-theme="dark"] .form-control::placeholder {
-      color: var(--text-secondary);
-      opacity: 0.6;
+    .account-cell:nth-child(odd) { border-right: 1px solid var(--border-color); }
+    .account-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .account-cell .cell-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+    .account-cell .cell-value { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+
+    @media (max-width: 600px) {
+      .account-grid { grid-template-columns: 1fr; }
+      .account-cell:nth-child(odd) { border-right: none; }
+      .account-cell:nth-last-child(-n+2) { border-bottom: 1px solid var(--border-color); }
+      .account-cell:last-child { border-bottom: none; }
+      .theme-options { flex-direction: column; }
+      .s-row { flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
-  <!-- Background animado -->
-<div class="bg-animation">
-  <div class="floating-shape shape1"></div>
-  <div class="floating-shape shape2"></div>
-  <div class="floating-shape shape3"></div>
-  <div class="floating-shape shape4"></div>
-  <div class="floating-shape shape5"></div>
-  <div class="floating-shape shape6"></div>
-  <div class="floating-shape shape7"></div>
-  <div class="floating-shape shape8"></div>  
-  <div class="floating-shape shape9"></div>
-</div>
-<nav class="navbar navbar-expand-lg navbar-light">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../dashboard.php">
-      <img src="../assets/logo2.png" alt="Freecard">
-      FreeCard
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
-        <li class="nav-item"><a class="nav-link" href="transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
-        <li class="nav-item"><a class="nav-link" href="budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="reminders.php"><i class="bi bi-calendar-check"></i> Lembretes</a></li>
-        <li class="nav-item"><a class="nav-link" href="analytics.php"><i class="bi bi-graph-up"></i> Análise</a></li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item active" href="settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
-          </ul>
-        </li>
-      </ul>
+<div class="app-layout">
+<?php
+$activePage    = 'settings';
+$sidebarPrefix = '../';
+include __DIR__ . '/../components/sidebar.php';
+?>
+<main class="main-content">
+<div class="page-content">
+<div class="settings-wrapper">
+
+  <!-- CABEÇALHO -->
+  <div class="page-header">
+    <div class="page-header-icon"><i class="bi bi-gear"></i></div>
+    <div>
+      <h2>Definições</h2>
+      <p>Personalize a sua experiência FreeCard</p>
     </div>
   </div>
-</nav>
 
-<div class="container mt-4 mb-5">
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-10">
-      <div class="mb-4">
-        <a href="../dashboard.php" class="text-decoration-none" style="color: var(--text-secondary);">
-          <i class="bi bi-arrow-left"></i> Voltar ao Dashboard
-        </a>
-      </div>
+  <!-- ALERTA -->
+  <?php if ($message): ?>
+    <?php $icon = $messageType === 'success' ? 'check-circle' : ($messageType === 'danger' ? 'exclamation-circle' : 'info-circle'); ?>
+    <div class="s-alert s-alert-<?=$messageType?>">
+      <i class="bi bi-<?=$icon?>" style="flex-shrink:0;margin-top:1px"></i>
+      <span><?=$message?></span>
+    </div>
+  <?php endif; ?>
 
-      <h2 class="mb-4"><i class="bi bi-gear"></i> Configurações</h2>
-
-      <?php if ($message): ?>
-        <div class="alert alert-<?=$messageType?> alert-dismissible fade show">
-          <i class="bi bi-<?=$messageType === 'success' ? 'check-circle' : 'exclamation-circle'?>"></i>
-          <?=$message?>
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-      <?php endif; ?>
-
-      <!-- SEGURANÇA -->
-      <div class="card">
-        <div class="card-header-custom">
-          <h5 class="mb-0"><i class="bi bi-shield-lock"></i> Segurança</h5>
-        </div>
-        <div class="card-body p-0">
-          
-          <!-- Alterar Password -->
-          <div class="setting-item">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-              <div>
-                <h6 class="mb-1">
-                  <i class="bi bi-key"></i> Alterar Password
-                  <?php if ($canChangePassword): ?>
-                    <span class="security-badge available">
-                      <i class="bi bi-check-circle"></i> Disponível
-                    </span>
-                  <?php else: ?>
-                    <span class="security-badge locked">
-                      <i class="bi bi-lock"></i> Bloqueado por <?=$daysUntilPasswordChange?> dia(s)
-                    </span>
-                  <?php endif; ?>
-                </h6>
-                <p class="text-muted small mb-0">
-                  Última alteração: 
-                  <?php if ($user['last_password_change']): ?>
-                    <?=date('d/m/Y', strtotime($user['last_password_change']))?>
-                  <?php else: ?>
-                    Nunca
-                  <?php endif; ?>
-                </p>
-              </div>
-              <button 
-                class="btn btn-sm btn-outline-primary" 
-                data-bs-toggle="collapse" 
-                data-bs-target="#changePasswordForm"
-                <?=!$canChangePassword ? 'disabled' : ''?>
-              >
-                <i class="bi bi-pencil"></i> Alterar
-              </button>
-            </div>
-            
-            <div class="collapse" id="changePasswordForm">
-              <form method="post" class="mt-3">
-                <input type="hidden" name="action" value="change_password">
-                
-                <div class="mb-3">
-                  <label class="form-label">Password Atual *</label>
-                  <input 
-                    type="password" 
-                    name="current_password" 
-                    class="form-control" 
-                    placeholder="Introduz a tua password atual"
-                    required
-                  >
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">Nova Password *</label>
-                  <input 
-                    type="password" 
-                    name="new_password" 
-                    id="new_password"
-                    class="form-control" 
-                    placeholder="Cria uma password segura"
-                    required
-                  >
-                  <div class="password-strength">
-                    <div class="password-strength-bar" id="strength-bar"></div>
-                  </div>
-                  <small class="text-muted">Mínimo 8 caracteres, incluindo maiúsculas, minúsculas, números e especiais</small>
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">Confirmar Nova Password *</label>
-                  <input 
-                    type="password" 
-                    name="confirm_password" 
-                    class="form-control" 
-                    placeholder="Repete a nova password"
-                    required
-                  >
-                </div>
-                
-                <div class="info-box">
-                  <small>
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Política de Segurança:</strong> Por razões de segurança, só podes alterar a password uma vez a cada 30 dias.
-                  </small>
-                </div>
-                
-                <div class="d-grid gap-2 mt-3">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-check-circle"></i> Alterar Password
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#changePasswordForm">
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <!-- Alterar Email -->
-          <div class="setting-item">
-            <div class="d-flex justify-content-between align-items-start mb-3">
-              <div>
-                <h6 class="mb-1">
-                  <i class="bi bi-envelope"></i> Alterar Email
-                  <?php if ($hasPendingEmail): ?>
-                    <span class="security-badge" style="background: rgba(243, 156, 18, 0.1); color: #f39c12;">
-                      <i class="bi bi-clock-history"></i> Pendente
-                    </span>
-                  <?php elseif ($canChangeEmail): ?>
-                    <span class="security-badge available">
-                      <i class="bi bi-check-circle"></i> Disponível
-                    </span>
-                  <?php else: ?>
-                    <span class="security-badge locked">
-                      <i class="bi bi-lock"></i> Bloqueado por <?=$daysUntilEmailChange?> dia(s)
-                    </span>
-                  <?php endif; ?>
-                </h6>
-                <p class="text-muted small mb-0">
-                  Email atual: <strong><?=htmlspecialchars($user['email'])?></strong>
-                </p>
-                <?php if ($hasPendingEmail): ?>
-                <p class="small mb-0" style="color: #f39c12;">
-                  <i class="bi bi-arrow-right"></i> Novo email pendente: <strong><?=htmlspecialchars($user['pending_email'])?></strong>
-                </p>
-                <?php endif; ?>
-                <p class="text-muted small mb-0">
-                  Última alteração:
-                  <?php if ($user['last_email_change']): ?>
-                    <?=date('d/m/Y', strtotime($user['last_email_change']))?>
-                  <?php else: ?>
-                    Nunca
-                  <?php endif; ?>
-                </p>
-              </div>
-              <?php if (!$hasPendingEmail): ?>
-              <button
-                class="btn btn-sm btn-outline-primary"
-                data-bs-toggle="collapse"
-                data-bs-target="#changeEmailForm"
-                <?=!$canChangeEmail ? 'disabled' : ''?>
-              >
-                <i class="bi bi-pencil"></i> Alterar
-              </button>
-              <?php endif; ?>
-            </div>
-
-            <?php if ($hasPendingEmail): ?>
-            <div class="info-box" style="background: rgba(243, 156, 18, 0.1);">
-              <small>
-                <i class="bi bi-envelope-exclamation"></i>
-                <strong>Verificação pendente:</strong> Enviamos um email para <strong><?=htmlspecialchars($user['pending_email'])?></strong>.
-                Clica no link para confirmar a alteração. O link expira em 1 hora.
-              </small>
-            </div>
-            <form method="post" class="mt-2">
-              <input type="hidden" name="action" value="cancel_email_change">
-              <button type="submit" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-x-circle"></i> Cancelar pedido
-              </button>
-            </form>
+  <!-- PERFIL -->
+  <div class="settings-group">
+    <p class="group-label">Perfil</p>
+    <div class="settings-card">
+      <!-- Foto de perfil -->
+      <div class="s-row" style="flex-wrap:wrap;gap:16px">
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+          <div class="avatar-wrap" id="avatarWrap">
+            <?php if (!empty($user['avatar_path'])): ?>
+              <img src="../<?=htmlspecialchars($user['avatar_path'])?>?v=<?=time()?>"
+                   alt="avatar" class="avatar-img" id="avatarImg">
             <?php else: ?>
-            <div class="collapse" id="changeEmailForm">
-              <form method="post" class="mt-3">
-                <input type="hidden" name="action" value="change_email">
-
-                <div class="mb-3">
-                  <label class="form-label">Password (para confirmar) *</label>
-                  <input
-                    type="password"
-                    name="current_password_email"
-                    class="form-control"
-                    placeholder="Introduz a tua password"
-                    required
-                  >
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Novo Email *</label>
-                  <input
-                    type="email"
-                    name="new_email"
-                    class="form-control"
-                    placeholder="novo@email.com"
-                    required
-                  >
-                </div>
-
-                <div class="info-box">
-                  <small>
-                    <i class="bi bi-info-circle"></i>
-                    <strong>Verificação necessária:</strong> Vais receber um email no novo endereço para confirmar a alteração.
-                  </small>
-                </div>
-
-                <div class="d-grid gap-2 mt-3">
-                  <button type="submit" class="btn btn-primary">
-                    <i class="bi bi-envelope"></i> Enviar Verificação
-                  </button>
-                  <button type="button" class="btn btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#changeEmailForm">
-                    Cancelar
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div class="avatar-circle" id="avatarLetter"><?=strtoupper(substr($user['username'],0,1))?></div>
             <?php endif; ?>
+            <label for="avatarInput" class="avatar-edit-btn" title="Alterar foto">
+              <i class="bi bi-camera-fill"></i>
+            </label>
           </div>
+          <div style="min-width:0">
+            <p class="s-row-label"><?=htmlspecialchars($user['username'])?></p>
+            <p class="s-row-sub"><?=htmlspecialchars($user['email'])?></p>
+            <span class="s-badge s-badge-role" style="margin-top:4px">Membro</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
+          <form method="post" enctype="multipart/form-data" id="avatarForm">
+            <input type="hidden" name="action" value="upload_avatar">
+            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none">
+          </form>
+          <?php if (!empty($user['avatar_path'])): ?>
+          <form method="post" id="removeAvatarForm">
+            <input type="hidden" name="action" value="remove_avatar">
+            <button type="submit" class="btn-s btn-s-danger"
+                    onclick="return confirm('Remover foto de perfil?')">
+              <i class="bi bi-trash3"></i> Remover
+            </button>
+          </form>
+          <?php endif; ?>
         </div>
       </div>
 
-      <!-- APARÊNCIA -->
-      <div class="card">
-        <div class="card-header-custom">
-          <h5 class="mb-0"><i class="bi bi-palette"></i> Aparência</h5>
-        </div>
-        <form method="post">
-          <input type="hidden" name="action" value="update_theme">
-          <div class="card-body p-0">
-            <div class="setting-item">
-              <div class="mb-3">
-                <h6 class="mb-1"><i class="bi bi-moon-stars"></i> Tema</h6>
-                <p class="text-muted small mb-3">Escolhe o tema que preferes para a interface</p>
-              </div>
-              
-              <div class="d-flex gap-3">
-                <label class="theme-preview theme-preview-light <?=$currentTheme === 'light' ? 'active' : ''?>">
-                  <input type="radio" name="theme" value="light" <?=$currentTheme === 'light' ? 'checked' : ''?>>
-                  <div class="p-2">
-                    <small class="fw-bold" style="color: #2c3e50;">Claro</small>
-                  </div>
-                </label>
-                
-                <label class="theme-preview theme-preview-dark <?=$currentTheme === 'dark' ? 'active' : ''?>">
-                  <input type="radio" name="theme" value="dark" <?=$currentTheme === 'dark' ? 'checked' : ''?>>
-                  <div class="p-2">
-                    <small class="fw-bold" style="color: #ecf0f1;">Escuro</small>
-                  </div>
-                </label>
-              </div>
-            </div>
-
-            <div class="setting-item">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <h6 class="mb-1"><i class="bi bi-bell"></i> Notificações </h6>
-                  <p class="text-muted small mb-0">Recebe alertas quando te aproximas dos limites dos cartões</p>
-                </div>
-                <div class="form-check form-switch">
-                  <input 
-                    class="form-check-input" 
-                    type="checkbox" 
-                    name="notifications" 
-                    <?=$settings['notifications'] ? 'checked' : ''?>
-                    style="width: 3em; height: 1.5em;"
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card-body">
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-primary">
-                <i class="bi bi-check-circle"></i> Guardar Alterações
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-
-      <!-- INFORMAÇÕES DA CONTA -->
-      <div class="card">
-        <div class="card-header-custom">
-          <h5 class="mb-0"><i class="bi bi-person"></i> Informações da Conta</h5>
-        </div>
-        <div class="card-body">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <small class="text-muted">Nome de utilizador</small>
-              <div class="fw-semibold"><?=htmlspecialchars($user['username'])?></div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <small class="text-muted">Email</small>
-              <div class="fw-semibold"><?=htmlspecialchars($user['email'])?></div>
-            </div>
-            <div class="col-md-6 mb-3">
-              <small class="text-muted">Membro desde</small>
-              <div class="fw-semibold"><?=date('d/m/Y', strtotime($user['created_at']))?></div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- SOBRE -->
-      <div class="card">
-        <div class="card-body">
-          <h6 class="mb-3"><i class="bi bi-info-circle"></i> Sobre o FreeCard</h6>
-          <p class="text-muted small mb-2">Versão: 1.0.0</p>
-          <p class="text-muted small mb-0">
-            Desenvolvido por Diogo Freire e Jandro Antunes<br>
-            Projeto de Aptidão Profissional
+      <!-- Alterar Password -->
+      <div class="s-row" style="align-items:flex-start">
+        <div class="s-row-text">
+          <p class="s-row-label">
+            Palavra-passe
+            &nbsp;
+            <?php if ($canChangePassword): ?>
+              <span class="s-badge s-badge-ok"><i class="bi bi-check-circle" style="font-size:10px"></i> Disponível</span>
+            <?php else: ?>
+              <span class="s-badge s-badge-locked"><i class="bi bi-lock" style="font-size:10px"></i> Bloqueado <?=$daysUntilPasswordChange?> dia(s)</span>
+            <?php endif; ?>
+          </p>
+          <p class="s-row-sub">
+            Última alteração:
+            <?= $user['last_password_change'] ? date('d/m/Y', strtotime($user['last_password_change'])) : 'Nunca' ?>
           </p>
         </div>
+        <button
+          class="btn-s <?=!$canChangePassword?'':''?>"
+          data-bs-toggle="collapse"
+          data-bs-target="#formPassword"
+          <?=!$canChangePassword?'disabled':''?>
+        ><i class="bi bi-pencil"></i> Alterar</button>
+      </div>
+      <div class="collapse" id="formPassword">
+        <div class="s-form">
+          <form method="post">
+            <input type="hidden" name="action" value="change_password">
+            <div class="mb-3">
+              <label class="form-label">Password atual</label>
+              <input type="password" name="current_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Nova password</label>
+              <input type="password" name="new_password" id="new_password" class="form-control" placeholder="••••••••" required>
+              <div class="pw-strength"><div class="pw-bar" id="pw-bar"></div></div>
+              <small style="font-size:11px;color:var(--text-secondary)">Mínimo 8 caracteres — maiúsculas, minúsculas, números e especiais</small>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Confirmar nova password</label>
+              <input type="password" name="confirm_password" class="form-control" placeholder="••••••••" required>
+            </div>
+            <div class="s-info-box mb-3">
+              <i class="bi bi-info-circle"></i> Por segurança, só podes alterar a password uma vez a cada 30 dias.
+            </div>
+            <div style="display:flex;gap:8px">
+              <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar</button>
+              <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formPassword">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Alterar Email -->
+      <div class="s-row" style="align-items:flex-start">
+        <div class="s-row-text">
+          <p class="s-row-label">
+            Email
+            &nbsp;
+            <?php if ($hasPendingEmail): ?>
+              <span class="s-badge s-badge-pending"><i class="bi bi-clock-history" style="font-size:10px"></i> Pendente</span>
+            <?php elseif ($canChangeEmail): ?>
+              <span class="s-badge s-badge-ok"><i class="bi bi-check-circle" style="font-size:10px"></i> Disponível</span>
+            <?php else: ?>
+              <span class="s-badge s-badge-locked"><i class="bi bi-lock" style="font-size:10px"></i> Bloqueado <?=$daysUntilEmailChange?> dia(s)</span>
+            <?php endif; ?>
+          </p>
+          <p class="s-row-sub">
+            <?=htmlspecialchars($user['email'])?>
+            <?php if ($hasPendingEmail): ?>
+              → <strong><?=htmlspecialchars($user['pending_email'])?></strong>
+            <?php endif; ?>
+          </p>
+        </div>
+        <?php if (!$hasPendingEmail): ?>
+          <button class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail" <?=!$canChangeEmail?'disabled':''?>>
+            <i class="bi bi-pencil"></i> Alterar
+          </button>
+        <?php endif; ?>
+      </div>
+      <?php if ($hasPendingEmail): ?>
+        <div class="s-form">
+          <div class="s-info-box warning mb-3">
+            <i class="bi bi-envelope-exclamation"></i>
+            Enviamos um email para <strong><?=htmlspecialchars($user['pending_email'])?></strong>. Clica no link para confirmar. O link expira em 1 hora.
+          </div>
+          <form method="post">
+            <input type="hidden" name="action" value="cancel_email_change">
+            <button type="submit" class="btn-s"><i class="bi bi-x-circle"></i> Cancelar pedido</button>
+          </form>
+        </div>
+      <?php else: ?>
+        <div class="collapse" id="formEmail">
+          <div class="s-form">
+            <form method="post">
+              <input type="hidden" name="action" value="change_email">
+              <div class="mb-3">
+                <label class="form-label">Password (para confirmar)</label>
+                <input type="password" name="current_password_email" class="form-control" placeholder="••••••••" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Novo email</label>
+                <input type="email" name="new_email" class="form-control" placeholder="novo@email.com" required>
+              </div>
+              <div class="s-info-box mb-3">
+                <i class="bi bi-info-circle"></i> Vais receber um email no novo endereço para confirmar a alteração.
+              </div>
+              <div style="display:flex;gap:8px">
+                <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-envelope"></i> Enviar verificação</button>
+                <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail">Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <!-- APARÊNCIA -->
+  <div class="settings-group">
+    <p class="group-label">Aparência</p>
+    <div class="settings-card">
+      <form method="post">
+        <input type="hidden" name="action" value="update_theme">
+
+        <div class="s-row">
+          <div class="s-row-text">
+            <p class="s-row-label">Tema</p>
+            <p class="s-row-sub">Escolhe entre o tema claro e escuro</p>
+          </div>
+          <div class="theme-options">
+            <label class="theme-opt <?=$currentTheme==='light'?'active':''?>" id="opt-light">
+              <input type="radio" name="theme" value="light" <?=$currentTheme==='light'?'checked':''?>>
+              ☀ Claro
+            </label>
+            <label class="theme-opt <?=$currentTheme==='dark'?'active':''?>" id="opt-dark">
+              <input type="radio" name="theme" value="dark" <?=$currentTheme==='dark'?'checked':''?>>
+              ☾ Escuro
+            </label>
+          </div>
+        </div>
+
+        <div class="s-row">
+          <div class="s-row-text">
+            <p class="s-row-label">Notificações</p>
+            <p class="s-row-sub">Alertas quando se aproxima dos limites dos cartões</p>
+          </div>
+          <label style="display:flex;align-items:center;cursor:pointer;gap:8px">
+            <div style="position:relative">
+              <input type="checkbox" name="notifications" id="notif-cb" <?=$settings['notifications']?'checked':''?> style="display:none">
+              <button type="button" class="s-switch" id="notif-toggle"
+                style="background:<?=$settings['notifications']?'#3498db':'var(--border-color)'?>">
+                <span class="s-switch-thumb" style="left:<?=$settings['notifications']?'23px':'3px'?>"></span>
+              </button>
+            </div>
+          </label>
+        </div>
+
+        <div style="padding:12px 20px;border-top:1px solid var(--border-color)">
+          <button type="submit" class="btn-s btn-s-primary">
+            <i class="bi bi-check-circle"></i> Guardar alterações
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- CONTA -->
+  <div class="settings-group">
+    <p class="group-label">Informações da conta</p>
+    <div class="settings-card">
+      <div class="account-grid">
+        <div class="account-cell">
+          <p class="cell-label">Nome de utilizador</p>
+          <p class="cell-value"><?=htmlspecialchars($user['username'])?></p>
+        </div>
+        <div class="account-cell">
+          <p class="cell-label">Email</p>
+          <p class="cell-value" style="font-size:13px"><?=htmlspecialchars($user['email'])?></p>
+        </div>
+        <div class="account-cell">
+          <p class="cell-label">Membro desde</p>
+          <p class="cell-value"><?=date('d/m/Y', strtotime($user['created_at']))?></p>
+        </div>
+        <div class="account-cell">
+          <p class="cell-label">Versão</p>
+          <p class="cell-value">FreeCard 2.0.0</p>
+        </div>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- ZONA DE PERIGO -->
+  <div class="settings-group">
+    <p class="group-label" style="color:#dc2626">Zona de perigo</p>
+    <div class="settings-card" style="border-color:rgba(220,38,38,.25)">
+      <div class="s-row">
+        <div class="s-row-text">
+          <p class="s-row-label">Eliminar conta</p>
+          <p class="s-row-sub">Remove permanentemente a conta e todos os dados. Esta ação é irreversível.</p>
+        </div>
+        <button class="btn-s btn-s-danger"><i class="bi bi-trash3"></i> Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /settings-wrapper -->
+</div><!-- /page-content -->
+</main>
+</div><!-- /app-layout -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Preview ao vivo do tema
-document.querySelectorAll('input[name="theme"]').forEach(radio => {
-  radio.addEventListener('change', function() {
+// Tema — preview ao vivo
+document.querySelectorAll('input[name="theme"]').forEach(r => {
+  r.addEventListener('change', function() {
     document.documentElement.setAttribute('data-theme', this.value);
-    document.querySelectorAll('.theme-preview').forEach(preview => {
-      preview.classList.remove('active');
-    });
-    this.closest('.theme-preview').classList.add('active');
+    document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('active'));
+    this.closest('.theme-opt').classList.add('active');
   });
 });
 
-// Password strength indicator
-const passwordInput = document.getElementById('new_password');
-if (passwordInput) {
-  passwordInput.addEventListener('input', function(e) {
-    const password = e.target.value;
-    const strengthBar = document.getElementById('strength-bar');
-    
-    let strength = 0;
-    if (password.length >= 8) strength++;
-    if (/[A-Z]/.test(password)) strength++;
-    if (/[a-z]/.test(password)) strength++;
-    if (/[0-9]/.test(password)) strength++;
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    
-    strengthBar.className = 'password-strength-bar';
-    if (strength >= 4) {
-      strengthBar.classList.add('strength-strong');
-    } else if (strength >= 2) {
-      strengthBar.classList.add('strength-medium');
-    } else if (strength >= 1) {
-      strengthBar.classList.add('strength-weak');
-    }
+// Toggle notificações
+var notifToggle = document.getElementById('notif-toggle');
+var notifCb = document.getElementById('notif-cb');
+if (notifToggle) {
+  notifToggle.addEventListener('click', function() {
+    var on = notifCb.checked = !notifCb.checked;
+    this.style.background = on ? '#3498db' : 'var(--border-color)';
+    this.querySelector('.s-switch-thumb').style.left = on ? '23px' : '3px';
   });
 }
 
-(function() {
-  if (window.innerWidth <= 768) return;
-  const container = document.querySelector('.bg-animation');
-  if (!container) return;
-  for (let i = 0; i < 15; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'particle';
-    particle.style.left = Math.random() * 100 + '%';
-    particle.style.animationDelay = Math.random() * 15 + 's';
-    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-    container.appendChild(particle);
-  }
-})();
+// Avatar — auto-submit ao escolher ficheiro
+var avatarInput = document.getElementById('avatarInput');
+if (avatarInput) {
+  avatarInput.addEventListener('change', function() {
+    if (!this.files[0]) return;
+    var file = this.files[0];
+    // Preview imediato
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      var wrap = document.getElementById('avatarWrap');
+      var existing = wrap.querySelector('.avatar-img, .avatar-circle');
+      var img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'avatar-img avatar-preview-ring';
+      img.id = 'avatarImg';
+      if (existing) existing.replaceWith(img);
+      else wrap.prepend(img);
+    };
+    reader.readAsDataURL(file);
+    // Submit
+    document.getElementById('avatarForm').submit();
+  });
+}
+
+// Password strength
+var pwInput = document.getElementById('new_password');
+if (pwInput) {
+  pwInput.addEventListener('input', function() {
+    var pw = this.value, s = 0;
+    if (pw.length >= 8) s++;
+    if (/[A-Z]/.test(pw)) s++;
+    if (/[a-z]/.test(pw)) s++;
+    if (/[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    var bar = document.getElementById('pw-bar');
+    bar.className = 'pw-bar';
+    if (s >= 4) bar.classList.add('pw-strong');
+    else if (s >= 2) bar.classList.add('pw-medium');
+    else if (s >= 1) bar.classList.add('pw-weak');
+  });
+}
 </script>
 </body>
 </html>
