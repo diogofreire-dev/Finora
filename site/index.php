@@ -592,7 +592,7 @@
                 $pct = $max > 0 ? round(($h/$max)*100) : 0;
               ?>
               <div class="mock-bar-col">
-                <div class="mock-bar" style="height:<?=$pct?>%;opacity:<?=$h>0?.85:.15?>"></div>
+                <div class="mock-bar" style="height:<?=round($pct*.8)?>px;opacity:<?=$h>0?.85:.15?>"></div>
                 <div class="mock-bar-lbl"><?=$lbl?></div>
               </div>
               <?php endforeach; ?>

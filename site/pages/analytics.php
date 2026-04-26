@@ -528,7 +528,7 @@ Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Rob
 Chart.defaults.font.size = 12;
 
 // ── Gráfico de Linhas por Categoria ──
-const allMonthLabels = <?=json_encode(array_values($monthNamesShort))?>;
+const allMonthLabels = <?=json_encode(array_slice($monthNamesShort, 1))?>;
 const catColors = <?=json_encode($categoryColors)?>;
 const catMonthly = <?=json_encode($catMonthlyOrdered)?>;
 
@@ -538,7 +538,7 @@ let lastActiveMonth = 0;
 allValues.forEach(vals => {
   vals.forEach((v, i) => { if (v > 0 && i > lastActiveMonth) lastActiveMonth = i; });
 });
-const cutoff = Math.min(lastActiveMonth + 1, 11); // +1 para incluir o mês seguinte como contexto
+const cutoff = Math.min(lastActiveMonth, 11); // até ao último mês com dados
 const monthLabels = allMonthLabels.slice(0, cutoff + 1);
 
 const lineDatasets = Object.entries(catMonthly).map(([cat, values]) => {
@@ -623,7 +623,7 @@ new Chart(document.getElementById('cardChart'), {
 
 // ── Gráfico Comparação Anual ──
 <?php if ($hasPrevData): ?>
-const compareLabels  = <?=json_encode(array_values($monthNamesShort))?>;
+const compareLabels = <?=json_encode(array_slice($monthNamesShort, 1))?>;
 const compareCurrentData = <?=json_encode(array_values($monthlyTotals))?>;
 const comparePrevData    = <?=json_encode(array_values($prevMonthlyTotals))?>;
 

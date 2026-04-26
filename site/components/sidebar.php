@@ -44,6 +44,9 @@ function _sidebarClass($page, $current) {
     <a href="<?= $_sp ?>pages/analytics.php"   class="<?= _sidebarClass('analytics',    $_ap) ?>">
       <i class="bi bi-bar-chart-line"></i> Análise
     </a>
+    <a href="<?= $_sp ?>pages/ai.php"          class="<?= _sidebarClass('ai',           $_ap) ?>">
+      <i class="bi bi-stars"></i> Assistente IA
+    </a>
 
     <div class="sidebar-section-label">Ferramentas</div>
     <a href="<?= $_sp ?>pages/scan_fatura.php"  class="<?= _sidebarClass('scan_fatura',  $_ap) ?>">

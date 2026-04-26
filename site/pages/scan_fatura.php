@@ -71,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     .scan-frame::before,.scan-frame::after { content:''; position:absolute; width:20px; height:20px; border-color:#3498db; border-style:solid; }
     .scan-frame::before { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
     .scan-frame::after  { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
-    #scanStatus { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:13px; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.7); }
+    #scanStatus { text-align:center; font-size:13px; color:var(--text-secondary); margin-top:12px; min-height:20px; }
 
     /* Tabs */
     .tab-btns { display:flex; gap:8px; margin-bottom:18px; }
@@ -168,9 +168,9 @@ include __DIR__ . '/../components/sidebar.php';
             <video id="videoEl" autoplay playsinline muted></video>
             <canvas id="canvasEl"></canvas>
             <div class="scan-overlay"><div class="scan-frame"></div></div>
-            <div id="scanStatus">A iniciar câmara…</div>
           </div>
-          <div style="text-align:center;margin-top:12px">
+          <div id="scanStatus">A iniciar câmara…</div>
+          <div style="text-align:center;margin-top:16px">
             <button class="btn-secondary" id="btnToggleCam" onclick="toggleCamera()" style="font-size:13px;padding:8px 18px">
               <i class="bi bi-camera-video-off"></i> Parar câmara
             </button>
