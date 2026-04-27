@@ -14,9 +14,9 @@
 
 /* Tema Escuro */
 :root[data-theme="dark"] {
-  --bg-primary: #2b3035;
+  --bg-primary: #1a1d29;
   --bg-secondary: #252936;
-  --bg-hover: #323844;
+  --bg-hover: #2d3142;
   --text-primary: #ecf0f1;
   --text-secondary: #95a5a6;
   --border-color: #34495e;
@@ -319,35 +319,6 @@
 .card {
   z-index: auto;
 }
-
-/* QR Scanner Fixes - Video Layout & Overlay */
-#reader {
-  position: relative !important;
-  overflow: hidden !important;
-  border-radius: 12px;
-}
-
-#reader video {
-  width: 100% !important;
-  height: 100% !important;
-  object-fit: cover !important;
-  border-radius: 12px;
-}
-
-#reader__scan_region {
-  border: 2px solid #3b82f6 !important;
-  border-radius: 10px !important;
-}
-
-#reader__scan_region > img {
-  border-radius: 8px !important;
-}
-
-/* Dark theme adjustments */
-[data-theme="dark"] #reader__scan_region {
-  border-color: #60a5fa !important;
-}
-
 /* ========== FIX PARA DROPDOWNS ========== */
 /* Garante que dropdowns ficam sempre visíveis */
 .dropdown-menu {

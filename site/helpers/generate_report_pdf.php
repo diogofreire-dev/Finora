@@ -1,8 +1,7 @@
 <?php
-// site/generate_report_pdf.php
+// site/helpers/generate_report_pdf.php
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../../config/db.php';
-require_once __DIR__ . '/../../vendor/autoload.php';
 
 $uid = $_SESSION['user_id'] ?? null;
 
@@ -42,7 +41,6 @@ if ($month) {
 }
 
 $sql .= " ORDER BY t.transaction_date DESC";
-
 if ($type === 'summary') {
     $sql .= " LIMIT 20";
 }
@@ -83,309 +81,358 @@ if ($includeStats) {
     arsort($categoryStats);
 }
 
-// Cores profissionais (azul da marca + cinzas)
-$brandBlue = [46, 88, 204]; // Cor azul do site FreeCard
-$darkText = [31, 41, 55];
-$mediumGray = [107, 114, 128];
-$lightGray = [249, 250, 251];
-$borderGray = [229, 231, 235];
+$reportTitle = $type === 'full' ? 'Relatório Completo' : 'Relatório Resumido';
+$filename = 'freecard-relatorio-' . date('Y-m-d') . '.pdf';
 
-// Criar PDF
-$pdf = new TCPDF('P', 'mm', 'A4', true, 'UTF-8', false);
-
-$pdf->SetCreator('FreeCard');
-$pdf->SetAuthor($user['username']);
-$pdf->SetTitle('Relatorio FreeCard');
-
-$pdf->setPrintHeader(false);
-$pdf->setPrintFooter(false);
-$pdf->SetMargins(20, 15, 20);
-$pdf->SetAutoPageBreak(TRUE, 15);
-
-$pdf->AddPage();
-
-// ===== CABEÇALHO =====
-$pdf->SetFillColor($brandBlue[0], $brandBlue[1], $brandBlue[2]);
-$pdf->Rect(0, 0, 210, 37, 'F');
-
-$pdf->SetTextColor(255, 255, 255);
-$pdf->SetFont('helvetica', 'B', 26);
-$pdf->SetXY(20, 5);
-$pdf->Cell(0, 8, 'FreeCard', 0, 1, 'L');
-
-$pdf->SetFont('helvetica', '', 9);
-$pdf->SetXY(20, 15);
-$pdf->Cell(0, 5, 'Gestao Financeira Pessoal', 0, 1, 'L');
-
-$pdf->SetFont('helvetica', 'B', 11);
-$pdf->SetXY(20, 23);
-$reportTitle = $type === 'full' ? 'Relatorio Completo' : 'Relatorio Resumido';
-$pdf->Cell(0, 6, $reportTitle, 0, 1, 'L');
-
-$pdf->SetFont('helvetica', '', 8);
-$pdf->SetXY(20, 28);
-$pdf->Cell(0, 4, 'Gerado em ' . date('d/m/Y H:i'), 0, 1, 'L');
-
-// ===== INFO UTILIZADOR =====
-$pdf->SetY(46);
-$pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-$pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-$pdf->RoundedRect(20, 46, 170, 18, 2, '1111', 'F');
-
-$pdf->SetXY(20, 49);
-$pdf->SetFont('helvetica', 'B', 9);
-$pdf->Cell(170, 4, 'Utilizador', 0, 1, 'C');
-
-$pdf->SetX(20);
-$pdf->SetFont('helvetica', '', 8);
-$pdf->Cell(170, 4, $user['username'] . ' (' . $user['email'] . ')', 0, 1, 'C');
-
-if ($month || $category || $card_id) {
-    $pdf->SetX(20);
-    $pdf->SetFont('helvetica', 'I', 7);
-    $pdf->SetTextColor($mediumGray[0], $mediumGray[1], $mediumGray[2]);
-    $filters = [];
-    if ($month) $filters[] = 'Mes: ' . date('m/Y', strtotime($month . '-01'));
-    if ($category) $filters[] = 'Categoria: ' . $category;
-    if ($card_id) {
-        foreach ($transactions as $t) {
-            if ($t['card_id'] == $card_id && $t['card_name']) {
-                $filters[] = 'Cartao: ' . $t['card_name'];
-                break;
-            }
-        }
-    }
-    $pdf->Cell(170, 4, 'Filtros: ' . implode(' | ', $filters), 0, 1, 'C');
-}
-
-// ===== RESUMO =====
-$pdf->SetY(70);
-$pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-$pdf->SetFont('helvetica', 'B', 10);
-$pdf->Cell(0, 5, 'Resumo', 0, 1, 'C');
-
-$pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-$pdf->SetDrawColor($borderGray[0], $borderGray[1], $borderGray[2]);
-
-$boxWidth = 50;
-$boxHeight = 20;
-$spacing = 5;
-$startY = $pdf->GetY() + 2;
-$totalWidth = ($boxWidth * 3) + ($spacing * 2);
-$startX = (210 - $totalWidth) / 2;
-
-// Box Total Gasto
-$pdf->RoundedRect($startX, $startY, $boxWidth, $boxHeight, 2, '1111', 'DF');
-$pdf->SetXY($startX, $startY + 3);
-$pdf->SetFont('helvetica', '', 7);
-$pdf->SetTextColor($mediumGray[0], $mediumGray[1], $mediumGray[2]);
-$pdf->Cell($boxWidth, 3, 'Total Gasto', 0, 1, 'C');
-$pdf->SetXY($startX, $startY + 9);
-$pdf->SetFont('helvetica', 'B', 11);
-$pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-$pdf->Cell($boxWidth, 5, number_format($totalAmount, 2, ',', ' ') . ' EUR', 0, 0, 'C');
-
-// Box Transações
-$pdf->RoundedRect($startX + $boxWidth + $spacing, $startY, $boxWidth, $boxHeight, 2, '1111', 'DF');
-$pdf->SetXY($startX + $boxWidth + $spacing, $startY + 3);
-$pdf->SetFont('helvetica', '', 7);
-$pdf->SetTextColor($mediumGray[0], $mediumGray[1], $mediumGray[2]);
-$pdf->Cell($boxWidth, 3, 'Transacoes', 0, 1, 'C');
-$pdf->SetXY($startX + $boxWidth + $spacing, $startY + 9);
-$pdf->SetFont('helvetica', 'B', 11);
-$pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-$pdf->Cell($boxWidth, 5, $transactionCount, 0, 0, 'C');
-
-// Box Média
-$pdf->RoundedRect($startX + ($boxWidth + $spacing) * 2, $startY, $boxWidth, $boxHeight, 2, '1111', 'DF');
-$pdf->SetXY($startX + ($boxWidth + $spacing) * 2, $startY + 3);
-$pdf->SetFont('helvetica', '', 7);
-$pdf->SetTextColor($mediumGray[0], $mediumGray[1], $mediumGray[2]);
-$pdf->Cell($boxWidth, 3, 'Media', 0, 1, 'C');
-$pdf->SetXY($startX + ($boxWidth + $spacing) * 2, $startY + 9);
-$pdf->SetFont('helvetica', 'B', 11);
-$pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-$pdf->Cell($boxWidth, 5, number_format($avgAmount, 2, ',', ' ') . ' EUR', 0, 0, 'C');
-
-$pdf->SetY($startY + $boxHeight + 6);
-
-// ===== CARTÕES =====
-if ($includeCards && !empty($cards)) {
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-    $pdf->Cell(0, 5, 'Cartoes', 0, 1, 'L');
-    $pdf->Ln(1);
-
-    $tableWidth = 170;
-    $tableX = (210 - $tableWidth) / 2;
-    $pdf->SetX($tableX);
-
-    $pdf->SetFont('helvetica', 'B', 7);
-    $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-    $pdf->SetDrawColor($borderGray[0], $borderGray[1], $borderGray[2]);
-    $pdf->Cell(55, 5, 'Nome', 1, 0, 'C', true);
-    $pdf->Cell(25, 5, 'Estado', 1, 0, 'C', true);
-    $pdf->Cell(50, 5, 'Gasto / Limite', 1, 0, 'C', true);
-    $pdf->Cell(40, 5, 'Disponivel', 1, 1, 'C', true);
-
-    $pdf->SetFont('helvetica', '', 7);
-    $alternate = false;
-    foreach ($cards as $card) {
-        $available = $card['limit_amount'] - $card['balance'];
-
-        if ($alternate) {
-            $pdf->SetFillColor(255, 255, 255);
-        } else {
-            $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-        }
-        $alternate = !$alternate;
-
-        $pdf->SetX($tableX);
-        $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-        $pdf->Cell(55, 5, substr($card['name'], 0, 30), 1, 0, 'L', true);
-
-        $statusText = $card['active'] ? 'ATIVO' : 'INATIVO';
-        $pdf->Cell(25, 5, $statusText, 1, 0, 'C', true);
-        $pdf->Cell(50, 5, number_format($card['balance'], 2) . ' / ' . number_format($card['limit_amount'], 2), 1, 0, 'R', true);
-        $pdf->Cell(40, 5, number_format($available, 2) . ' EUR', 1, 1, 'R', true);
-    }
-    $pdf->Ln(4);
-}
-
-// ===== CATEGORIAS =====
-if ($includeStats && !empty($categoryStats)) {
-    if ($pdf->GetY() > 220) {
-        $pdf->AddPage();
-    }
-
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-    $pdf->Cell(0, 5, 'Gastos por Categoria', 0, 1, 'L');
-    $pdf->Ln(1);
-
-    $tableWidth2 = 170;
-    $tableX2 = (210 - $tableWidth2) / 2;
-    $pdf->SetX($tableX2);
-
-    $pdf->SetFont('helvetica', 'B', 7);
-    $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-    $pdf->SetDrawColor($borderGray[0], $borderGray[1], $borderGray[2]);
-    $pdf->Cell(65, 5, 'Categoria', 1, 0, 'C', true);
-    $pdf->Cell(35, 5, 'Transacoes', 1, 0, 'C', true);
-    $pdf->Cell(45, 5, 'Total', 1, 0, 'C', true);
-    $pdf->Cell(25, 5, '%', 1, 1, 'C', true);
-
-    $pdf->SetFont('helvetica', '', 7);
-    $alternate = false;
-    foreach ($categoryStats as $cat => $stats) {
-        if ($pdf->GetY() > 265) {
-            $pdf->AddPage();
-            $pdf->SetX($tableX2);
-            $pdf->SetFont('helvetica', 'B', 7);
-            $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-            $pdf->Cell(65, 5, 'Categoria', 1, 0, 'C', true);
-            $pdf->Cell(35, 5, 'Transacoes', 1, 0, 'C', true);
-            $pdf->Cell(45, 5, 'Total', 1, 0, 'C', true);
-            $pdf->Cell(25, 5, '%', 1, 1, 'C', true);
-            $pdf->SetFont('helvetica', '', 7);
-            $alternate = false;
-        }
-
-        if ($alternate) {
-            $pdf->SetFillColor(255, 255, 255);
-        } else {
-            $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-        }
-        $alternate = !$alternate;
-
-        $percentage = $totalAmount > 0 ? ($stats['total'] / $totalAmount) * 100 : 0;
-        $pdf->SetX($tableX2);
-        $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-        $pdf->Cell(65, 5, $cat, 1, 0, 'L', true);
-        $pdf->Cell(35, 5, $stats['count'], 1, 0, 'C', true);
-        $pdf->Cell(45, 5, number_format($stats['total'], 2, ',', ' ') . ' EUR', 1, 0, 'R', true);
-        $pdf->Cell(25, 5, number_format($percentage, 1) . '%', 1, 1, 'R', true);
-    }
-    $pdf->Ln(4);
-}
-
-// ===== TRANSAÇÕES =====
-if (!empty($transactions)) {
-    if ($pdf->GetY() > 220) {
-        $pdf->AddPage();
-    }
-
-    $pdf->SetFont('helvetica', 'B', 10);
-    $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-    $transTitle = $type === 'summary' ? 'Ultimas 20 Transacoes' : 'Transacoes';
-    $pdf->Cell(0, 5, $transTitle, 0, 1, 'L');
-    $pdf->Ln(1);
-
-    $tableWidth3 = 170;
-    $tableX3 = (210 - $tableWidth3) / 2;
-    $pdf->SetX($tableX3);
-
-    $pdf->SetFont('helvetica', 'B', 7);
-    $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-    $pdf->SetDrawColor($borderGray[0], $borderGray[1], $borderGray[2]);
-    $pdf->Cell(20, 5, 'Data', 1, 0, 'C', true);
-    $pdf->Cell(50, 5, 'Descricao', 1, 0, 'C', true);
-    $pdf->Cell(35, 5, 'Categoria', 1, 0, 'C', true);
-    $pdf->Cell(35, 5, 'Cartao', 1, 0, 'C', true);
-    $pdf->Cell(30, 5, 'Valor', 1, 1, 'C', true);
-
-    $pdf->SetFont('helvetica', '', 7);
-    $alternate = false;
+$monthLabel = $month ? date('m/Y', strtotime($month . '-01')) : 'Todos os meses';
+$filters = [];
+if ($month) $filters[] = 'Mês: ' . date('m/Y', strtotime($month . '-01'));
+if ($category) $filters[] = 'Categoria: ' . htmlspecialchars($category);
+if ($card_id) {
     foreach ($transactions as $t) {
-        if ($pdf->GetY() > 265) {
-            $pdf->AddPage();
-            $pdf->SetX($tableX3);
-            $pdf->SetFont('helvetica', 'B', 7);
-            $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-            $pdf->Cell(20, 5, 'Data', 1, 0, 'C', true);
-            $pdf->Cell(50, 5, 'Descricao', 1, 0, 'C', true);
-            $pdf->Cell(35, 5, 'Categoria', 1, 0, 'C', true);
-            $pdf->Cell(35, 5, 'Cartao', 1, 0, 'C', true);
-            $pdf->Cell(30, 5, 'Valor', 1, 1, 'C', true);
-            $pdf->SetFont('helvetica', '', 7);
-            $alternate = false;
+        if ($t['card_id'] == $card_id && $t['card_name']) {
+            $filters[] = 'Cartão: ' . htmlspecialchars($t['card_name']);
+            break;
         }
-
-        if ($alternate) {
-            $pdf->SetFillColor(255, 255, 255);
-        } else {
-            $pdf->SetFillColor($lightGray[0], $lightGray[1], $lightGray[2]);
-        }
-        $alternate = !$alternate;
-
-        $date = date('d/m/Y', strtotime($t['transaction_date']));
-        $description = mb_substr($t['description'], 0, 25, 'UTF-8');
-        $category = $t['category'] ?? '-';
-        $cardName = $t['card_name'] ? mb_substr($t['card_name'], 0, 15, 'UTF-8') : 'Dinheiro';
-
-        $pdf->SetX($tableX3);
-        $pdf->SetTextColor($darkText[0], $darkText[1], $darkText[2]);
-        $pdf->Cell(20, 5, $date, 1, 0, 'C', true);
-        $pdf->Cell(50, 5, $description, 1, 0, 'L', true);
-        $pdf->Cell(35, 5, $category, 1, 0, 'L', true);
-        $pdf->Cell(35, 5, $cardName, 1, 0, 'L', true);
-        $pdf->Cell(30, 5, number_format($t['amount'], 2, ',', ' '). ' EUR', 1, 1, 'R', true);
     }
 }
+?>
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <title><?= htmlspecialchars($reportTitle) ?> - FreeCard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
-// ===== RODAPÉ =====
-$pdf->SetAutoPageBreak(false);
-$totalPages = $pdf->getNumPages();
-for ($i = 1; $i <= $totalPages; $i++) {
-    $pdf->setPage($i);
-    $pdf->SetY(-12);
-    $pdf->SetFont('helvetica', 'I', 7);
-    $pdf->SetTextColor($mediumGray[0], $mediumGray[1], $mediumGray[2]);
-    $pdf->Cell(90, 4, 'FreeCard - Gestao Financeira', 0, 0, 'L');
-    $pdf->Cell(90, 4, 'Pagina ' . $i . ' de ' . $totalPages, 0, 0, 'R');
-}
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11px;
+            color: #1f2937;
+            background: #f3f4f6;
+            padding: 70px 20px 30px;
+        }
 
-// Gerar
-$filename = 'freecard-relatorio-' . date('Y-m-d-His') . '.pdf';
-$pdf->Output($filename, 'D');
-exit;
+        .page {
+            max-width: 860px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 28px;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        /* ===== CABEÇALHO ===== */
+        .header {
+            background: #212121;
+            color: #fff;
+            padding: 18px 24px 14px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+        }
+        .header h1 { font-size: 22px; font-weight: bold; letter-spacing: 1px; }
+        .header .subtitle { font-size: 10px; opacity: 0.75; margin-top: 2px; }
+        .header .report-type { font-size: 13px; font-weight: bold; margin-top: 8px; }
+        .header .date { font-size: 9px; opacity: 0.65; margin-top: 2px; }
+
+        /* ===== UTILIZADOR ===== */
+        .user-box {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .user-box .label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .user-box .name { font-size: 12px; font-weight: bold; margin-top: 2px; }
+        .user-box .filters { font-size: 9px; color: #6b7280; margin-top: 4px; font-style: italic; }
+
+        /* ===== RESUMO ===== */
+        .summary-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #1f2937;
+        }
+        .summary-boxes {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+        .summary-box {
+            flex: 1;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 10px;
+            text-align: center;
+        }
+        .summary-box .box-label { font-size: 9px; color: #6b7280; text-transform: uppercase; }
+        .summary-box .box-value { font-size: 15px; font-weight: bold; margin-top: 4px; }
+
+        /* ===== SECÇÕES ===== */
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin: 16px 0 6px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid #212121;
+            color: #1f2937;
+        }
+
+        /* ===== TABELAS ===== */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+        thead th {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            padding: 5px 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        tbody td {
+            border: 1px solid #e5e7eb;
+            padding: 4px 6px;
+        }
+        tbody tr:nth-child(even) td { background: #f9fafb; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .badge-active {
+            background: #dcfce7; color: #166534;
+            padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: bold;
+        }
+        .badge-inactive {
+            background: #fee2e2; color: #991b1b;
+            padding: 1px 6px; border-radius: 10px; font-size: 9px; font-weight: bold;
+        }
+
+        /* ===== RODAPÉ ===== */
+        .footer {
+            margin-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            color: #9ca3af;
+        }
+
+        /* ===== BOTÕES (não aparecem no PDF) ===== */
+        .print-btn-bar {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            background: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 20px;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .print-btn-bar .bar-title {
+            color: #fff;
+            font-size: 13px;
+            font-weight: bold;
+            opacity: 0.85;
+        }
+        .bar-actions { display: flex; gap: 8px; }
+        .btn-print {
+            background: #fff;
+            color: #1a1a1a;
+            border: none;
+            padding: 8px 18px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-print:hover { background: #e5e7eb; }
+        .btn-close {
+            background: transparent;
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.35);
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-close:hover { background: rgba(255,255,255,0.1); }
+
+        /* ===== PRINT MEDIA ===== */
+        @media print {
+            body { padding: 0; background: #fff; }
+            .print-btn-bar { display: none !important; }
+            .page { box-shadow: none; border-radius: 0; padding: 0; max-width: 100%; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; }
+            .section-title { page-break-after: avoid; }
+        }
+
+        @page {
+            size: A4;
+            margin: 15mm 12mm;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Barra de botões (só visível no browser, não no PDF) -->
+<div class="print-btn-bar">
+    <span class="bar-title">Pré-visualização do Relatório</span>
+    <div class="bar-actions">
+        <button class="btn-print" onclick="window.print()">Guardar / Imprimir PDF</button>
+        <button class="btn-close" onclick="history.length > 1 ? history.back() : window.location.href='../pages/dados.php'">✕ Fechar</button>
+    </div>
+</div>
+
+<div class="page">
+
+<!-- CABEÇALHO -->
+<div class="header">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+            <h1>FreeCard</h1>
+            <div class="subtitle">Gestão Financeira Pessoal</div>
+        </div>
+        <div style="text-align:right;">
+            <div class="report-type"><?= htmlspecialchars($reportTitle) ?></div>
+            <div class="date">Gerado em <?= date('d/m/Y H:i') ?></div>
+        </div>
+    </div>
+</div>
+
+<!-- UTILIZADOR -->
+<div class="user-box">
+    <div class="label">Utilizador</div>
+    <div class="name"><?= htmlspecialchars($user['username']) ?> &lt;<?= htmlspecialchars($user['email']) ?>&gt;</div>
+    <?php if (!empty($filters)): ?>
+        <div class="filters">Filtros: <?= implode(' | ', $filters) ?></div>
+    <?php endif; ?>
+</div>
+
+<!-- RESUMO -->
+<div class="summary-title">Resumo</div>
+<div class="summary-boxes">
+    <div class="summary-box">
+        <div class="box-label">Total Gasto</div>
+        <div class="box-value"><?= number_format($totalAmount, 2, ',', ' ') ?> €</div>
+    </div>
+    <div class="summary-box">
+        <div class="box-label">Transações</div>
+        <div class="box-value"><?= $transactionCount ?></div>
+    </div>
+    <div class="summary-box">
+        <div class="box-label">Média</div>
+        <div class="box-value"><?= number_format($avgAmount, 2, ',', ' ') ?> €</div>
+    </div>
+</div>
+
+<?php if ($includeCards && !empty($cards)): ?>
+<!-- CARTÕES -->
+<div class="section-title">Cartões</div>
+<table>
+    <thead>
+        <tr>
+            <th>Nome</th>
+            <th>Estado</th>
+            <th class="text-right">Gasto / Limite</th>
+            <th class="text-right">Disponível</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($cards as $card): ?>
+            <?php $available = $card['limit_amount'] - $card['balance']; ?>
+            <tr>
+                <td><?= htmlspecialchars($card['name']) ?></td>
+                <td class="text-center">
+                    <?php if ($card['active']): ?>
+                        <span class="badge-active">ATIVO</span>
+                    <?php else: ?>
+                        <span class="badge-inactive">INATIVO</span>
+                    <?php endif; ?>
+                </td>
+                <td class="text-right"><?= number_format($card['balance'], 2, ',', ' ') ?> / <?= number_format($card['limit_amount'], 2, ',', ' ') ?> €</td>
+                <td class="text-right"><?= number_format($available, 2, ',', ' ') ?> €</td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>
+
+<?php if ($includeStats && !empty($categoryStats)): ?>
+<!-- CATEGORIAS -->
+<div class="section-title">Gastos por Categoria</div>
+<table>
+    <thead>
+        <tr>
+            <th>Categoria</th>
+            <th class="text-center">Transações</th>
+            <th class="text-right">Total</th>
+            <th class="text-right">%</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($categoryStats as $cat => $stats): ?>
+            <?php $pct = $totalAmount > 0 ? ($stats['total'] / $totalAmount) * 100 : 0; ?>
+            <tr>
+                <td><?= htmlspecialchars($cat) ?></td>
+                <td class="text-center"><?= $stats['count'] ?></td>
+                <td class="text-right"><?= number_format($stats['total'], 2, ',', ' ') ?> €</td>
+                <td class="text-right"><?= number_format($pct, 1) ?>%</td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>
+
+<?php if (!empty($transactions)): ?>
+<!-- TRANSAÇÕES -->
+<div class="section-title">
+    <?= $type === 'summary' ? 'Últimas 20 Transações' : 'Transações' ?>
+</div>
+<table>
+    <thead>
+        <tr>
+            <th>Data</th>
+            <th>Descrição</th>
+            <th>Categoria</th>
+            <th>Cartão</th>
+            <th class="text-right">Valor</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php foreach ($transactions as $t): ?>
+            <tr>
+                <td class="text-center"><?= date('d/m/Y', strtotime($t['transaction_date'])) ?></td>
+                <td><?= htmlspecialchars(mb_substr($t['description'], 0, 40, 'UTF-8')) ?></td>
+                <td><?= htmlspecialchars($t['category'] ?? '-') ?></td>
+                <td><?= htmlspecialchars($t['card_name'] ?? 'Dinheiro') ?></td>
+                <td class="text-right"><?= number_format($t['amount'], 2, ',', ' ') ?> €</td>
+            </tr>
+        <?php endforeach; ?>
+    </tbody>
+</table>
+<?php endif; ?>
+
+<!-- RODAPÉ -->
+<div class="footer">
+    <span>FreeCard — Gestão Financeira Pessoal</span>
+    <span>Gerado em <?= date('d/m/Y \à\s H:i') ?></span>
+</div>
+
+</div><!-- /page -->
+
+<script>
+// Auto-abre o diálogo de impressão (opcional — comenta se não quiseres)
+// window.addEventListener('load', () => setTimeout(() => window.print(), 500));
+</script>
+</body>
+</html>

@@ -7,63 +7,42 @@ require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
 $errors = [];
-$success = false;
+$name    = '';
+$limit   = 0;
+$balance = 0;
+$color   = 'purple';
 
-// Cores disponíveis para os cartões
 $cardColors = [
-    'purple' => ['name' => 'Roxo', 'gradient' => 'linear-gradient(135deg, #667eea 0%, #667eea 100%)'],
-    'blue' => ['name' => 'Azul', 'gradient' => 'linear-gradient(135deg, #2196F3 0%, #2196F3 100%)'],
-    'green' => ['name' => 'Verde', 'gradient' => 'linear-gradient(135deg, #13d168ff 0%, #13d168ff 100%)'],
-    'orange' => ['name' => 'Laranja', 'gradient' => 'linear-gradient(135deg, #FF9800 0%, #FF9800 100%)'],
-    'red' => ['name' => 'Vermelho', 'gradient' => 'linear-gradient(135deg, #f44336 0%, #f44336 100%)'],
-    'pink' => ['name' => 'Rosa', 'gradient' => 'linear-gradient(135deg, #E91E63 0%, #E91E63 100%)'],
-    'teal' => ['name' => 'Turquesa', 'gradient' => 'linear-gradient(135deg, #00BCD4 0%, #00BCD4 100%)'],
-    'indigo' => ['name' => 'Índigo', 'gradient' => 'linear-gradient(135deg, #3F51B5 0%, #3F51B5 100%)']
+    'purple' => ['name' => 'Roxo',     'gradient' => 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'],
+    'blue'   => ['name' => 'Azul',     'gradient' => 'linear-gradient(135deg, #2196F3 0%, #1565C0 100%)'],
+    'green'  => ['name' => 'Verde',    'gradient' => 'linear-gradient(135deg, #13d168 0%, #0f9c4e 100%)'],
+    'orange' => ['name' => 'Laranja',  'gradient' => 'linear-gradient(135deg, #FF9800 0%, #E65100 100%)'],
+    'red'    => ['name' => 'Vermelho', 'gradient' => 'linear-gradient(135deg, #f44336 0%, #c62828 100%)'],
+    'pink'   => ['name' => 'Rosa',     'gradient' => 'linear-gradient(135deg, #E91E63 0%, #880E4F 100%)'],
+    'teal'   => ['name' => 'Turquesa','gradient' => 'linear-gradient(135deg, #00BCD4 0%, #006064 100%)'],
+    'indigo' => ['name' => 'Indigo',   'gradient' => 'linear-gradient(135deg, #3F51B5 0%, #1A237E 100%)'],
 ];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = trim($_POST['name'] ?? '');
-    $limit = floatval($_POST['limit_amount'] ?? 0);
+    $name    = trim($_POST['name'] ?? '');
+    $limit   = floatval($_POST['limit_amount'] ?? 0);
     $balance = floatval($_POST['balance'] ?? 0);
-    $color = $_POST['color'] ?? 'purple';
+    $color   = $_POST['color'] ?? 'purple';
 
-    // Validações
-    if (strlen($name) < 3) {
-        $errors[] = 'O nome do cartão deve ter pelo menos 3 caracteres.';
-    }
-    if ($limit < 0) {
-        $errors[] = 'O limite não pode ser negativo.';
-    }
-    if ($balance < 0) {
-        $errors[] = 'O saldo não pode ser negativo.';
-    }
-    if ($balance > $limit) {
-        $errors[] = 'O saldo não pode ser superior ao limite.';
-    }
-    if (!array_key_exists($color, $cardColors)) {
-        $color = 'purple';
-    }
+    if (strlen($name) < 3)        { $errors[] = 'O nome do cartao deve ter pelo menos 3 caracteres.'; }
+    if ($limit < 0)                { $errors[] = 'O limite nao pode ser negativo.'; }
+    if ($balance < 0)              { $errors[] = 'O saldo nao pode ser negativo.'; }
+    if ($balance > $limit)         { $errors[] = 'O saldo nao pode ser superior ao limite.'; }
+    if (!array_key_exists($color, $cardColors)) { $color = 'purple'; }
 
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("
-                INSERT INTO cards (user_id, name, limit_amount, balance, active, color)
-                VALUES (:uid, :name, :limit, :balance, 1, :color)
-            ");
-            $stmt->execute([
-                ':uid' => $uid,
-                ':name' => $name,
-                ':limit' => $limit,
-                ':balance' => $balance,
-                ':color' => $color
-            ]);
-            $success = true;
-
-            // Limpar campos após sucesso
+            $stmt = $pdo->prepare("INSERT INTO cards (user_id, name, limit_amount, balance, active, color) VALUES (:uid, :name, :limit, :balance, 1, :color)");
+            $stmt->execute([':uid' => $uid, ':name' => $name, ':limit' => $limit, ':balance' => $balance, ':color' => $color]);
             header('Location: cards.php?success=card_added');
             exit;
         } catch (PDOException $e) {
-            $errors[] = 'Erro ao adicionar cartão. Tenta novamente.';
+            $errors[] = 'Erro ao adicionar cartao. Tenta novamente.';
         }
     }
 }
@@ -73,504 +52,205 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Adicionar Cartão - Freecard</title>
+  <title>Adicionar Cartao - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-<style>
-  /* ========== BACKGROUND ANIMADO ========== */
-    body {
-      position: relative;
-      min-height: 100vh;
-    }
-    .bg-animation {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    [data-theme="light"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #e8eef5ff 0%, #e9eef8ff 50%, #e8edf5ff 100%);
-      z-index: -1;
-    }
-    [data-theme="dark"] body::before {
-      content: '';
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
-      z-index: -1;
-    }
-    .floating-shape {
-      position: absolute;
-      border-radius: 50%;
-      animation: float 20s infinite ease-in-out;
-    }
-    [data-theme="light"] .floating-shape {
-      background: rgba(46, 88, 204);
-    }
-    [data-theme="dark"] .floating-shape {
-      background: rgba(46, 88, 204);
-    }
-    .shape1 { width: 300px; height: 300px; top: -100px; left: -100px; animation-delay: 0s; }
-    .shape2 { width: 200px; height: 200px; bottom: -50px; right: -50px; animation-delay: 5s; }
-    .shape3 { width: 150px; height: 150px; top: 50%; right: 10%; animation-delay: 2s; }
-    .shape4 { width: 100px; height: 100px; bottom: 20%; left: 15%; animation-delay: 7s; }
-    .shape5 { width: 250px; height: 250px; top: 30%; left: 50%; animation-delay: 3s; }
-    .shape6 { width: 250px; height: 300px; top: -100px; right: -100px; animation-delay: 6s; }
-    .shape7 { width: 180px; height: 180px; top: 10%; left: 70%; animation-delay: 1s; }
-    .shape8 { width: 120px; height: 120px; bottom: 10%; right: 30%; animation-delay: 4s; }
-    .shape9 { width: 220px; height: 220px; top: 60%; left: -80px; animation-delay: 8s; }
-    @keyframes float {
-      0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.3; }
-      50% { transform: translateY(-30px) rotate(180deg); opacity: 0.6; }
-    }
-    .particle {
-      position: absolute;
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      animation: rise 15s infinite ease-in;
-    }
-    [data-theme="light"] .particle { background: rgba(46, 88, 204); }
-    [data-theme="dark"] .particle { background: rgba(46, 88, 204); }
-    @keyframes rise {
-      0% { transform: translateY(0) translateX(0); opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
-    }
-    .navbar, .container { position: relative; z-index: 1; }
-    @media (max-width: 768px) {
-      .floating-shape { opacity: 0.4; animation-duration: 25s; }
-      .particle { display: none; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .floating-shape, .particle { animation: none; opacity: 0.2; }
-    }
-    :root {
-      --primary-blue: #3498db;
-      --dark-blue: #2980b9;
-    }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .navbar { 
-      box-shadow: 0 2px 10px rgba(0,0,0,0.05); 
-      background: var(--navbar-bg);
-    }
-    .navbar-brand img { height: 35px; margin-right: 8px; }
-    .btn-primary {
-      background: var(--primary-blue);
-      border-color: var(--primary-blue);
-    }
-    .btn-primary:hover {
-      background: var(--dark-blue);
-      border-color: var(--dark-blue);
-      transform: translateY(-2px);
-      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-    }
-    .btn-outline-primary {
-      color: var(--primary-blue);
-      border-color: var(--primary-blue);
-    }
-    .btn-outline-primary:hover {
-      background: var(--primary-blue);
-      border-color: var(--primary-blue);
-    }
-    .card {
-      border: none;
-      border-radius: 16px;
-      box-shadow: 0 4px 20px var(--shadow);
-      background: var(--bg-secondary);
-      color: var(--text-primary);
-    }
-    .card-header {
-      background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
-      border-radius: 16px 16px 0 0 !important;
-      padding: 24px;
-    }
-    .form-label {
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 8px;
-    }
-    .form-control, .form-select {
-      border: 2px solid var(--border-color);
-      border-radius: 10px;
-      padding: 12px 16px;
-      transition: all 0.3s;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .form-control:focus, .form-select:focus {
-      border-color: var(--primary-green);
-      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.1);
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
-    .card-preview {
-      border-radius: 16px;
-      padding: 24px;
-      color: white;
-      min-height: 180px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-      transition: all 0.3s;
-    }
-    .card-preview .card-number {
-      font-size: 24px;
-      letter-spacing: 4px;
-      font-weight: 600;
-    }
-    .card-preview .card-name {
-      font-size: 16px;
-      text-transform: uppercase;
-      font-weight: 600;
-    }
-    .progress-custom {
-      height: 8px;
-      border-radius: 10px;
-      background: var(--bg-hover);
-    }
-    .progress-bar-custom {
-      background: var(--primary-blue);
-      border-radius: 10px;
-    }
-    
-    .color-selector {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .color-option {
-      aspect-ratio: 1;
-      border-radius: 12px;
-      border: 3px solid transparent;
-      cursor: pointer;
-      transition: all 0.3s;
-      position: relative;
-      overflow: hidden;
-    }
-    .color-option:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .color-option input[type="radio"] {
-      display: none;
-    }
-    .color-option input[type="radio"]:checked + .color-display {
-      border-color: var(--primary-green);
-      box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.3);
-    }
-    .color-display {
-      width: 100%;
-      height: 100%;
-      border-radius: 8px;
-      border: 3px solid transparent;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .color-option input[type="radio"]:checked + .color-display::after {
-      color: white;
-      font-size: 24px;
-      font-weight: bold;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    [data-theme="dark"] .text-muted {
-      color: var(--text-secondary) !important;
-    }
-    [data-theme="dark"] .form-control::placeholder {
-      color: var(--text-secondary);
-      opacity: 0.7;
-    }
-
-    /* Remove number input spinners */
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+    .settings-wrapper { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
+    .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
+    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
+    .page-header p  { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .settings-group { margin-bottom: 24px; }
+    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
+    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
+    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
+    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
+    .s-alert-danger { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #7f1d1d; }
+    [data-theme="dark"] .s-alert-danger { color: #fca5a5; }
+    .two-col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; align-items: start; }
+    @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
+    .card-preview-wrap { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; }
+    .card-visual-lg { border-radius: 14px; padding: 20px 22px; color: #fff; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; transition: background .3s; }
+    .card-visual-lg::before { content: ''; position: absolute; top: -60%; right: -40%; width: 220%; height: 220%; background: radial-gradient(circle, rgba(255,255,255,.15) 0%, transparent 65%); pointer-events: none; }
+    .cv-number { font-size: 14px; letter-spacing: 4px; font-weight: 600; opacity: .9; position: relative; margin-top: 10px; }
+    .cv-name   { font-size: 13px; text-transform: uppercase; font-weight: 700; position: relative; }
+    .cv-meta   { font-size: 11px; opacity: .85; position: relative; margin-top: 6px; display: flex; justify-content: space-between; }
+    .usage-track { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin: 6px 0 4px; }
+    .usage-bar   { height: 100%; border-radius: 3px; background: #22c55e; transition: width .4s, background .3s; }
+    .usage-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
+    .form-section { padding: 16px 20px; }
+    .form-section:not(:last-child) { border-bottom: 1px solid var(--border-color); }
+    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
+    .m-form .form-control { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
+    .m-form .form-control:focus { border-color: #3498db; box-shadow: none; outline: none; }
+    [data-theme="dark"] .m-form .form-control { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
+    .m-form .form-hint { font-size: 12px; color: var(--text-secondary); margin-top: 5px; }
+    input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+    input[type="number"] { -moz-appearance: textfield; }
+    .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 400px) { .input-row { grid-template-columns: 1fr; } }
+    .color-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 4px; }
+    .color-opt { position: relative; aspect-ratio: 1; }
+    .color-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
+    .color-swatch { width: 100%; height: 100%; border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: all .15s; display: block; outline: 2px solid transparent; outline-offset: 2px; }
+    .color-opt input:checked + .color-swatch { outline-color: #3498db; }
+    .color-swatch:hover { transform: scale(1.05); }
+    .form-actions { display: flex; gap: 8px; padding: 16px 20px; }
+    .form-actions .btn-s { flex: 1; justify-content: center; }
   </style>
 </head>
 <body>
-  <!-- Background animado -->
-  <div class="bg-animation">
-    <div class="floating-shape shape1"></div>
-    <div class="floating-shape shape2"></div>
-    <div class="floating-shape shape3"></div>
-    <div class="floating-shape shape4"></div>
-    <div class="floating-shape shape5"></div>
-    <div class="floating-shape shape6"></div>
-    <div class="floating-shape shape7"></div>
-    <div class="floating-shape shape8"></div>  
-    <div class="floating-shape shape9"></div>
-  </div>
-<nav class="navbar navbar-expand-lg navbar-light">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../dashboard.php">
-      <img src="../assets/logo2.png" alt="Freecard">
-      FreeCard
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link active" href="cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
-        <li class="nav-item"><a class="nav-link" href="transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
-        <li class="nav-item"><a class="nav-link" href="budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="reminders.php"><i class="bi bi-calendar-check"></i> Lembretes</a></li>
-        <li class="nav-item"><a class="nav-link" href="analytics.php"><i class="bi bi-graph-up"></i> Análise</a></li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
-          </ul>
-        </li>      
-      </ul>
+<div class="app-layout">
+<?php $activePage = 'cards'; $sidebarPrefix = '../'; include __DIR__ . '/../components/sidebar.php'; ?>
+<main class="main-content">
+<div class="page-content">
+<div class="settings-wrapper">
+
+  <div class="page-header">
+    <div class="page-header-icon"><i class="bi bi-plus-circle"></i></div>
+    <div style="flex:1">
+      <h2>Adicionar Cartao</h2>
+      <p>Regista um novo cartao de credito ou debito</p>
     </div>
+    <a href="cards.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
   </div>
-</nav>
 
-<div class="container mt-5 mb-5">
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-10">
-      <div class="mb-4">
-        <a href="cards.php" class="text-decoration-none text-muted">
-          <i class="bi bi-arrow-left"></i> Voltar aos Cartões
-        </a>
-      </div>
+  <?php if (!empty($errors)): ?>
+    <div class="s-alert s-alert-danger">
+      <i class="bi bi-exclamation-circle" style="flex-shrink:0;margin-top:1px"></i>
+      <div><?php foreach($errors as $e): ?><div><?=htmlspecialchars($e)?></div><?php endforeach; ?></div>
+    </div>
+  <?php endif; ?>
 
-      <div class="row g-4">
-        <div class="col-lg-5">
-          <div class="card">
-            <div class="card-body p-4">
-              <h5 class="mb-4"><i class="bi bi-eye"></i> Pré-visualização</h5>
-              <div class="card-preview" id="cardPreview" style="background: <?=$cardColors['purple']['gradient']?>;">
-                <div>
-                  <div class="mb-3">
-                    <i class="bi bi-credit-card" style="font-size: 32px;"></i>
-                  </div>
-                  <div class="card-number" id="preview-number">•••• •••• •••• ••••</div>
-                </div>
-                <div>
-                  <div class="card-name" id="preview-name">NOME DO CARTÃO</div>
-                  <div class="d-flex justify-content-between align-items-center mt-2">
-                    <small>Limite: <span id="preview-limit">€0.00</span></small>
-                    <small>Saldo: <span id="preview-balance">€0.00</span></small>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="mt-4">
-                <h6 class="mb-3">Utilização do Limite</h6>
-                <div class="progress-custom">
-                  <div class="progress-bar-custom" id="usage-bar" style="width: 0%"></div>
-                </div>
-                <div class="d-flex justify-content-between mt-2">
-                  <small class="text-muted">0%</small>
-                  <small class="text-muted" id="usage-percent">0% usado</small>
-                </div>
-              </div>
-            </div>
+  <div class="two-col">
+
+    <div class="settings-group">
+      <p class="group-label">Pre-visualizacao</p>
+      <div class="card-preview-wrap">
+        <div class="card-visual-lg" id="cardPreview" style="background:<?=$cardColors[$color]['gradient']?>">
+          <div>
+            <i class="bi bi-credit-card" style="font-size:22px;position:relative"></i>
+            <div class="cv-number">•••• •••• •••• ••••</div>
+          </div>
+          <div>
+            <div class="cv-name" id="preview-name"><?=strtoupper(htmlspecialchars($name ?: 'NOME DO CARTAO'))?></div>
+          </div>
+          <div class="cv-meta">
+            <span>Limite: <strong id="preview-limit">€<?=number_format($limit,2)?></strong></span>
+            <span>Gasto: <strong id="preview-balance">€<?=number_format($balance,2)?></strong></span>
           </div>
         </div>
-
-        <div class="col-lg-7">
-          <div class="card">
-            <div class="card-header text-white">
-              <h4 class="mb-0"><i class="bi bi-credit-card-2-front"></i> Adicionar Novo Cartão</h4>
-            </div>
-            <div class="card-body p-4">
-              <?php if ($success): ?>
-                <div class="alert alert-success alert-dismissible fade show">
-                  <i class="bi bi-check-circle"></i> Cartão adicionado com sucesso!
-                  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-              <?php endif; ?>
-
-              <?php if (!empty($errors)): ?>
-                <div class="alert alert-danger">
-                  <strong><i class="bi bi-exclamation-circle"></i> Erros:</strong>
-                  <ul class="mb-0 mt-2">
-                    <?php foreach($errors as $e): ?>
-                      <li><?=htmlspecialchars($e)?></li>
-                    <?php endforeach; ?>
-                  </ul>
-                </div>
-              <?php endif; ?>
-
-              <form method="post" id="cardForm">
-                <div class="mb-3">
-                  <label class="form-label">Nome do Cartão *</label>
-                  <input 
-                    type="text" 
-                    name="name" 
-                    id="cardName"
-                    class="form-control" 
-                    placeholder="ex: Visa Principal, Mastercard Viagens"
-                    value="<?=htmlspecialchars($name ?? '')?>" 
-                    required
-                  >
-                  <small class="text-muted">Dá um nome descritivo ao teu cartão</small>
-                </div>
-
-                <div class="mb-3">
-                  <label class="form-label">Cor do Cartão *</label>
-                  <div class="color-selector">
-                    <?php foreach($cardColors as $colorKey => $colorData): ?>
-                      <label class="color-option">
-                        <input 
-                          type="radio" 
-                          name="color" 
-                          value="<?=$colorKey?>" 
-                          <?=($color ?? 'purple') === $colorKey ? 'checked' : ''?>
-                          data-gradient="<?=$colorData['gradient']?>"
-                        >
-                        <div class="color-display" style="background: <?=$colorData['gradient']?>;"></div>
-                      </label>
-                    <?php endforeach; ?>
-                  </div>
-                  <small class="text-muted mt-2 d-block">Escolhe uma cor para identificar facilmente o teu cartão</small>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Limite do Cartão (€) *</label>
-                    <input 
-                      type="number" 
-                      name="limit_amount" 
-                      id="cardLimit"
-                      class="form-control" 
-                      placeholder="1500.00"
-                      step="0.01"
-                      min="0"
-                      value="<?=htmlspecialchars($limit ?? 0)?>" 
-                      required
-                    >
-                    <small class="text-muted">O limite máximo de gastos</small>
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Gasto Inicial (€)</label>
-                    <input 
-                      type="number" 
-                      name="balance" 
-                      id="cardBalance"
-                      class="form-control" 
-                      placeholder="0.00"
-                      step="0.01"
-                      min="0"
-                      value="<?=htmlspecialchars($balance ?? 0)?>"
-                    >
-                    <small class="text-muted">Se já tens gastos acumulados</small>
-                  </div>
-                </div>
-
-                <div class="d-grid gap-2 mt-4">
-                  <button type="submit" class="btn btn-primary btn-lg">
-                    <i class="bi bi-plus-circle"></i> Adicionar Cartão
-                  </button>
-                  <a href="cards.php" class="btn btn-outline-secondary">
-                    Cancelar
-                  </a>
-                </div>
-              </form>
-            </div>
+        <div style="margin-top:16px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px">
+            <span>Utilizacao</span>
+            <strong id="usage-pct" style="color:var(--text-primary)">0%</strong>
+          </div>
+          <div class="usage-track"><div class="usage-bar" id="usage-bar" style="width:0%"></div></div>
+          <div class="usage-labels">
+            <span id="usage-spent">€0.00 gasto</span>
+            <span id="usage-limit-lbl">€0.00 limite</span>
           </div>
         </div>
       </div>
     </div>
+
+    <div class="settings-group">
+      <p class="group-label">Dados do cartao</p>
+      <div class="settings-card">
+        <form method="post" class="m-form">
+
+          <div class="form-section">
+            <label class="form-label">Nome do Cartao *</label>
+            <input type="text" name="name" id="cardName" class="form-control"
+                   placeholder="ex: Visa Principal, Mastercard Viagens"
+                   value="<?=htmlspecialchars($name)?>" required>
+            <p class="form-hint">Da um nome descritivo ao teu cartao</p>
+          </div>
+
+          <div class="form-section">
+            <label class="form-label">Cor</label>
+            <div class="color-grid">
+              <?php foreach($cardColors as $ck => $cd): ?>
+                <div class="color-opt">
+                  <input type="radio" name="color" id="color_<?=$ck?>" value="<?=$ck?>"
+                         <?=$color===$ck?'checked':''?> data-gradient="<?=$cd['gradient']?>">
+                  <label class="color-swatch" for="color_<?=$ck?>"
+                         style="background:<?=$cd['gradient']?>" title="<?=$cd['name']?>"></label>
+                </div>
+              <?php endforeach; ?>
+            </div>
+            <p class="form-hint" style="margin-top:8px">Escolhe uma cor para identificar facilmente o cartao</p>
+          </div>
+
+          <div class="form-section">
+            <div class="input-row">
+              <div>
+                <label class="form-label">Limite (€) *</label>
+                <input type="number" name="limit_amount" id="cardLimit" class="form-control"
+                       placeholder="1500.00" step="0.01" min="0"
+                       value="<?=htmlspecialchars($limit)?>" required>
+                <p class="form-hint">Limite maximo de gastos</p>
+              </div>
+              <div>
+                <label class="form-label">Gasto Inicial (€)</label>
+                <input type="number" name="balance" id="cardBalance" class="form-control"
+                       placeholder="0.00" step="0.01" min="0"
+                       value="<?=htmlspecialchars($balance)?>">
+                <p class="form-hint">Se ja tens gastos acumulados</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn-s btn-s-primary">
+              <i class="bi bi-plus-circle"></i> Adicionar Cartao
+            </button>
+            <a href="cards.php" class="btn-s">Cancelar</a>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
   </div>
+
 </div>
-
+</div>
+</main>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Live preview
-document.getElementById('cardName').addEventListener('input', function(e) {
-  const name = e.target.value || 'NOME DO CARTÃO';
-  document.getElementById('preview-name').textContent = name.toUpperCase();
+document.getElementById('cardName').addEventListener('input', function() {
+  document.getElementById('preview-name').textContent = (this.value || 'NOME DO CARTAO').toUpperCase();
 });
-
-document.getElementById('cardLimit').addEventListener('input', updateUsage);
-document.getElementById('cardBalance').addEventListener('input', updateUsage);
-
-// Mudança de cor
-document.querySelectorAll('input[name="color"]').forEach(radio => {
-  radio.addEventListener('change', function() {
-    const gradient = this.dataset.gradient;
-    document.getElementById('cardPreview').style.background = gradient;
+document.querySelectorAll('input[name="color"]').forEach(r => {
+  r.addEventListener('change', function() {
+    document.getElementById('cardPreview').style.background = this.dataset.gradient;
   });
 });
-
-function updateUsage() {
-  const limit = parseFloat(document.getElementById('cardLimit').value) || 0;
-  const balance = parseFloat(document.getElementById('cardBalance').value) || 0;
-  
-  document.getElementById('preview-limit').textContent = `€${limit.toFixed(2)}`;
-  document.getElementById('preview-balance').textContent = `€${balance.toFixed(2)}`;
-  
-  if (limit > 0) {
-    const percent = Math.min((balance / limit) * 100, 100);
-    document.getElementById('usage-bar').style.width = percent + '%';
-    document.getElementById('usage-percent').textContent = Math.round(percent) + '% usado';
-    
-    // Mudar cor baseado no uso
-    const bar = document.getElementById('usage-bar');
-    if (percent >= 80) {
-      bar.style.background = '#e74c3c';
-    } else if (percent >= 60) {
-      bar.style.background = '#f39c12';
-    } else {
-      bar.style.background = '#2ecc71';
-    }
-  }
+document.getElementById('cardLimit').addEventListener('input', updatePreview);
+document.getElementById('cardBalance').addEventListener('input', updatePreview);
+function updatePreview() {
+  const lim = parseFloat(document.getElementById('cardLimit').value) || 0;
+  const bal = parseFloat(document.getElementById('cardBalance').value) || 0;
+  document.getElementById('preview-limit').textContent = '€' + lim.toFixed(2);
+  document.getElementById('preview-balance').textContent = '€' + bal.toFixed(2);
+  document.getElementById('usage-spent').textContent = '€' + bal.toFixed(2) + ' gasto';
+  document.getElementById('usage-limit-lbl').textContent = '€' + lim.toFixed(2) + ' limite';
+  const pct = lim > 0 ? Math.min((bal / lim) * 100, 100) : 0;
+  const bar = document.getElementById('usage-bar');
+  bar.style.width = pct + '%';
+  bar.style.background = pct >= 80 ? '#ef4444' : pct >= 60 ? '#f59e0b' : '#22c55e';
+  document.getElementById('usage-pct').textContent = Math.round(pct) + '%';
 }
-<!-- Gerar partículas (apenas desktop) -->
-
-(function() {
-  if (window.innerWidth <= 768) return;
-  const container = document.querySelector('.bg-animation');
-  if (!container) return;
-  for (let i = 0; i < 15; i++) {
-    const particle = document.createElement('div');
-    particle.className = 'particle';
-    particle.style.left = Math.random() * 100 + '%';
-    particle.style.animationDelay = Math.random() * 15 + 's';
-    particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-    container.appendChild(particle);
-  }
-})();
-
+updatePreview();
 </script>
 </body>
 </html>

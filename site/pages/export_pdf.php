@@ -21,6 +21,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Exportar Relatório - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
 <style>
@@ -56,7 +57,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #2b3035 0%, #323844 50%, #2b3035 100%);
+    background: linear-gradient(135deg, #1a1d29 0%, #252936 50%, #1a1d29 100%);
     z-index: -1;
   }
   .floating-shape {
@@ -199,51 +200,15 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
 </style>
 </head>
 <body>
-<div class="bg-animation">
-  <div class="floating-shape shape1"></div>
-  <div class="floating-shape shape2"></div>
-  <div class="floating-shape shape3"></div>
-  <div class="floating-shape shape4"></div>
-  <div class="floating-shape shape5"></div>
-  <div class="floating-shape shape6"></div>
-  <div class="floating-shape shape7"></div>
-  <div class="floating-shape shape8"></div>
-  <div class="floating-shape shape9"></div>
-</div>
+<div class="app-layout">
+<?php
+$activePage    = 'settings';
+$sidebarPrefix = '../';
+include __DIR__ . '/../components/sidebar.php';
+?>
+<main class="main-content">
+<div class="page-content">
 
-<nav class="navbar navbar-expand-lg navbar-light">
-  <div class="container">
-    <a class="navbar-brand fw-bold" href="../dashboard.php">
-      <img src="../assets/logo2.png" alt="Freecard">
-      FreeCard
-    </a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-      <ul class="navbar-nav ms-auto">
-        <li class="nav-item"><a class="nav-link active" href="../dashboard.php"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="../pages/cards.php"><i class="bi bi-wallet2"></i> Cartões</a></li>
-        <li class="nav-item"><a class="nav-link" href="../pages/transactions.php"><i class="bi bi-receipt"></i> Transações</a></li>
-        <li class="nav-item"><a class="nav-link" href="../pages/budgets.php"><i class="bi bi-piggy-bank"></i> Orçamentos</a></li>
-        <li class="nav-item"><a class="nav-link" href="../pages/reminders.php"><i class="bi bi-calendar-check"></i> Lembretes</a></li>
-        <li class="nav-item"><a class="nav-link" href="../pages/analytics.php"><i class="bi bi-graph-up"></i> Análise</a></li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-            <i class="bi bi-person-circle"></i> <?=htmlspecialchars($_SESSION['username'])?>
-          </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="../pages/settings.php"><i class="bi bi-gear"></i> Configurações</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item" href="../auth/logout.php"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
-          </ul>
-        </li>
-      </ul>
-    </div>
-  </div>
-</nav>
-
-<div class="container mt-4 mb-5">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
       <h2><i class="bi bi-file-earmark-pdf text-danger"></i> Exportar Relatório</h2>
@@ -254,7 +219,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
   <!-- Filtros -->
   <div class="filter-card">
     <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros</h5>
-    <form id="exportForm" method="get" action="generate_report_pdf.php">
+    <form id="exportForm" method="get" action="../helpers/generate_report_pdf.php">
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label small fw-semibold">
@@ -343,6 +308,9 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
     <strong>Nota:</strong> O relatório será gerado em formato PDF e descarregado automaticamente.
   </div>
 </div>
+</div><!-- /page-content -->
+</main><!-- /main-content -->
+</div><!-- /app-layout -->
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
@@ -366,7 +334,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
     const formData = new FormData(form);
     const params = new URLSearchParams(formData);
     params.append('type', type);
-    window.location.href = 'generate_report_pdf.php?' + params.toString();
+    window.location.href = '../helpers/generate_report_pdf.php?' + params.toString();
   }
 </script>
 </body>
