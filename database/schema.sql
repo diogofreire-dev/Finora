@@ -25,8 +25,7 @@ CREATE TABLE IF NOT EXISTS users (
   pending_email_token VARCHAR(64) NULL,
   pending_email_expires DATETIME NULL,
   two_factor_enabled TINYINT(1) DEFAULT 0,
-  two_factor_secret VARCHAR(255) NULL,
-  avatar_path VARCHAR(255) NULL DEFAULT NULL
+  two_factor_secret VARCHAR(255) NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE users MODIFY id INT UNSIGNED AUTO_INCREMENT;
