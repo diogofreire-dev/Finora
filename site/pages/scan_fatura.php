@@ -15,9 +15,23 @@ $cards = $stmt->fetchAll();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount           = floatval($_POST['total'] ?? 0);
     $description      = trim($_POST['empresa'] ?? 'Fatura');
-    $category         = 'Fatura';
+
+    // Categoria a partir do select (id_categoria 1..8)
+    $categoriaMap = [
+        1 => 'Compras',
+        2 => 'Alimentação',
+        3 => 'Transporte',
+        4 => 'Saúde',
+        5 => 'Entretenimento',
+        6 => 'Educação',
+        7 => 'Casa',
+        8 => 'Outros',
+    ];
+    $id_cat   = !empty($_POST['id_categoria']) ? intval($_POST['id_categoria']) : null;
+    $category = $categoriaMap[$id_cat] ?? 'Outros';
+
     $card_id          = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
-    $transaction_date = trim($_POST['data'] ?? date('Y-m-d'));
+    $transaction_date = trim($_POST['data'] ?? '') ?: date('Y-m-d');
     $nif              = trim($_POST['nif'] ?? '');
 
     if ($amount <= 0) {
@@ -43,6 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt = $pdo->prepare("INSERT INTO nif_empresas (nif, nome_empresa, id_categoria) VALUES (:nif, :nome, :cat) ON DUPLICATE KEY UPDATE nome_empresa = VALUES(nome_empresa), id_categoria = VALUES(id_categoria)");
                 $stmt->execute([':nif' => $nif, ':nome' => $description, ':cat' => $id_cat]);
             }
+
+
 
             $pdo->commit();
             $message = 'Fatura guardada com sucesso.';
@@ -404,13 +420,20 @@ async function startQR() {
       const ctx  = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code    = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'dontInvert' });
+      const code    = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: 'attemptBoth' });
       if (code && code.data) {
+        console.log('QR RAW:', code.data);
         stopQR();
         document.getElementById('scanStatus').textContent = '✓ QR lido!';
         const dados = parseQR(code.data);
+
+        // Se o parse não extrair nada útil, mostra o raw no campo empresa para debug
+        if ((!dados || (!dados.total && !dados.nif && !dados.empresa)) && code.data) {
+          dados.empresa = code.data;
+        }
+
         preencherForm(dados);
-        if (dados.nif) fetchCompanyByNif(dados.nif);
+        if (dados && dados.nif) fetchCompanyByNif(dados.nif);
         mostrarResultado('QR code lido com sucesso');
       }
     }, 150);
@@ -755,3 +778,4 @@ document.addEventListener('DOMContentLoaded', () => {
 </script>
 </body>
 </html>
+
