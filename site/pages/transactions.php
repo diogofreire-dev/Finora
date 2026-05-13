@@ -41,6 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
 $category = $_GET['category'] ?? '';
 $card_id  = !empty($_GET['card_id']) ? intval($_GET['card_id']) : null;
 $month    = $_GET['month'] ?? date('Y-m');
+$search   = trim($_GET['search'] ?? '');
 
 $stmt = $pdo->prepare("SELECT DISTINCT category FROM transactions WHERE user_id = :uid AND category IS NOT NULL ORDER BY category");
 $stmt->execute([':uid' => $uid]);
@@ -55,7 +56,8 @@ $params = [':uid' => $uid];
 if ($category) { $sql .= " AND t.category = :cat"; $params[':cat'] = $category; }
 if ($card_id)  { $sql .= " AND t.card_id = :cid"; $params[':cid'] = $card_id; }
 if ($month)    { $sql .= " AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :month"; $params[':month'] = $month; }
-$sql .= " ORDER BY t.transaction_date DESC LIMIT 100";
+if ($search)   { $sql .= " AND t.description LIKE :search"; $params[':search'] = '%' . $search . '%'; }
+$sql .= " ORDER BY t.transaction_date DESC LIMIT 200";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -100,32 +102,32 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Transações - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary) !important; }
     .settings-wrapper { max-width: 820px; margin: 0 auto; padding: 0 16px 60px; }
 
     .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
-    .page-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary) !important; }
+    .page-header p { font-size: 13px; color: var(--text-secondary) !important; margin: 0; }
 
     .settings-group { margin-bottom: 24px; }
-    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
-    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary) !important; margin: 0 0 8px 4px; }
+    .settings-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 14px; overflow: hidden; }
 
     .s-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
     .s-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .s-row-label { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0; }
+    .s-row-label { font-size: 14px; font-weight: 500; color: var(--text-primary) !important; margin: 0; }
 
-    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
-    .btn-s-danger { border-color: #dc2626; color: #dc2626; background: transparent; }
-    .btn-s-danger:hover { background: rgba(239,68,68,.07); }
+    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color) !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary) !important; }
+    .btn-s-primary { background: #3498db !important; color: #fff !important; border-color: #3498db !important; }
+    .btn-s-primary:hover { background: #2980b9 !important; color: #fff !important; border-color: #2980b9 !important; }
+    .btn-s-danger { border-color: #dc2626 !important; color: #dc2626 !important; background: transparent !important; }
+    .btn-s-danger:hover { background: rgba(239,68,68,.07) !important; }
 
     .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
     .s-alert-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #065f46; }
@@ -133,27 +135,31 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     [data-theme="dark"] .s-alert-success { color: #6ee7b7; }
     [data-theme="dark"] .s-alert-danger  { color: #fca5a5; }
 
-    .s-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
+    .s-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary) !important; border: 1px solid var(--border-color) !important; color: var(--text-secondary) !important; }
 
     .empty-state { padding: 48px 20px; text-align: center; }
     .empty-state i { font-size: 48px; color: var(--border-color); display: block; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
+    .empty-state p { font-size: 14px; color: var(--text-secondary) !important; margin-bottom: 16px; }
 
     .t-block { padding: 13px 20px; }
     .t-block:not(:last-child) { border-bottom: 1px solid var(--border-color); }
     .t-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
 
     .filter-body { padding: 16px 20px; }
-    .m-form label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; display: block; }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
+    .m-form label { font-size: 11px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; display: block; }
+    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 8px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; width: 100%; }
     .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; outline: none; }
     [data-theme="dark"] .m-form .form-control,
-    [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
+    [data-theme="dark"] .m-form .form-select { background: var(--bg-primary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
 
-    .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
-    @media (max-width: 640px) { .filter-grid { grid-template-columns: 1fr 1fr; } .filter-actions { grid-column: 1 / -1; } }
+    .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: end; }
+    .filter-grid-bottom { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; margin-top: 12px; }
+    @media (max-width: 640px) { .filter-grid { grid-template-columns: 1fr 1fr; } .filter-grid-bottom { grid-template-columns: 1fr; } }
     @media (max-width: 380px)  { .filter-grid { grid-template-columns: 1fr; } }
     @media (max-width: 500px)  { .t-amount-col { flex-direction: column; align-items: flex-end; gap: 6px; } }
+    .search-wrap { position: relative; }
+    .search-wrap .bi-search { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-secondary) !important; font-size: 14px; pointer-events: none; }
+    .search-wrap input { padding-left: 34px !important; }
   </style>
 </head>
 <body>
@@ -167,7 +173,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     <div class="page-header-icon"><i class="bi bi-receipt"></i></div>
     <div style="flex:1">
       <h2>As Minhas Transações</h2>
-      <p>Histórico completo de despesas</p>
+      <p>Histórico completo de despesas<?= $search ? ' · A pesquisar: <strong>'.htmlspecialchars($search).'</strong>' : '' ?></p>
     </div>
     <a href="create_transaction.php" class="btn-s btn-s-primary">
       <i class="bi bi-plus-circle"></i> Nova
@@ -213,7 +219,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
             </div>
             <div>
               <label><i class="bi bi-tag"></i> Categoria</label>
-              <select name="category" class="form-select">
+              <select name="category" class="form-select" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
                 <option value="">Todas</option>
                 <?php foreach($categories as $cat): ?>
                   <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?=htmlspecialchars($cat)?></option>
@@ -222,16 +228,25 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
             </div>
             <div>
               <label><i class="bi bi-credit-card"></i> Cartão</label>
-              <select name="card_id" class="form-select">
+              <select name="card_id" class="form-select" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
                 <option value="">Todos</option>
                 <?php foreach($cards as $c): ?>
                   <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>><?=htmlspecialchars($c['name'])?></option>
                 <?php endforeach; ?>
               </select>
             </div>
-            <div class="filter-actions" style="display:flex;gap:6px">
-              <button type="submit" class="btn-s btn-s-primary" style="padding:8px 14px"><i class="bi bi-search"></i> Filtrar</button>
-              <a href="transactions.php" class="btn-s" style="padding:8px 12px"><i class="bi bi-x-lg"></i></a>
+          </div>
+          <div class="filter-grid-bottom">
+            <div class="search-wrap">
+              <label><i class="bi bi-search"></i> Pesquisar</label>
+              <div style="position:relative">
+                <i class="bi bi-search"></i>
+                <input type="text" name="search" class="form-control" placeholder="Pesquisar por descrição..." value="<?=htmlspecialchars($search)?>">
+              </div>
+            </div>
+            <div style="display:flex;gap:6px">
+              <button type="submit" class="btn-s btn-s-primary" style="padding:8px 16px"><i class="bi bi-search"></i> Filtrar</button>
+              <a href="transactions.php" class="btn-s" style="padding:8px 12px" title="Limpar filtros"><i class="bi bi-x-lg"></i></a>
             </div>
           </div>
         </form>
@@ -317,5 +332,43 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
+<script>
+// Pesquisa instantânea — filtra os blocos já renderizados enquanto o utilizador digita
+const searchInput = document.querySelector('input[name="search"]');
+if (searchInput) {
+  searchInput.addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    const blocks = document.querySelectorAll('.t-block');
+    blocks.forEach(block => {
+      const desc = block.querySelector('[style*="font-weight:500"]')?.textContent?.toLowerCase() || '';
+      block.style.display = (!q || desc.includes(q)) ? '' : 'none';
+    });
+
+    // Esconder grupos de dia que ficaram completamente vazios
+    document.querySelectorAll('.settings-group').forEach(group => {
+      const visibleBlocks = group.querySelectorAll('.t-block:not([style*="display: none"])');
+      const hasTransactions = group.querySelector('.t-block');
+      if (hasTransactions) {
+        group.style.display = visibleBlocks.length > 0 ? '' : 'none';
+      }
+    });
+
+    // Mostrar mensagem se não há resultados
+    let noResults = document.getElementById('no-results-msg');
+    const totalVisible = document.querySelectorAll('.t-block:not([style*="display: none"])').length;
+    if (q && totalVisible === 0) {
+      if (!noResults) {
+        noResults = document.createElement('div');
+        noResults.id = 'no-results-msg';
+        noResults.className = 'settings-card';
+        noResults.innerHTML = `<div class="empty-state"><i class="bi bi-search"></i><p>Nenhuma transação encontrada para "<strong>${this.value}</strong>".</p></div>`;
+        searchInput.closest('.settings-group')?.after(noResults);
+      }
+      noResults.style.display = '';
+    } else if (noResults) {
+      noResults.style.display = 'none';
+    }
+  });
+}
+</script>
 </html>

@@ -81,24 +81,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Nova Transação - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary) !important; }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
 
     .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
-    .page-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary) !important; }
+    .page-header p { font-size: 13px; color: var(--text-secondary) !important; margin: 0; }
 
     .settings-group { margin-bottom: 24px; }
-    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
-    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
+    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary) !important; margin: 0 0 8px 4px; }
+    .settings-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 14px; overflow: hidden; }
 
-    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
+    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color) !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary) !important; }
     .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
     .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
 
@@ -108,13 +108,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     /* Form */
     .form-section { padding: 18px 20px; }
     .form-section:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
-    .m-form .form-label-sub { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
+    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
+    .m-form .form-label-sub { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-secondary) !important; }
+    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; width: 100%; }
     .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; outline: none; }
     [data-theme="dark"] .m-form .form-control,
-    [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
-    .m-form .form-hint { font-size: 12px; color: var(--text-secondary); margin-top: 5px; }
+    [data-theme="dark"] .m-form .form-select { background: var(--bg-primary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
+    .m-form .form-hint { font-size: 12px; color: var(--text-secondary) !important; margin-top: 5px; }
 
     /* Amount input */
     .amount-input { font-size: 28px !important; font-weight: 700 !important; text-align: center !important; padding: 12px !important; }
@@ -126,14 +126,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     @media (max-width: 480px) { .cat-grid { grid-template-columns: repeat(4, 1fr); } }
     .cat-option { position: relative; }
     .cat-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
-    .cat-label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px 8px; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all .15s; background: var(--bg-primary); text-align: center; }
+    .cat-label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px 8px; border: 1px solid var(--border-color) !important; border-radius: 10px; cursor: pointer; transition: all .15s; background: var(--bg-primary) !important; text-align: center; }
     .cat-label:hover { border-color: #3498db; background: rgba(52,152,219,.05); }
     .cat-option input:checked + .cat-label { border-color: #3498db; background: rgba(52,152,219,.08); color: #3498db; }
     .cat-label i { font-size: 22px; }
     .cat-label span { font-size: 11px; font-weight: 600; line-height: 1.2; }
 
     /* Card progress */
-    .card-mini { padding: 12px 16px; border-radius: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); margin-bottom: 8px; }
+    .card-mini { padding: 12px 16px; border-radius: 10px; background: var(--bg-primary) !important; border: 1px solid var(--border-color) !important; margin-bottom: 8px; }
     .card-mini:last-child { margin-bottom: 0; }
     .card-bar { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin: 6px 0 4px; }
     .card-bar-fill { height: 100%; border-radius: 3px; }
@@ -141,7 +141,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     /* Info tip */
     .tip-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; }
     .tip-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .tip-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+    .tip-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--bg-primary) !important; border: 1px solid var(--border-color) !important; display: flex; align-items: center; justify-content: center; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
 
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
@@ -196,16 +196,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Valor -->
         <div class="form-section">
           <label class="form-label" style="text-align:center;width:100%">Valor (€) *</label>
-          <input type="number" name="amount" class="form-control amount-input"
-                 placeholder="0.00" step="0.01" min="0.01"
-                 value="<?=htmlspecialchars($amount ?: '')?>" required>
+          <input type="number" name="amount" step="0.01" min="0" class="form-control amount-input"
+                 placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
 
         <!-- Descrição -->
         <div class="form-section">
           <label class="form-label">Descrição *</label>
           <input type="text" name="description" class="form-control"
-                 placeholder="ex: Café, Supermercado, Gasolina…"
+                 placeholder="Ex: Supermercado, Netflix, Gasolina..."
                  value="<?=htmlspecialchars($description)?>" required>
         </div>
 
@@ -229,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <!-- Cartão -->
         <div class="form-section">
           <label class="form-label">Cartão associado <span class="form-label-sub">(opcional)</span></label>
-          <select name="card_id" class="form-select">
+          <select name="card_id" class="form-select" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
             <option value="">Nenhum / Dinheiro</option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=($card_id==$c['id'])?'selected':''?>>

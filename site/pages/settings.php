@@ -37,6 +37,14 @@ try {
     $pdo->exec("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL DEFAULT NULL");
 } catch (PDOException $e) { /* coluna já existe */ }
 
+// Auto-migração: adicionar coluna google_id se não existir
+try { $pdo->exec("ALTER TABLE users ADD COLUMN google_id VARCHAR(128) NULL DEFAULT NULL"); } catch (PDOException $e) {}
+
+// Auto-migração: remover índice UNIQUE de username (nome é apenas display name)
+try {
+    $pdo->exec("ALTER TABLE users DROP INDEX username");
+} catch (PDOException $e) { /* índice já não existe */ }
+
 // Diretório de avatares
 $avatarDir = __DIR__ . '/../../site/assets/avatars/';
 if (!is_dir($avatarDir)) @mkdir($avatarDir, 0755, true);
@@ -44,7 +52,7 @@ if (!is_dir($avatarDir)) @mkdir($avatarDir, 0755, true);
 $stmt = $pdo->prepare("
     SELECT username, email, created_at, last_password_change,
            last_email_change, two_factor_enabled, pending_email, pending_email_expires,
-           avatar_path
+           avatar_path, google_id
     FROM users WHERE id = :uid
 ");
 $stmt->execute([':uid' => $uid]);
@@ -172,6 +180,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $messageType = 'info';
     }
 
+    elseif ($action === 'unlink_google') {
+        try {
+            $pdo->prepare("UPDATE users SET google_id = NULL WHERE id = :uid")->execute([':uid' => $uid]);
+            $user['google_id'] = null;
+            $message = 'Conta Google desvinculada com sucesso.';
+            $messageType = 'success';
+        } catch (PDOException $e) {
+            $message = 'Erro ao desvincular conta Google.';
+            $messageType = 'danger';
+        }
+    }
+
+
+    elseif ($action === 'change_username') {
+        $newUsername = trim($_POST['new_username'] ?? '');
+        $errors = [];
+        if (strlen($newUsername) < 3)  $errors[] = 'O nome deve ter pelo menos 3 caracteres.';
+        if (strlen($newUsername) > 50) $errors[] = 'O nome não pode ter mais de 50 caracteres.';
+        if (empty($errors)) {
+            try {
+                $stmt = $pdo->prepare("UPDATE users SET username = :u WHERE id = :uid");
+                $stmt->execute([':u' => $newUsername, ':uid' => $uid]);
+                $_SESSION['username'] = $newUsername;
+                $user['username'] = $newUsername;
+                $message = 'Nome atualizado com sucesso.';
+                $messageType = 'success';
+            } catch (PDOException $e) {
+                $message = 'Erro ao atualizar o nome. Tenta novamente.';
+                $messageType = 'danger';
+            }
+        }
+        if (!empty($errors)) { $message = implode('<br>', $errors); $messageType = 'danger'; }
+    }
+
     elseif ($action === 'upload_avatar') {
         $file = $_FILES['avatar'] ?? null;
         $errors = [];
@@ -255,9 +297,9 @@ $currentTheme = $settings['theme'] ?? 'light';
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Definições - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -540,6 +582,13 @@ $currentTheme = $settings['theme'] ?? 'light';
       .theme-options { flex-direction: column; }
       .s-row { flex-wrap: wrap; }
     }
+
+    .linked-row { display: flex; align-items: center; gap: 14px; padding: 16px 20px; }
+    .linked-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
+    .linked-icon { width: 36px; height: 36px; border-radius: 10px; background: var(--bg-primary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .linked-info { flex: 1; min-width: 0; }
+    .linked-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 2px; }
+    .linked-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
   </style>
 </head>
 <body>
@@ -605,10 +654,39 @@ include __DIR__ . '/../components/sidebar.php';
             <input type="hidden" name="action" value="remove_avatar">
             <button type="submit" class="btn-s btn-s-danger"
                     onclick="return confirm('Remover foto de perfil?')">
-              <i class="bi bi-trash3"></i> Remover
+              <i class="bi bi-trash3"></i> Remover foto de perfil
             </button>
           </form>
           <?php endif; ?>
+        </div>
+      </div>
+
+      <!-- Alterar Nome -->
+      <div class="s-row" style="align-items:flex-start">
+        <div class="s-row-text">
+          <p class="s-row-label">Nome</p>
+          <p class="s-row-sub"><?=htmlspecialchars($user['username'])?></p>
+        </div>
+        <button class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername">
+          <i class="bi bi-pencil"></i> Alterar
+        </button>
+      </div>
+      <div class="collapse" id="formUsername">
+        <div class="s-form">
+          <form method="post">
+            <input type="hidden" name="action" value="change_username">
+            <div class="mb-3">
+              <label class="form-label">Novo nome</label>
+              <input type="text" name="new_username" class="form-control"
+                     placeholder="ex: João Silva"
+                     value="<?=htmlspecialchars($user['username'])?>"
+                     minlength="3" maxlength="50" required>
+            </div>
+            <div style="display:flex;gap:8px;justify-content:flex-end">
+              <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername">Cancelar</button>
+              <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar</button>
+            </div>
+          </form>
         </div>
       </div>
 
@@ -804,16 +882,34 @@ include __DIR__ . '/../components/sidebar.php';
     </div>
   </div>
 
-  <!-- ZONA DE PERIGO -->
+  <!-- CONTAS VINCULADAS -->
   <div class="settings-group">
-    <p class="group-label" style="color:#dc2626">Zona de perigo</p>
-    <div class="settings-card" style="border-color:rgba(220,38,38,.25)">
-      <div class="s-row">
-        <div class="s-row-text">
-          <p class="s-row-label">Eliminar conta</p>
-          <p class="s-row-sub">Remove permanentemente a conta e todos os dados. Esta ação é irreversível.</p>
+    <p class="group-label"><i class="bi bi-link-45deg me-1"></i>Contas vinculadas</p>
+    <div class="settings-card">
+      <div class="linked-row">
+        <div class="linked-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.169 6.656 3.58 9 3.58z"/></svg>
         </div>
-        <button class="btn-s btn-s-danger"><i class="bi bi-trash3"></i> Eliminar</button>
+        <div class="linked-info">
+          <p class="linked-name">Google</p>
+          <?php if (!empty($user['google_id'])): ?>
+            <p class="linked-sub"><span class="s-badge s-badge-active" style="background:rgba(34,197,94,.1);color:#16a34a;border:none"><i class="bi bi-check-circle" style="font-size:10px"></i> Vinculada</span></p>
+          <?php else: ?>
+            <p class="linked-sub">Não vinculada — podes usar o Google para entrar</p>
+          <?php endif; ?>
+        </div>
+        <?php if (!empty($user['google_id'])): ?>
+          <form method="post" onsubmit="return confirm('Tens a certeza que queres desvincular a conta Google?')">
+            <input type="hidden" name="action" value="unlink_google">
+            <button class="btn-s btn-s-danger" style="font-size:12px;padding:5px 12px" type="submit">
+              <i class="bi bi-x-circle"></i> Desvincular
+            </button>
+          </form>
+        <?php else: ?>
+          <a href="../auth/google_redirect.php?link=1" class="btn-s btn-s-primary" style="font-size:12px;padding:5px 12px">
+            <i class="bi bi-link-45deg"></i> Vincular
+          </a>
+        <?php endif; ?>
       </div>
     </div>
   </div>

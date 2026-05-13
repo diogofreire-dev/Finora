@@ -6,11 +6,14 @@ $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
+require_once __DIR__ . '/../helpers/banks.php';
+
 $errors = [];
 $name    = '';
 $limit   = 0;
 $balance = 0;
 $color   = 'purple';
+$bank    = '';
 
 $cardColors = [
     'purple' => ['name' => 'Roxo',     'gradient' => 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'],
@@ -28,6 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $limit   = floatval($_POST['limit_amount'] ?? 0);
     $balance = floatval($_POST['balance'] ?? 0);
     $color   = $_POST['color'] ?? 'purple';
+    $bank    = $_POST['bank'] ?? '';
+
+    // Se banco conhecido, sobrepor cor
+    if (!empty($bank) && isset($BANKS[$bank]) && $BANKS[$bank]['color']) {
+        $color = $BANKS[$bank]['color'];
+    }
 
     if (strlen($name) < 3)        { $errors[] = 'O nome do cartao deve ter pelo menos 3 caracteres.'; }
     if ($limit < 0)                { $errors[] = 'O limite nao pode ser negativo.'; }
@@ -37,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (empty($errors)) {
         try {
-            $stmt = $pdo->prepare("INSERT INTO cards (user_id, name, limit_amount, balance, active, color) VALUES (:uid, :name, :limit, :balance, 1, :color)");
-            $stmt->execute([':uid' => $uid, ':name' => $name, ':limit' => $limit, ':balance' => $balance, ':color' => $color]);
+            $stmt = $pdo->prepare("INSERT INTO cards (user_id, name, limit_amount, balance, active, color, bank) VALUES (:uid, :name, :limit, :balance, 1, :color, :bank)");
+            $stmt->execute([':uid' => $uid, ':name' => $name, ':limit' => $limit, ':balance' => $balance, ':color' => $color, ':bank' => $bank]);
             header('Location: cards.php?success=card_added');
             exit;
         } catch (PDOException $e) {
@@ -54,21 +63,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Adicionar Cartao - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary) !important; }
     .settings-wrapper { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
     .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
-    .page-header p  { font-size: 13px; color: var(--text-secondary); margin: 0; }
+    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary) !important; }
+    .page-header p  { font-size: 13px; color: var(--text-secondary) !important; margin: 0; }
     .settings-group { margin-bottom: 24px; }
-    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
-    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
-    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
+    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary) !important; margin: 0 0 8px 4px; }
+    .settings-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 14px; overflow: hidden; }
+    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color) !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary) !important; }
     .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
     .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
     .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
@@ -76,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     [data-theme="dark"] .s-alert-danger { color: #fca5a5; }
     .two-col { display: grid; grid-template-columns: 1fr 1.4fr; gap: 16px; align-items: start; }
     @media (max-width: 680px) { .two-col { grid-template-columns: 1fr; } }
-    .card-preview-wrap { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; }
+    .card-preview-wrap { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 14px; padding: 20px; }
     .card-visual-lg { border-radius: 14px; padding: 20px 22px; color: #fff; min-height: 160px; display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; transition: background .3s; }
     .card-visual-lg::before { content: ''; position: absolute; top: -60%; right: -40%; width: 220%; height: 220%; background: radial-gradient(circle, rgba(255,255,255,.15) 0%, transparent 65%); pointer-events: none; }
     .cv-number { font-size: 14px; letter-spacing: 4px; font-weight: 600; opacity: .9; position: relative; margin-top: 10px; }
@@ -84,14 +93,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .cv-meta   { font-size: 11px; opacity: .85; position: relative; margin-top: 6px; display: flex; justify-content: space-between; }
     .usage-track { height: 5px; border-radius: 3px; background: var(--border-color); overflow: hidden; margin: 6px 0 4px; }
     .usage-bar   { height: 100%; border-radius: 3px; background: #22c55e; transition: width .4s, background .3s; }
-    .usage-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); }
+    .usage-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary) !important; }
     .form-section { padding: 16px 20px; }
     .form-section:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
-    .m-form .form-control { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
+    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
+    .m-form .form-control { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; width: 100%; }
     .m-form .form-control:focus { border-color: #3498db; box-shadow: none; outline: none; }
-    [data-theme="dark"] .m-form .form-control { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
-    .m-form .form-hint { font-size: 12px; color: var(--text-secondary); margin-top: 5px; }
+    [data-theme="dark"] .m-form .form-control { background: var(--bg-primary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
+    .m-form .form-hint { font-size: 12px; color: var(--text-secondary) !important; margin-top: 5px; }
     input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -102,6 +111,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .color-swatch { width: 100%; height: 100%; border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: all .15s; display: block; outline: 2px solid transparent; outline-offset: 2px; }
     .color-opt input:checked + .color-swatch { outline-color: #3498db; }
     .color-swatch:hover { transform: scale(1.05); }
+    .color-row-hidden { opacity: .4; pointer-events: none; }
+    .bank-logo { position: absolute; top: 14px; right: 16px; font-size: 11px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); padding: 3px 8px; border-radius: 5px; }
     .form-actions { display: flex; gap: 8px; padding: 16px 20px; }
     .form-actions .btn-s { flex: 1; justify-content: center; }
   </style>
@@ -135,8 +146,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <p class="group-label">Pre-visualizacao</p>
       <div class="card-preview-wrap">
         <div class="card-visual-lg" id="cardPreview" style="background:<?=$cardColors[$color]['gradient']?>">
-          <div>
-            <i class="bi bi-credit-card" style="font-size:22px;position:relative"></i>
+            <!-- Watermark do banco -->
+            <div id="bankWatermarkEl" style="position:absolute;right:10px;bottom:8px;width:40%;height:75%;opacity:0.13;display:none;align-items:flex-end;justify-content:flex-end;pointer-events:none;overflow:hidden;">
+              <img id="bankWatermarkImg" src="" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:right bottom;" alt="">
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <i class="bi bi-credit-card" style="font-size:22px;position:relative"></i>
+                <div id="bankLogoEl" class="bank-logo" style="display:none"></div>
+              </div>
             <div class="cv-number">•••• •••• •••• ••••</div>
           </div>
           <div>
@@ -167,9 +185,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="post" class="m-form">
 
           <div class="form-section">
+            <label class="form-label">Banco</label>
+            <select name="bank" id="bankSelect" class="form-control" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
+              <?php foreach($BANKS as $bk => $bd): ?>
+                <option value="<?=$bk?>"
+                  data-gradient="<?=htmlspecialchars($bd['gradient'] ?? '')?>"
+                  data-color="<?=htmlspecialchars($bd['color'] ?? '')?>"
+                  data-label="<?=htmlspecialchars($bd['label'])?>"
+                  <?=$bank===$bk?'selected':''?>>
+                  <?=htmlspecialchars($bd['name'])?>
+                </option>
+              <?php endforeach; ?>
+            </select>
+            <p class="form-hint">A cor do cartao é aplicada automaticamente</p>
+          </div>
+
+          <div class="form-section">
             <label class="form-label">Nome do Cartao *</label>
             <input type="text" name="name" id="cardName" class="form-control"
-                   placeholder="ex: Visa Principal, Mastercard Viagens"
+                   placeholder="Ex: Cartão Principal, Poupança, Viagens..."
                    value="<?=htmlspecialchars($name)?>" required>
             <p class="form-hint">Da um nome descritivo ao teu cartao</p>
           </div>
@@ -194,7 +228,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <div>
                 <label class="form-label">Limite (€) *</label>
                 <input type="number" name="limit_amount" id="cardLimit" class="form-control"
-                       placeholder="1500.00" step="0.01" min="0"
+                       placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($limit)?>" required>
                 <p class="form-hint">Limite maximo de gastos</p>
               </div>
@@ -227,14 +261,83 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const cardColors = <?=json_encode(array_map(fn($c) => $c['gradient'], $cardColors))?>;
+
+// Logos base64 para o preview
+const bankLogos = <?php
+  $logos = [];
+  $logoFiles = ['millennium'=>'millennium.svg','cgd'=>'cgd.svg','revolut'=>'revolut.svg','n26'=>'n26.svg','santander'=>'santander.svg','bpi'=>'bpi.svg','novobanco'=>'novobanco.svg','montepio'=>'montepio.svg','wise'=>'wise.svg','activobank'=>'activobank.svg','mbway'=>'mbway.svg','visa'=>'visa.svg','mastercard'=>'mastercard.svg'];
+  foreach ($logoFiles as $key => $file) {
+    $path = __DIR__ . '/../assets/banks/' . $file;
+    if (file_exists($path)) {
+      $svg = file_get_contents($path);
+      $svg = preg_replace('/fill="(?!none)[^"]*"/', 'fill="white"', $svg);
+      $svg = preg_replace('/stroke="(?!none|white)[^"]*"/', 'stroke="white"', $svg);
+      $logos[$key] = 'data:image/svg+xml;base64,' . base64_encode($svg);
+    }
+  }
+  echo json_encode($logos);
+?>;
+
 document.getElementById('cardName').addEventListener('input', function() {
   document.getElementById('preview-name').textContent = (this.value || 'NOME DO CARTAO').toUpperCase();
 });
+
+const bankSelect      = document.getElementById('bankSelect');
+const colorSection    = document.querySelector('.color-grid').closest('.form-section');
+const bankLogoEl      = document.getElementById('bankLogoEl');
+const bankWatermarkEl = document.getElementById('bankWatermarkEl');
+const bankWatermarkImg= document.getElementById('bankWatermarkImg');
+
+bankSelect.addEventListener('change', function() {
+  const opt      = this.options[this.selectedIndex];
+  const gradient = opt.dataset.gradient;
+  const label    = opt.dataset.label;
+  const colorKey = opt.dataset.color;
+  const bankKey  = this.value;
+
+  if (gradient) {
+    document.getElementById('cardPreview').style.background = gradient;
+    colorSection.classList.add('color-row-hidden');
+    if (colorKey) {
+      const radio = document.querySelector(`input[name="color"][value="${colorKey}"]`);
+      if (radio) radio.checked = true;
+    }
+  } else {
+    colorSection.classList.remove('color-row-hidden');
+    const checked = document.querySelector('input[name="color"]:checked');
+    if (checked) document.getElementById('cardPreview').style.background = cardColors[checked.value];
+  }
+
+  // Badge pequeno
+  if (label) {
+    bankLogoEl.textContent = label;
+    bankLogoEl.style.display = 'block';
+  } else {
+    bankLogoEl.style.display = 'none';
+  }
+
+  // Watermark
+  if (bankLogos[bankKey]) {
+    bankWatermarkImg.src = bankLogos[bankKey];
+    bankWatermarkEl.style.display = 'flex';
+  } else {
+    bankWatermarkEl.style.display = 'none';
+    bankWatermarkImg.src = '';
+  }
+});
+
+bankSelect.dispatchEvent(new Event('change'));
+
 document.querySelectorAll('input[name="color"]').forEach(r => {
   r.addEventListener('change', function() {
-    document.getElementById('cardPreview').style.background = this.dataset.gradient;
+    const opt = bankSelect.options[bankSelect.selectedIndex];
+    if (!opt.dataset.gradient) {
+      document.getElementById('cardPreview').style.background = cardColors[this.value];
+    }
   });
 });
+
 document.getElementById('cardLimit').addEventListener('input', updatePreview);
 document.getElementById('cardBalance').addEventListener('input', updatePreview);
 function updatePreview() {

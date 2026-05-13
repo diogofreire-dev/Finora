@@ -75,6 +75,19 @@ try {
     ");
     $stmt->execute([':uid' => $uid]);
     $top5 = $stmt->fetchAll();
+
+    // Uso por cartão
+    $stmt = $pdo->prepare("
+        SELECT c.name as cartao, COUNT(t.id) as num_transacoes,
+               ROUND(SUM(t.amount),2) as total_gasto
+        FROM transactions t
+        JOIN cards c ON c.id = t.card_id
+        WHERE t.user_id = :uid AND t.card_id IS NOT NULL
+        GROUP BY t.card_id, c.name
+        ORDER BY num_transacoes DESC
+    ");
+    $stmt->execute([':uid' => $uid]);
+    $porCartao = $stmt->fetchAll();
 } catch (Exception $e) {
     jsonOut(['error' => 'Erro BD: ' . $e->getMessage()]);
 }
@@ -91,6 +104,12 @@ $ctx .= "\nMes atual:\n";
 foreach ($mesAtual as $r) $ctx .= "  [{$r['category']}] {$r['description']}: EUR{$r['amount']}\n";
 $ctx .= "\nTop 5 gastos:\n";
 foreach ($top5 as $r) $ctx .= "  {$r['description']}: EUR{$r['amount']}\n";
+$ctx .= "\nUso por cartao:\n";
+if (empty($porCartao)) {
+    $ctx .= "  Nenhuma transacao associada a cartao.\n";
+} else {
+    foreach ($porCartao as $r) $ctx .= "  {$r['cartao']}: {$r['num_transacoes']} transacoes, EUR{$r['total_gasto']} gastos\n";
+}
 
 if ($type === 'insights') {
     $prompt = $ctx . "\nTAREFA: Escreve 3 insights do mes atual. Cada insight numa linha. Usa **negrito** apenas nos valores em euros e nas categorias. Sem emojis. Sem introducao. Exemplo: Gastaste **EUR1.200** em **Casa** este mes.";

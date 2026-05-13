@@ -9,6 +9,11 @@ $currentTheme = getUserTheme($pdo, $uid);
 $message = '';
 $messageType = 'info';
 
+if (!empty($_GET['success'])) {
+    $message = $_GET['success'] === 'created' ? 'Lembrete criado com sucesso!' : 'Lembrete atualizado com sucesso!';
+    $messageType = 'success';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     if ($action === 'create') {
@@ -121,9 +126,9 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lembretes de Pagamento - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
@@ -176,18 +181,41 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
     .empty-state i { font-size: 48px; color: var(--border-color); display: block; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
     /* Modal */
-    .modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; }
-    .modal-header { border-bottom: 1px solid var(--border-color); padding: 18px 20px; }
-    .modal-footer { border-top: 1px solid var(--border-color); padding: 14px 20px; }
-    .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; background: var(--bg-primary); color: var(--text-primary); }
-    [data-theme="dark"] .m-form .form-control, [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
+    .modal-content { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 16px; color: var(--text-primary) !important; }
+    .modal-header { border-bottom: 1px solid var(--border-color) !important; padding: 18px 20px; background: transparent !important; }
+    .modal-body { background: transparent !important; }
+    .modal-footer { border-top: 1px solid var(--border-color) !important; padding: 14px 20px; background: transparent !important; }
+    .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary) !important; }
+    .modal { z-index: 1055 !important; }
+    .modal-backdrop { z-index: 1050 !important; }
+    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db !important; box-shadow: 0 0 0 2px rgba(52,152,219,.25) !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; }
+    .m-form .form-control::placeholder { color: var(--text-secondary) !important; opacity: 1; }
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-    @media (max-width:600px) { .stats-row { flex-direction: column; } .stat-cell:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border-color); } .s-row { flex-wrap: wrap; } }
+    @media (max-width:600px) {
+      .stats-row { flex-direction: column; }
+      .stat-cell:not(:last-child) { border-right: none; border-bottom: 1px solid var(--border-color); }
+    }
+    /* Reminder row responsive */
+    .r-row { display: flex; align-items: flex-start; gap: 12px; padding: 16px 20px; }
+    .r-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
+    .r-row-info { flex: 1; min-width: 0; }
+    .r-row-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+    .r-row-amount { font-size: 16px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+    .r-row-actions-right { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+    .r-row-actions-right form { display: contents; }
+    .btn-s-pago-text { display: inline; }
+    @media (max-width: 600px) {
+      .r-row { flex-wrap: wrap; gap: 10px; }
+      .r-row-info { width: 100%; }
+      .r-row-actions { width: 100%; justify-content: space-between; }
+      .r-row-actions-right { display: flex; gap: 6px; align-items: center; flex-wrap: nowrap; }
+      .r-row-actions-right form { display: contents; }
+      .btn-s-pago-text { display: none; }
+    }
   </style>
 </head>
 <body>
@@ -203,9 +231,9 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
       <h2>Lembretes de Pagamento</h2>
       <p>Gere os teus pagamentos futuros e despesas recorrentes</p>
     </div>
-    <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
+    <a href="add_reminder.php" class="btn-s btn-s-primary">
       <i class="bi bi-plus-circle"></i> Novo
-    </button>
+    </a>
   </div>
 
   <?php if ($message): ?>
@@ -242,9 +270,9 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
       <div class="empty-state">
         <i class="bi bi-calendar-check"></i>
         <p>Ainda não tens lembretes de pagamento.<br>Cria o primeiro para nunca mais esquecer um pagamento.</p>
-        <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
+        <a href="add_reminder.php" class="btn-s btn-s-primary">
           <i class="bi bi-plus-circle"></i> Criar Primeiro Lembrete
-        </button>
+        </a>
       </div>
     </div>
   <?php else: ?>
@@ -254,8 +282,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
       <p class="group-label" style="color:#dc2626"><i class="bi bi-exclamation-triangle me-1"></i>Atrasados</p>
       <div class="settings-card">
         <?php foreach($overdueReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
+        <div class="r-row">
+          <div class="r-row-info">
             <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
             <p class="s-row-sub">
               Venceu a <?=date('d/m/Y', strtotime($r['due_date']))?>
@@ -264,14 +292,18 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
               <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
             </p>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
-            <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)" title="Marcar como pago"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)" title="Editar"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" type="submit" title="Eliminar"><i class="bi bi-trash3"></i></button>
-            </form>
+          <div class="r-row-actions">
+            <span class="r-row-amount">€<?=number_format($r['amount'],2)?></span>
+            <div class="r-row-actions-right">
+              <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)" title="Marcar como pago">
+                <i class="bi bi-check-circle"></i><span class="btn-s-pago-text"> Pago</span>
+              </button>
+              <a href="edit_reminder.php?id=<?=$r['id']?>" class="btn-s" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="post" onsubmit="return confirm('Eliminar lembrete?')">
+                <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
+                <button class="btn-s btn-s-danger" type="submit" title="Eliminar"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
           </div>
         </div>
         <?php endforeach; ?>
@@ -284,8 +316,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
       <p class="group-label" style="color:#d97706"><i class="bi bi-clock-history me-1"></i>Próximos 7 dias</p>
       <div class="settings-card">
         <?php foreach($upcomingReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
+        <div class="r-row">
+          <div class="r-row-info">
             <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
             <p class="s-row-sub">
               Vence a <?=date('d/m/Y', strtotime($r['due_date']))?>
@@ -294,14 +326,18 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
               <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
             </p>
           </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
-            <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)" title="Marcar como pago"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)" title="Editar"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" type="submit" title="Eliminar"><i class="bi bi-trash3"></i></button>
-            </form>
+          <div class="r-row-actions">
+            <span class="r-row-amount">€<?=number_format($r['amount'],2)?></span>
+            <div class="r-row-actions-right">
+              <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)" title="Marcar como pago">
+                <i class="bi bi-check-circle"></i><span class="btn-s-pago-text"> Pago</span>
+              </button>
+              <a href="edit_reminder.php?id=<?=$r['id']?>" class="btn-s" title="Editar"><i class="bi bi-pencil"></i></a>
+              <form method="post" onsubmit="return confirm('Eliminar lembrete?')">
+                <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
+                <button class="btn-s btn-s-danger" type="submit" title="Eliminar"><i class="bi bi-trash3"></i></button>
+              </form>
+            </div>
           </div>
         </div>
         <?php endforeach; ?>
@@ -326,8 +362,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)" title="Marcar como pago"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)" title="Editar"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
+            <a href="edit_reminder.php?id=<?=$r['id']?>" class="btn-s" title="Editar"><i class="bi bi-pencil"></i></a>
+            <form method="post" style="display:contents" onsubmit="return confirm('Eliminar lembrete?')">
               <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s btn-s-danger" type="submit" title="Eliminar"><i class="bi bi-trash3"></i></button>
             </form>
@@ -350,8 +386,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span style="font-size:15px;font-weight:600;color:var(--text-secondary)">€<?=number_format($r['amount'],2)?></span>
-            <form method="post" style="margin:0"><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
+            <form method="post" style="display:contents"><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
+            <form method="post" style="display:contents" onsubmit="return confirm('Eliminar?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
           </div>
         </div>
         <?php endforeach; ?>
@@ -364,121 +400,71 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
 </div><!-- /settings-wrapper -->
 </div><!-- /page-content -->
 
-<!-- Modal Novo Lembrete -->
-<div class="modal fade" id="newReminderModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Novo Lembrete</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="post" class="m-form">
-        <input type="hidden" name="action" value="create">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome do Pagamento *</label><input type="text" name="name" class="form-control" placeholder="ex: Netflix, Renda, Conta da Luz" required></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
-            <div><label class="form-label">Data de Vencimento *</label><input type="date" name="due_date" class="form-control" min="<?=date('Y-m-d')?>" required></div>
-          </div>
-          <div><label class="form-label">Recorrência</label><select name="recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly" selected>Mensal</option><option value="yearly">Anual</option></select></div>
-          <div><label class="form-label">Categoria</label><select name="category" class="form-select"><option value="">Sem categoria</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão</label><select name="card_id" class="form-select"><option value="">Dinheiro / A definir</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Notificar</label><select name="notify_days_before" class="form-select"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="3" selected>3 dias antes</option><option value="7">7 dias antes</option></select></div>
-            <div><label class="form-label">Método</label><select name="notify_method" class="form-select"><option value="email" selected>Email</option><option value="site">Notificação</option><option value="both">Ambos</option></select></div>
-          </div>
-        </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Criar Lembrete</button>
-        </div>
-      </form>
+<!-- Modal Customizado — Marcar Como Pago -->
+<div id="markPaidOverlay" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+  <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;width:min(460px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.4);animation:modalIn .2s ease;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border-color);">
+      <span style="font-size:15px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+        <i class="bi bi-check-circle" style="color:#22c55e"></i> Marcar Como Pago
+      </span>
+      <button onclick="closeMarkPaidModal()" style="background:none;border:none;cursor:pointer;color:var(--text-secondary);font-size:18px;line-height:1;padding:2px 6px;">&times;</button>
     </div>
-  </div>
-</div>
-
-<!-- Modal Marcar Como Pago -->
-<div class="modal fade" id="markPaidModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Marcar Como Pago</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Body -->
+    <form method="post" id="markPaidForm" class="m-form">
+      <input type="hidden" name="action" value="mark_paid">
+      <input type="hidden" name="reminder_id" id="mark_paid_reminder_id">
+      <div style="padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div class="s-alert s-alert-info">
+          <i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i>
+          <span>Ao marcar como pago, podes criar automaticamente uma transação no sistema.</span>
+        </div>
+        <div>
+          <label class="form-label">Data do Pagamento</label>
+          <input type="date" name="paid_date" class="form-control" max="<?=date('Y-m-d')?>" required>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+          <input class="form-check-input" type="checkbox" name="create_transaction" checked style="margin:0">
+          Criar transação e atualizar saldo do cartão
+        </label>
       </div>
-      <form method="post" id="markPaidForm" class="m-form">
-        <input type="hidden" name="action" value="mark_paid">
-        <input type="hidden" name="reminder_id" id="mark_paid_reminder_id">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div class="s-alert s-alert-info"><i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i><span>Ao marcar como pago, podes criar automaticamente uma transação no sistema.</span></div>
-          <div><label class="form-label">Data do Pagamento</label><input type="date" name="paid_date" class="form-control" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>" required></div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
-            <input class="form-check-input" type="checkbox" name="create_transaction" checked style="margin:0">
-            Criar transação e atualizar saldo do cartão
-          </label>
-        </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-success"><i class="bi bi-check-circle"></i> Confirmar Pagamento</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Editar -->
-<div class="modal fade" id="editReminderModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Lembrete</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      <!-- Footer -->
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:14px 20px;border-top:1px solid var(--border-color);">
+        <button type="button" class="btn-s" onclick="closeMarkPaidModal()">Cancelar</button>
+        <button type="submit" class="btn-s btn-s-success"><i class="bi bi-check-circle"></i> Confirmar Pagamento</button>
       </div>
-      <form method="post" class="m-form">
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="reminder_id" id="edit_reminder_id">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome *</label><input type="text" name="name" id="edit_name" class="form-control" required></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
-            <div><label class="form-label">Data *</label><input type="date" name="due_date" id="edit_due_date" class="form-control" required></div>
-          </div>
-          <div><label class="form-label">Recorrência</label><select name="recurrence" id="edit_recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div>
-          <div><label class="form-label">Categoria</label><select name="category" id="edit_category" class="form-select"><option value="">Sem categoria</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão</label><select name="card_id" id="edit_card_id" class="form-select"><option value="">Dinheiro / A definir</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Notificar</label><select name="notify_days_before" id="edit_notify_days" class="form-select"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="3">3 dias antes</option><option value="7">7 dias antes</option></select></div>
-            <div><label class="form-label">Método</label><select name="notify_method" id="edit_notify_method" class="form-select"><option value="email">Email</option><option value="site">Notificação</option><option value="both">Ambos</option></select></div>
-          </div>
-        </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar</button>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
 </div>
 
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<style>
+@keyframes modalIn {
+  from { opacity:0; transform:scale(.95) translateY(-8px); }
+  to   { opacity:1; transform:scale(1)  translateY(0); }
+}
+</style>
 <script>
 function openMarkPaidModal(reminderId) {
   document.getElementById('mark_paid_reminder_id').value = reminderId;
-  new bootstrap.Modal(document.getElementById('markPaidModal')).show();
+  const overlay = document.getElementById('markPaidOverlay');
+  overlay.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
 }
-function openEditModal(reminder) {
-  document.getElementById('edit_reminder_id').value = reminder.id;
-  document.getElementById('edit_name').value = reminder.name;
-  document.getElementById('edit_amount').value = reminder.amount;
-  document.getElementById('edit_due_date').value = reminder.due_date;
-  document.getElementById('edit_recurrence').value = reminder.recurrence;
-  document.getElementById('edit_category').value = reminder.category || '';
-  document.getElementById('edit_card_id').value = reminder.card_id || '';
-  document.getElementById('edit_notify_days').value = reminder.notify_days_before;
-  document.getElementById('edit_notify_method').value = reminder.notify_method || 'email';
-  new bootstrap.Modal(document.getElementById('editReminderModal')).show();
+function closeMarkPaidModal() {
+  document.getElementById('markPaidOverlay').style.display = 'none';
+  document.body.style.overflow = '';
 }
+// Fechar ao clicar fora
+document.getElementById('markPaidOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeMarkPaidModal();
+});
+// Fechar com Escape
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeMarkPaidModal();
+});
 </script>
 </body>
 </html>

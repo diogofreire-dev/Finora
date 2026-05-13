@@ -6,6 +6,9 @@ $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
+require_once __DIR__ . '/../helpers/banks.php';
+require_once __DIR__ . '/../helpers/bank_watermark.php';
+
 $message = '';
 $messageType = 'info';
 
@@ -34,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
 }
 
 $stmt = $pdo->prepare("
-    SELECT c.id, c.name, c.color, c.limit_amount, c.balance, c.active, c.created_at,
+    SELECT c.id, c.name, c.color, c.bank, c.limit_amount, c.balance, c.active, c.created_at,
            COALESCE(SUM(t.amount), 0) as total_spent,
            COUNT(t.id) as transaction_count
     FROM cards c
@@ -60,9 +63,9 @@ $activeAvailable    = $activeTotalLimit - $activeTotalBalance;
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gerir Cartoes - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 920px; margin: 0 auto; padding: 0 16px 60px; }
@@ -114,6 +117,7 @@ $activeAvailable    = $activeTotalLimit - $activeTotalBalance;
     .cv-name   { font-size: 13px; text-transform: uppercase; font-weight: 700; position: relative; }
     .cv-badge  { font-size: 10px; font-weight: 700; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.35); color: #fff; padding: 3px 8px; border-radius: 5px; flex-shrink: 0; }
     .cv-meta   { font-size: 11px; opacity: .85; position: relative; display: flex; justify-content: space-between; margin-top: 6px; }
+    .bank-logo-badge { font-size: 11px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); padding: 3px 9px; border-radius: 5px; }
 
     /* ── Card body ── */
     .card-body-wrap { padding: 14px 16px; flex: 1; display: flex; flex-direction: column; gap: 12px; }
@@ -220,13 +224,22 @@ $activeAvailable    = $activeTotalLimit - $activeTotalBalance;
           $pct       = $c['limit_amount'] > 0 ? ($c['balance'] / $c['limit_amount']) * 100 : 0;
           $barColor  = $pct >= 80 ? '#ef4444' : ($pct >= 60 ? '#f59e0b' : '#22c55e');
           $available = $c['limit_amount'] - $c['balance'];
-          $gradient  = $cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple'];
+          $bankKey   = $c['bank'] ?? '';
+          $bankData  = $BANKS[$bankKey] ?? null;
+          $gradient  = ($bankData && $bankData['gradient']) ? $bankData['gradient'] : ($cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple']);
+          $bankLabel = $bankData['label'] ?? '';
         ?>
         <div class="card-tile">
           <!-- Visual card -->
           <div class="card-visual" style="background:<?=$gradient?>">
+            <?= bankWatermark($bankKey) ?>
             <div>
-              <i class="bi bi-credit-card cv-icon"></i>
+              <div style="display:flex;justify-content:space-between;align-items:flex-start">
+                <i class="bi bi-credit-card cv-icon"></i>
+                <?php if ($bankLabel): ?>
+                  <span class="bank-logo-badge"><?=htmlspecialchars($bankLabel)?></span>
+                <?php endif; ?>
+              </div>
               <div class="cv-number">•••• •••• •••• ••••</div>
             </div>
             <div>
@@ -294,7 +307,9 @@ $activeAvailable    = $activeTotalLimit - $activeTotalBalance;
       <p class="group-label">Cartoes inativos</p>
       <div class="settings-card">
         <?php foreach ($inactiveCards as $c):
-          $gradient = $cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple'];
+          $bankKey  = $c['bank'] ?? '';
+          $bankData = $BANKS[$bankKey] ?? null;
+          $gradient = ($bankData && $bankData['gradient']) ? $bankData['gradient'] : ($cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple']);
         ?>
         <div class="s-row">
           <div style="display:flex;align-items:center;gap:12px;min-width:0">

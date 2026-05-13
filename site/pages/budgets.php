@@ -8,6 +8,11 @@ $currentTheme = getUserTheme($pdo, $uid);
 
 $message = ''; $messageType = 'info';
 
+if (!empty($_GET['success'])) {
+    $message = $_GET['success'] === 'created' ? 'Orçamento criado com sucesso!' : 'Orçamento atualizado com sucesso!';
+    $messageType = 'success';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
     switch ($_POST['action']) {
         case 'create':
@@ -55,9 +60,9 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Orçamentos - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
+  <link rel="stylesheet" href="../css/sidebar.css">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
@@ -94,14 +99,15 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
     .budget-progress { height: 6px; border-radius: 3px; background: var(--bg-primary); overflow: hidden; margin: 10px 0 8px; }
     .budget-bar { height: 100%; border-radius: 3px; transition: width 1s ease-out; width: 0; }
     /* Modal */
-    .modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; }
-    .modal-header { border-bottom: 1px solid var(--border-color); padding: 18px 20px; }
-    .modal-footer { border-top: 1px solid var(--border-color); padding: 14px 20px; }
-    .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; background: var(--bg-primary); color: var(--text-primary); }
-    [data-theme="dark"] .m-form .form-control, [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
+    .modal-content { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 16px; color: var(--text-primary) !important; }
+    .modal-header { border-bottom: 1px solid var(--border-color) !important; padding: 18px 20px; background: transparent !important; }
+    .modal-body { background: transparent !important; }
+    .modal-footer { border-top: 1px solid var(--border-color) !important; padding: 14px 20px; background: transparent !important; }
+    .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary) !important; }
+    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; background-color: var(--bg-primary) !important; color: var(--text-primary) !important; --bs-body-bg: var(--bg-primary); --bs-body-color: var(--text-primary); --bs-border-color: var(--border-color); }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db !important; box-shadow: 0 0 0 2px rgba(52,152,219,.25) !important; background: var(--bg-primary) !important; background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
+    .m-form .form-control::placeholder { color: var(--text-secondary) !important; opacity: 1; }
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     @media (max-width:600px) { .s-row { flex-wrap: wrap; } }
@@ -120,9 +126,9 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
       <h2>Os Meus Orçamentos</h2>
       <p>Controla os teus gastos mensais e mantém-te no orçamento</p>
     </div>
-    <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newBudgetModal">
+    <a href="add_budget.php" class="btn-s btn-s-primary">
       <i class="bi bi-plus-circle"></i> Novo
-    </button>
+    </a>
   </div>
 
   <?php if ($message): ?>
@@ -138,9 +144,9 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
       <div class="empty-state">
         <i class="bi bi-piggy-bank"></i>
         <p>Ainda não tens orçamentos definidos.<br>Cria o primeiro para começares a controlar os teus gastos.</p>
-        <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newBudgetModal">
+        <a href="add_budget.php" class="btn-s btn-s-primary">
           <i class="bi bi-plus-circle"></i> Criar Primeiro Orçamento
-        </button>
+        </a>
       </div>
     </div>
   <?php else: ?>
@@ -183,7 +189,7 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
               </div>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0;margin-top:2px">
-              <button class="btn-s" style="padding:5px 10px" onclick="editBudget(<?=htmlspecialchars(json_encode($b))?>)"><i class="bi bi-pencil"></i></button>
+              <a href="edit_budget.php?id=<?=$b['id']?>" class="btn-s" style="padding:5px 10px" title="Editar"><i class="bi bi-pencil"></i></a>
               <form method="post" style="margin:0"><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 10px" type="submit" title="Desativar"><i class="bi bi-pause-circle"></i></button></form>
               <form method="post" style="margin:0" onsubmit="return confirm('Eliminar orçamento?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
             </div>
@@ -222,63 +228,6 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
 </div><!-- /settings-wrapper -->
 </div><!-- /page-content -->
 
-<!-- Modal Novo Orçamento -->
-<div class="modal fade" id="newBudgetModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-piggy-bank me-2"></i>Novo Orçamento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="post" class="m-form">
-        <input type="hidden" name="action" value="create">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome *</label><input type="text" name="name" class="form-control" placeholder="ex: Orçamento Mensal" required></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="1500.00" required></div>
-            <div><label class="form-label">Período</label><select name="period" class="form-select"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="yearly">Anual</option></select></div>
-          </div>
-          <div><label class="form-label">Categoria <span style="font-weight:400;text-transform:none">(opcional — deixa vazio para global)</span></label><select name="category" class="form-select"><option value="">Todas as categorias</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão <span style="font-weight:400;text-transform:none">(opcional)</span></label><select name="card_id" class="form-select"><option value="">Todos os cartões</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
-        </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Criar Orçamento</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Editar Orçamento -->
-<div class="modal fade" id="editBudgetModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Orçamento</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <form method="post" class="m-form">
-        <input type="hidden" name="action" value="edit">
-        <input type="hidden" name="budget_id" id="edit_budget_id">
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome *</label><input type="text" name="name" id="edit_name" class="form-control" required></div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
-            <div><label class="form-label">Período</label><select name="period" id="edit_period" class="form-select"><option value="monthly">Mensal</option><option value="weekly">Semanal</option><option value="yearly">Anual</option></select></div>
-          </div>
-          <div><label class="form-label">Categoria</label><select name="category" id="edit_category" class="form-select"><option value="">Todas as categorias</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão</label><select name="card_id" id="edit_card_id" class="form-select"><option value="">Todos os cartões</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
-        </div>
-        <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -288,15 +237,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.budget-bar').forEach(bar => { bar.style.width = bar.dataset.width; });
   }, 100);
 });
-function editBudget(b) {
-  document.getElementById('edit_budget_id').value = b.id;
-  document.getElementById('edit_name').value = b.name;
-  document.getElementById('edit_amount').value = b.amount;
-  document.getElementById('edit_period').value = b.period;
-  document.getElementById('edit_category').value = b.category || '';
-  document.getElementById('edit_card_id').value = b.card_id || '';
-  new bootstrap.Modal(document.getElementById('editBudgetModal')).show();
-}
 </script>
 </body>
 </html>
