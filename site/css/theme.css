@@ -363,3 +363,122 @@
 [data-theme="dark"] .navbar-nav .nav-item:not(:last-child) {
   border-color: rgba(255, 255, 255, 0.15);
 }
+
+/* =====================================================
+   ANIMATED BACKGROUND — post-login (all pages)
+   ===================================================== */
+
+/* ── Base de cor para html (camada mais baixa) ──────── */
+html { background-color: #f4f6f9; }
+[data-theme="dark"] html { background-color: #0e1420 !important; }
+
+/* ── body e app-layout transparentes ────────────────── */
+body,
+[data-theme="light"] body,
+[data-theme="dark"]  body {
+  background-color: transparent !important;
+  background-image: none !important;
+}
+[data-theme="light"] .app-layout,
+[data-theme="dark"]  .app-layout { background: transparent !important; }
+
+/* ── main-content: transparente para partículas passarem ── */
+.main-content {
+  position: relative !important;
+  overflow-x: clip;
+  background: transparent !important;
+}
+
+/* ── Gradientes de cor sobre o main-content via ::before ── */
+.main-content::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  animation: orbPulse 8s ease-in-out infinite;
+}
+
+[data-theme="dark"] .main-content::before {
+  background:
+    radial-gradient(circle 500px at 90% 10%,  rgba(0,40,80,0.45),    transparent 70%),
+    radial-gradient(circle 420px at 10% 60%,  rgba(200,120,60,0.18), transparent 70%),
+    radial-gradient(circle 380px at 60% 95%,  rgba(0,20,60,0.40),    transparent 70%),
+    radial-gradient(circle 350px at 55% 35%,  rgba(0,40,80,0.40),    transparent 70%),
+    radial-gradient(circle 280px at 70% 70%,  rgba(200,120,60,0.20), transparent 70%);
+}
+
+[data-theme="light"] .main-content::before {
+  background:
+    radial-gradient(circle 450px at 90% 10%,  rgba(0,40,80,0.10),    transparent 70%),
+    radial-gradient(circle 380px at 10% 60%,  rgba(200,120,60,0.09), transparent 70%),
+    radial-gradient(circle 340px at 60% 95%,  rgba(0,40,80,0.07),    transparent 70%),
+    radial-gradient(circle 320px at 55% 35%,  rgba(0,40,80,0.16),    transparent 70%),
+    radial-gradient(circle 250px at 70% 70%,  rgba(200,120,60,0.14), transparent 70%);
+}
+
+@keyframes orbPulse {
+  0%,  100% { opacity: 1;   transform: scale(1); }
+  50%        { opacity: 0.5; transform: scale(1.08); }
+}
+
+/* ── Todo o conteúdo acima dos gradientes e partículas ── */
+.main-content > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* ── Sidebar acima de tudo ── */
+.sidebar {
+  z-index: 1100 !important;
+}
+
+/* ── Modais Bootstrap acima do canvas ── */
+.modal, .modal-backdrop {
+  z-index: 1050 !important;
+}
+.modal-dialog {
+  z-index: 1060 !important;
+}
+
+/* ── Esconder o bg-canvas (não é necessário) ─────── */
+.bg-canvas { display: none; }
+
+/* ── Bootstrap modal dark mode fix ──────────────── */
+[data-theme="dark"] .modal-content {
+  background-color: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .modal-header,
+[data-theme="dark"] .modal-footer {
+  border-color: var(--border-color) !important;
+}
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .modal-body,
+[data-theme="dark"] .modal-body label {
+  color: var(--text-primary) !important;
+}
+[data-theme="dark"] .modal .form-control,
+[data-theme="dark"] .modal .form-select,
+[data-theme="dark"] .m-form .form-control,
+[data-theme="dark"] .m-form .form-select,
+[data-theme="dark"] .s-form .form-control,
+[data-theme="dark"] .s-form .form-select {
+  background-color: #12151f !important;
+  color: var(--text-primary) !important;
+  border-color: #4a5568 !important;
+  border-width: 1px !important;
+}
+[data-theme="dark"] .modal .form-control:focus,
+[data-theme="dark"] .modal .form-select:focus {
+  border-color: #3498db !important;
+  box-shadow: 0 0 0 2px rgba(52,152,219,.25) !important;
+}
+[data-theme="dark"] .modal .form-label,
+[data-theme="dark"] .modal label {
+  color: var(--text-secondary) !important;
+}
+[data-theme="dark"] .modal .btn-close {
+  filter: invert(1);
+}

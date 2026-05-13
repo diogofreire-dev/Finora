@@ -11,6 +11,9 @@ function _sidebarClass($page, $current) {
     return $page === $current ? 'sidebar-link active' : 'sidebar-link';
 }
 ?>
+<!-- Particles canvas (visible in all post-login pages) -->
+<canvas id="particles-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
+
 <aside class="sidebar" id="appSidebar">
   <!-- Logo -->
   <div class="sidebar-logo">
@@ -38,14 +41,19 @@ function _sidebarClass($page, $current) {
     <a href="<?= $_sp ?>pages/budgets.php"     class="<?= _sidebarClass('budgets',      $_ap) ?>">
       <i class="bi bi-piggy-bank"></i> Orçamentos
     </a>
+    <a href="<?= $_sp ?>pages/futuro.php"      class="<?= _sidebarClass('futuro',      $_ap) ?>">
+      <i class="bi bi-hourglass-split"></i> Metas
+    </a>
     <a href="<?= $_sp ?>pages/reminders.php"   class="<?= _sidebarClass('reminders',    $_ap) ?>">
       <i class="bi bi-bell"></i> Lembretes
     </a>
     <a href="<?= $_sp ?>pages/analytics.php"   class="<?= _sidebarClass('analytics',    $_ap) ?>">
       <i class="bi bi-bar-chart-line"></i> Análise
     </a>
-    <a href="<?= $_sp ?>pages/ai.php"          class="<?= _sidebarClass('ai',           $_ap) ?>">
-      <i class="bi bi-stars"></i> Assistente IA
+
+    <div class="sidebar-section-label">Percepções</div>
+    <a href="<?= $_sp ?>pages/persona.php"     class="<?= _sidebarClass('persona',     $_ap) ?> sidebar-link-special sidebar-link-persona">
+      <i class="bi bi-person-hearts"></i> Personalidade Financeira <span class="sidebar-ai-badge">Novo</span>
     </a>
 
     <div class="sidebar-section-label">Ferramentas</div>
@@ -54,6 +62,9 @@ function _sidebarClass($page, $current) {
     </a>
     <a href="<?= $_sp ?>pages/dados.php"       class="<?= _sidebarClass('dados',        $_ap) ?>">
       <i class="bi bi-database"></i> Dados & Relatórios
+    </a>
+    <a href="<?= $_sp ?>pages/ai.php"          class="<?= _sidebarClass('ai',           $_ap) ?> sidebar-link-special sidebar-link-ai">
+      <i class="bi bi-stars"></i> Assistente IA <span class="sidebar-ai-badge">Novo</span>
     </a>
     <a href="<?= $_sp ?>pages/settings.php"    class="<?= _sidebarClass('settings',     $_ap) ?>">
       <i class="bi bi-gear"></i> Definições
@@ -114,4 +125,50 @@ function closeSidebar() {
   document.getElementById('appSidebar').classList.remove('open');
   document.getElementById('sidebarOverlay').classList.remove('visible');
 }
+</script>
+<script>
+// ── Partículas (injetadas pelo sidebar em todas as páginas) ─
+(function() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, dots = [];
+
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+
+  for (let i = 0; i < 60; i++) {
+    dots.push({ x: Math.random()*window.innerWidth, y: Math.random()*window.innerHeight,
+      vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4, r: Math.random()*2+1 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const dark     = isDark();
+    const dotColor = dark ? 'rgba(200,160,100,.50)' : 'rgba(0,40,80,.25)';
+    const lineBase = dark ? '200,160,100' : '0,40,80';
+    dots.forEach(d => {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0 || d.x > W) d.vx *= -1;
+      if (d.y < 0 || d.y > H) d.vy *= -1;
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fillStyle = dotColor; ctx.fill();
+    });
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i+1; j < dots.length; j++) {
+        const dx = dots[i].x-dots[j].x, dy = dots[i].y-dots[j].y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if (dist < 120) {
+          ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(${lineBase},${(.15*(1-dist/120)).toFixed(3)})`; ctx.lineWidth=.8; ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>

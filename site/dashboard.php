@@ -3,6 +3,8 @@
 require_once __DIR__ . '/helpers/auth.php';
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/helpers/budget_alert_helper.php';
+require_once __DIR__ . '/helpers/banks.php';
+require_once __DIR__ . '/helpers/bank_watermark.php';
 require_once __DIR__ . '/components/notifications_panel.php';
 $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/helpers/theme_helper.php';
@@ -40,7 +42,7 @@ $stmt->execute([':uid'=>$uid]); $biggestExpense = $stmt->fetch();
 $stmt = $pdo->prepare("SELECT t.*, c.name AS card_name FROM transactions t LEFT JOIN cards c ON c.id=t.card_id WHERE t.user_id=:uid ORDER BY t.created_at DESC LIMIT 8");
 $stmt->execute([':uid'=>$uid]); $recent = $stmt->fetchAll();
 
-$stmt = $pdo->prepare("SELECT c.id,c.name,c.color,c.limit_amount,c.balance,c.active,c.created_at, COALESCE(SUM(t.amount),0) as total_spent,COUNT(t.id) as transaction_count FROM cards c LEFT JOIN transactions t ON t.card_id=c.id WHERE c.user_id=:uid GROUP BY c.id ORDER BY c.active DESC,c.created_at DESC");
+$stmt = $pdo->prepare("SELECT c.id,c.name,c.color,c.bank,c.limit_amount,c.balance,c.active,c.created_at, COALESCE(SUM(t.amount),0) as total_spent,COUNT(t.id) as transaction_count FROM cards c LEFT JOIN transactions t ON t.card_id=c.id WHERE c.user_id=:uid GROUP BY c.id ORDER BY c.active DESC,c.created_at DESC");
 $stmt->execute([':uid'=>$uid]); $cards = $stmt->fetchAll();
 
 $cardColors = [
@@ -90,9 +92,9 @@ $stmt->execute([':uid'=>$uid]); $activeBudgetsCount=$stmt->fetchColumn();
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard - FreeCard</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/sidebar.css">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 900px; margin: 0 auto; padding: 0 16px 60px; }
@@ -196,7 +198,7 @@ $stmt->execute([':uid'=>$uid]); $activeBudgetsCount=$stmt->fetchColumn();
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-speedometer2"></i></div>
     <div style="flex:1">
-      <h2>Dashboard</h2>
+      <h2>Olá, <?=htmlspecialchars($_SESSION['username'] ?? 'utilizador')?>! 👋</h2>
       <p>Visão geral das tuas finanças</p>
     </div>
     <a href="pages/create_transaction.php" class="btn-s btn-s-primary">
@@ -277,14 +279,21 @@ $stmt->execute([':uid'=>$uid]); $activeBudgetsCount=$stmt->fetchColumn();
               $pct=$c['limit_amount']>0?($c['balance']/$c['limit_amount'])*100:0;
               $barColor=$pct>=80?'#ef4444':($pct>=60?'#f59e0b':'#22c55e');
               $available=$c['limit_amount']-$c['balance'];
-              $gradient=$cardColors[$c['color']??'purple']??$cardColors['purple'];
+              $bankKey  = $c['bank'] ?? '';
+              $bankData = $BANKS[$bankKey] ?? null;
+              $gradient = ($bankData && $bankData['gradient']) ? $bankData['gradient'] : ($cardColors[$c['color']??'purple']??$cardColors['purple']);
+              $bankLabel = $bankData['label'] ?? '';
             ?>
             <div style="padding:14px 16px;<?= !$c['active']?'opacity:.6':''?>">
               <div class="card-visual" style="background:<?=$gradient?>">
-                <div>
+                <?= bankWatermark($bankKey) ?>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start">
                   <i class="bi bi-credit-card" style="font-size:16px"></i>
-                  <div class="card-number">•••• •••• •••• ••••</div>
+                  <?php if ($bankLabel): ?>
+                    <span style="font-size:10px;font-weight:800;letter-spacing:.5px;color:rgba(255,255,255,.9);background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);padding:2px 7px;border-radius:4px"><?=htmlspecialchars($bankLabel)?></span>
+                  <?php endif; ?>
                 </div>
+                <div class="card-number">•••• •••• •••• ••••</div>
                 <div style="display:flex;justify-content:space-between;align-items:flex-end">
                   <div class="card-name"><?=htmlspecialchars($c['name'])?></div>
                   <span style="font-size:9px;font-weight:700;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);color:#fff;padding:1px 7px;border-radius:4px"><?=$c['active']?'ATIVO':'INATIVO'?></span>

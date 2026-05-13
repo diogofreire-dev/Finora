@@ -93,9 +93,18 @@ body {
 }
 
 /* Inputs em tema escuro */
-[data-theme="dark"] .form-control::placeholder {
-  color: var(--text-secondary);
-  opacity: 0.7;
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] input::placeholder,
+[data-theme="dark"] textarea::placeholder {
+  color: #7f8c8d;
+  opacity: 1;
+}
+
+[data-theme="light"] .form-control::placeholder,
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder {
+  color: #adb5bd;
+  opacity: 1;
 }
 
 [data-theme="dark"] .input-group-text {
