@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /config/
+Disallow: /cron/
+Disallow: /vendor/
+Disallow: /site/pages/
+Disallow: /site/dashboard.php
+Disallow: /site/components/
+Disallow: /site/helpers/
+
+Sitemap: https://freecard.infinityfreeapp.com/sitemap.xml
