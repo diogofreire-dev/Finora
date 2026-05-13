@@ -1,19 +1,32 @@
 <?php
 // site/auth/login.php
 session_start();
+
+// Se já há sessão activa, destruí-la para forçar login limpo
+if (!empty($_SESSION['user_id'])) {
+    session_unset();
+    session_destroy();
+    session_start();
+}
+
+// Impede cache desta página
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+
 require_once __DIR__ . '/../../config/db.php';
 
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $emailOrUsername = trim($_POST['email_or_username'] ?? '');
+    $email    = strtolower(trim($_POST['email'] ?? ''));
     $password = $_POST['password'] ?? '';
 
-    if ($emailOrUsername === '' || $password === '') {
+    if ($email === '' || $password === '') {
         $errors[] = 'Preenche todos os campos.';
     } else {
-        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified FROM users WHERE email = :e OR username = :u LIMIT 1');
-        $stmt->execute([':e' => $emailOrUsername, ':u' => $emailOrUsername]);
+        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified FROM users WHERE email = :e LIMIT 1');
+        $stmt->execute([':e' => $email]);
         $user = $stmt->fetch();
 
         if ($user && password_verify($password, $user['password_hash'])) {
@@ -22,9 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 header('Location: verify.php');
                 exit;
             } else {
-                $_SESSION['user_id'] = $user['id'];
-                $_SESSION['username'] = $user['username'];
                 session_regenerate_id(true);
+                $_SESSION['user_id']  = $user['id'];
+                $_SESSION['username'] = $user['username'];
                 header('Location: ../dashboard.php');
                 exit;
             }
@@ -37,9 +50,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <!doctype html>
 <html lang="pt-PT" data-theme="light">
 <head>
+<script>
+  (function() {
+    var t = localStorage.getItem("fc_theme") || "light";
+    document.documentElement.setAttribute("data-theme", t);
+  })();
+</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entrar - FreeCard</title>
+  <title>Entrar — FreeCard</title>
+  <meta name="description" content="Entra na tua conta FreeCard e controla os teus cartões, transações e orçamentos.">
+  <meta name="robots" content="noindex, follow">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
@@ -59,14 +80,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       --bg-hover: #2d3142;
       --text-primary: #ecf0f1;
       --text-secondary: #95a5a6;
-      --border-color: #34495e;
+      --border-color: #2e3448;
       --shadow: rgba(0,0,0,0.35);
       --brand-panel-bg: linear-gradient(145deg, #0f1923 0%, #1a2744 50%, #1e2d50 100%);
     }
+    [data-theme="dark"] body {
+      background-color: #0e1420;
+      background-image:
+        radial-gradient(ellipse 70% 55% at 0%   0%,   rgba(0,40,80,.80)    0%, transparent 65%),
+        radial-gradient(ellipse 50% 40% at 100%  0%,   rgba(200,120,60,.30) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 50% 110%,  rgba(0,20,60,.70)    0%, transparent 65%);
+    }
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { transition: background-color .35s ease, color .25s ease; }
     body {
       min-height: 100vh;
-      background: var(--bg-primary);
+      background-color: #f0f2f5;
+      background-image:
+        radial-gradient(ellipse 65% 55% at 0%   0%,   rgba(0,40,80,.22)    0%, transparent 65%),
+        radial-gradient(ellipse 55% 45% at 100%  0%,   rgba(200,120,60,.20) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at 50% 115%,  rgba(0,40,80,.15)    0%, transparent 65%);
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       color: var(--text-primary);
       transition: background .3s, color .3s;
@@ -85,6 +118,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font-size: 15px; transition: all .2s; box-shadow: 0 2px 8px var(--shadow);
     }
     .theme-toggle:hover { color: var(--text-primary); border-color: #3498db; }
+
+    .btn-back {
+      position: fixed; top: 16px; left: 16px; z-index: 100;
+      display: flex; align-items: center; gap: 7px;
+      padding: 7px 14px; border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 13px; font-weight: 500;
+      text-decoration: none; transition: all .2s;
+      box-shadow: 0 2px 8px var(--shadow);
+    }
+    .btn-back:hover { color: var(--text-primary); border-color: #3498db; text-decoration: none; }
 
     /* ── Brand panel (left) ── */
     .brand-panel {
@@ -110,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       bottom: -50px; left: -50px;
     }
     .brand-panel .bp-logo { width: 56px; height: 56px; margin-bottom: 32px; position: relative; z-index: 1; }
-    .brand-panel .bp-logo img { width: 100%; filter: brightness(0) invert(1); }
+    .brand-panel .bp-logo img { width: 100%; filter: drop-shadow(-1px 0px 0 rgba(255,255,255,0.9)) drop-shadow(1px 0px 0 rgba(255,255,255,0.9)) drop-shadow(0px -1px 0 rgba(255,255,255,0.9)) drop-shadow(0px 1px 0 rgba(255,255,255,0.9)); }
     .brand-panel h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 12px; position: relative; z-index: 1; line-height: 1.3; }
     .brand-panel p { font-size: 15px; color: rgba(255,255,255,.65); margin-bottom: 40px; position: relative; z-index: 1; line-height: 1.6; }
     .brand-features { position: relative; z-index: 1; display: flex; flex-direction: column; gap: 16px; }
@@ -195,9 +241,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       .form-panel { padding: 24px 16px; align-items: flex-start; padding-top: 60px; }
       .auth-card-header .logo-sm { display: block; width: 40px; margin-bottom: 16px; }
     }
+
+    /* ── Partículas canvas ───────────────────────────────── */
+    #particles-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .auth-layout-inner, .auth-wrapper, form, .auth-card,
+    .brand-panel, .form-panel { position: relative; z-index: 1; }
+
+    /* ── Google OAuth button ── */
+    .btn-google { width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 10px 16px; border: 1px solid var(--border-color); border-radius: 10px; background: var(--bg-primary); color: var(--text-primary); font-size: 14px; font-weight: 500; cursor: pointer; text-decoration: none; transition: all .15s; margin-bottom: 16px; }
+    .btn-google:hover { border-color: #4285f4; background: var(--bg-hover); color: var(--text-primary); text-decoration: none; }
+    .btn-google svg { flex-shrink: 0; }
+    .or-divider { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+    .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--border-color); }
+    .or-divider span { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
   </style>
 </head>
 <body>
+<canvas id="particles-canvas"></canvas>
+<a href="../../index.php" class="btn-back">
+  <i class="bi bi-arrow-left"></i> Página inicial
+</a>
 <button class="theme-toggle" id="themeBtn" title="Alternar tema">
   <i class="bi bi-moon-fill" id="themeIcon"></i>
 </button>
@@ -233,9 +303,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="auth-card-header">
       <img class="logo-sm" src="../assets/logo2.png" alt="FreeCard">
       <h2>Entrar na conta</h2>
-      <p>Introduz as tuas credenciais para continuar</p>
+      <p>Introduz o teu email e palavra-passe para continuar</p>
     </div>
     <div class="auth-card-body">
+<?php
+require_once __DIR__ . '/../../config/google_oauth.php';
+if (!empty($_SESSION['google_error'])): $ge = $_SESSION['google_error']; unset($_SESSION['google_error']); ?>
+  <div class="a-error"><i class="bi bi-exclamation-circle" style="flex-shrink:0;margin-top:1px"></i><span><?=htmlspecialchars($ge)?></span></div>
+<?php endif; ?>
+
       <?php if (!empty($errors)): ?>
         <div class="a-error">
           <i class="bi bi-exclamation-circle" style="flex-shrink:0;margin-top:1px"></i>
@@ -243,15 +319,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       <?php endif; ?>
 
+      <a href="google_redirect.php" class="btn-google">
+        <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.169 6.656 3.58 9 3.58z"/></svg>
+        Continuar com Google
+      </a>
+      <div class="or-divider"><span>ou entra com email</span></div>
+
       <form method="post">
         <div class="f-group">
-          <label class="f-label">Email ou utilizador</label>
+          <label class="f-label">Email</label>
           <div class="f-input-wrap">
-            <i class="bi bi-person f-input-icon"></i>
-            <input type="text" name="email_or_username" class="f-input"
-                   placeholder="email ou nome de utilizador"
-                   value="<?=htmlspecialchars($emailOrUsername ?? '')?>"
-                   required autofocus>
+            <i class="bi bi-envelope f-input-icon"></i>
+            <input type="email" name="email" class="f-input"
+                   placeholder="o teu email"
+                   value="<?=htmlspecialchars($email ?? '')?>"
+                   required autofocus autocomplete="email">
           </div>
         </div>
         <div class="f-group">
@@ -304,6 +386,51 @@ function togglePw(inputId, iconId) {
   if (inp.type === 'password') { inp.type = 'text'; ico.className = 'bi bi-eye-slash'; }
   else { inp.type = 'password'; ico.className = 'bi bi-eye'; }
 }
+
+// ── Partículas ─────────────────────────────────────────────
+(function() {
+  const canvas = document.getElementById('particles-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W, H, dots = [];
+
+  function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
+
+  for (let i = 0; i < 55; i++) {
+    dots.push({ x: Math.random()*window.innerWidth, y: Math.random()*window.innerHeight,
+      vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4, r: Math.random()*2+1 });
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    const dark     = isDark();
+    const dotColor = dark ? 'rgba(200,160,100,.55)' : 'rgba(0,40,80,.28)';
+    const lineBase = dark ? '200,160,100' : '0,40,80';
+    dots.forEach(d => {
+      d.x += d.vx; d.y += d.vy;
+      if (d.x < 0 || d.x > W) d.vx *= -1;
+      if (d.y < 0 || d.y > H) d.vy *= -1;
+      ctx.beginPath(); ctx.arc(d.x, d.y, d.r, 0, Math.PI*2);
+      ctx.fillStyle = dotColor; ctx.fill();
+    });
+    for (let i = 0; i < dots.length; i++) {
+      for (let j = i+1; j < dots.length; j++) {
+        const dx = dots[i].x-dots[j].x, dy = dots[i].y-dots[j].y;
+        const dist = Math.sqrt(dx*dx+dy*dy);
+        if (dist < 120) {
+          ctx.beginPath(); ctx.moveTo(dots[i].x, dots[i].y); ctx.lineTo(dots[j].x, dots[j].y);
+          ctx.strokeStyle = `rgba(${lineBase},${(.18*(1-dist/120)).toFixed(3)})`; ctx.lineWidth=.8; ctx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
 </script>
 </body>
 </html>

@@ -1,5 +1,6 @@
 <?php
 session_start();
+session_unset();
 $_SESSION = [];
 if (ini_get("session.use_cookies")) {
     $params = session_get_cookie_params();
@@ -9,5 +10,9 @@ if (ini_get("session.use_cookies")) {
     );
 }
 session_destroy();
-header('Location: ../index.php');
+// Impede cache para garantir que o próximo login é sempre fresco
+header('Cache-Control: no-cache, no-store, must-revalidate');
+header('Pragma: no-cache');
+header('Expires: 0');
+header('Location: login.php');
 exit;

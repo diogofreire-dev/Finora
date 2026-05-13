@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === 'valid') {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
     :root[data-theme="light"] { --bg-primary:#f0f2f5;--bg-secondary:#ffffff;--bg-hover:#f0f0f0;--text-primary:#2c3e50;--text-secondary:#7f8c8d;--border-color:#e2e8f0;--shadow:rgba(0,0,0,0.08); }
-    :root[data-theme="dark"]  { --bg-primary:#1a1d29;--bg-secondary:#252936;--bg-hover:#2d3142;--text-primary:#ecf0f1;--text-secondary:#95a5a6;--border-color:#34495e;--shadow:rgba(0,0,0,0.35); }
+    :root[data-theme="dark"]  { --bg-primary:#1a1d29;--bg-secondary:#252936;--bg-hover:#2d3142;--text-primary:#ecf0f1;--text-secondary:#95a5a6;--border-color:#2e3448;--shadow:rgba(0,0,0,0.35); }
     *{box-sizing:border-box;margin:0;padding:0;}
     body{min-height:100vh;background:var(--bg-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text-primary);transition:background .3s,color .3s;display:flex;align-items:center;justify-content:center;padding:40px 16px;}
     .theme-toggle{position:fixed;top:16px;right:16px;z-index:100;width:36px;height:36px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;box-shadow:0 2px 8px var(--shadow);}
