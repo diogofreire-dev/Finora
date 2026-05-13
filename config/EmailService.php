@@ -1,315 +1,398 @@
 <?php
 // config/EmailService.php
-// Versao para InfinityFree - usa Brevo API (HTTP) em vez de SMTP
 
 class EmailService {
-    private $apiKey = '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';
-    private $apiUrl = 'https://api.brevo.com/v3/smtp/email';
+    private $apiKey    = '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';
+    private $apiUrl    = 'https://api.brevo.com/v3/smtp/email';
     private $fromEmail = 'freecardssuporte@gmail.com';
-    private $fromName = 'FreeCard';
+    private $fromName  = 'FreeCard';
+    private $baseUrl   = 'http://freecard.infinityfreeapp.com/site';
 
-    // URL base do site
-    private $baseUrl = 'http://freecard.infinityfreeapp.com/site';
-
-    public function __construct() {
-        // Nao precisa de configuracao
-    }
-
-    /**
-     * Enviar email usando Brevo API
-     */
     private function sendMail($to, $subject, $htmlBody, $textBody = '') {
         $data = [
-            'sender' => [
-                'name' => $this->fromName,
-                'email' => $this->fromEmail
-            ],
-            'to' => [
-                ['email' => $to]
-            ],
-            'subject' => $subject,
-            'htmlContent' => $htmlBody
+            'sender'      => ['name' => $this->fromName, 'email' => $this->fromEmail],
+            'to'          => [['email' => $to]],
+            'subject'     => $subject,
+            'htmlContent' => $htmlBody,
         ];
-
-        if (!empty($textBody)) {
-            $data['textContent'] = $textBody;
-        }
+        if (!empty($textBody)) $data['textContent'] = $textBody;
 
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $this->apiUrl);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, [
-            'accept: application/json',
-            'api-key: ' . $this->apiKey,
-            'content-type: application/json'
+        curl_setopt_array($ch, [
+            CURLOPT_URL        => $this->apiUrl,
+            CURLOPT_POST       => true,
+            CURLOPT_POSTFIELDS => json_encode($data),
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER => [
+                'accept: application/json',
+                'api-key: ' . $this->apiKey,
+                'content-type: application/json',
+            ],
         ]);
-
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $error = curl_error($ch);
+        $error    = curl_error($ch);
         curl_close($ch);
 
-        if ($error) {
-            error_log("Brevo CURL Error: " . $error);
-            return false;
-        }
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return true;
-        } else {
-            error_log("Brevo API Error: HTTP $httpCode - $response");
-            return false;
-        }
+        if ($error) { error_log("Brevo CURL Error: $error"); return false; }
+        if ($httpCode >= 200 && $httpCode < 300) return true;
+        error_log("Brevo API Error: HTTP $httpCode - $response");
+        return false;
     }
 
-    /**
-     * Estilos CSS base para todos os emails
-     */
-    private function getBaseStyles() {
-        return '
-        body { font-family: Arial, Helvetica, sans-serif; background-color: #f8f9fa; padding: 20px; margin: 0; }
-        .email-container { max-width: 600px; margin: 0 auto; background-color: #cadef7; border-radius: 12px; }
-        .email-header { background-color: #1e3c72; padding: 30px 20px; text-align: center; border-radius: 12px 12px 0 0; }
-        .logo { font-size: 28px; font-weight: bold; color: #ffffff; text-decoration: none; letter-spacing: 1px; }
-        .email-title { color: #ffffff; font-size: 20px; margin-top: 15px; font-weight: 400; }
-        .email-content { padding: 40px 30px; }
-        .greeting { font-size: 18px; color: #2c3e50; margin-bottom: 20px; }
-        .message { color: #5d6778; line-height: 1.7; margin-bottom: 20px; font-size: 15px; }
-        .btn-container { text-align: center; margin: 30px 0; }
-        .btn-primary { display: inline-block; background-color: #3498db; color: #ffffff !important; padding: 14px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; }
-        .info-box { background-color: #f8f9fa; padding: 15px 20px; margin: 20px 0; border-radius: 8px; }
-        .info-box.warning { background-color: #fef9e7; }
-        .info-box.danger { background-color: #fdf2f2; }
-        .info-box.success { background-color: #f0fdf4; }
-        .info-box-title { font-weight: 600; color: #2c3e50; margin-bottom: 5px; font-size: 14px; }
-        .info-box-text { color: #5d6778; font-size: 13px; }
-        .email-footer { background: #2c3e50; padding: 25px; text-align: center; border-radius: 0 0 12px 12px; }
-        .footer-logo { color: #ffffff; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
-        .footer-text { color: #95a5a6; font-size: 12px; line-height: 1.6; }
-        .small-text { color: #95a5a6; font-size: 12px; margin-top: 20px; }
-        .code-box { background-color: #3498db; color: #ffffff; font-size: 32px; font-weight: 700; letter-spacing: 8px; padding: 20px 30px; border-radius: 12px; display: inline-block; font-family: monospace; }
-        ';
-    }
+    // ── Envio público ────────────────────────────────────────────────────
 
-    private function getEmailHeader($title) {
-        return '<div class="email-header"><div class="logo">FreeCard</div><div class="email-title">' . $title . '</div></div>';
-    }
-
-    private function getEmailFooter() {
-        return '<div class="email-footer"><div class="footer-logo">FreeCard</div><div class="footer-text">Gestor de Cartoes de Credito<br>Este email foi enviado automaticamente.<br>&copy; 2025 FreeCard.</div></div>';
-    }
-
-    /**
-     * Enviar email de verificacao de conta com codigo
-     */
     public function sendVerificationEmail($email, $username, $code) {
-        try {
-            $subject = 'Codigo de verificacao - FreeCard';
-            $body = $this->getVerificationTemplate($username, $code);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar email de verificacao: " . $e->getMessage());
-            return false;
-        }
+        try { return $this->sendMail($email, 'Código de verificação — FreeCard', $this->tplVerification($username, $code)); }
+        catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar email de boas-vindas
-     */
     public function sendWelcomeEmail($email, $username) {
-        try {
-            $subject = 'Bem-vindo ao FreeCard!';
-            $body = $this->getWelcomeTemplate($username);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar email de boas-vindas: " . $e->getMessage());
-            return false;
-        }
+        try { return $this->sendMail($email, 'Bem-vindo ao FreeCard!', $this->tplWelcome($username)); }
+        catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar email de recuperacao de palavra-passe
-     */
     public function sendPasswordResetEmail($email, $username, $token) {
         try {
-            $subject = 'Recuperar palavra-passe - FreeCard';
-            $resetLink = $this->baseUrl . "/auth/reset_password.php?token=" . urlencode($token);
-            $body = $this->getPasswordResetTemplate($username, $resetLink);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar email de reset: " . $e->getMessage());
-            return false;
-        }
+            $link = $this->baseUrl . '/auth/reset_password.php?token=' . urlencode($token);
+            return $this->sendMail($email, 'Recuperar palavra-passe — FreeCard', $this->tplPasswordReset($username, $link));
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar lembrete de pagamento
-     */
     public function sendPaymentReminder($email, $username, $reminderData) {
         try {
             $subject = "Lembrete: {$reminderData['name']} vence em {$reminderData['days_until']} dias";
-            $body = $this->getPaymentReminderTemplate($username, $reminderData);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar lembrete de pagamento: " . $e->getMessage());
-            return false;
-        }
+            return $this->sendMail($email, $subject, $this->tplPaymentReminder($username, $reminderData));
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar alerta de orcamento excedido
-     */
     public function sendBudgetAlert($email, $username, $budgetData) {
         try {
-            $alertType = $budgetData['percentage'] >= 100 ? 'excedido' : 'em alerta';
-            $subject = "Orcamento {$alertType}: {$budgetData['name']} ({$budgetData['percentage']}%)";
-            $body = $this->getBudgetAlertTemplate($username, $budgetData);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar alerta de orcamento: " . $e->getMessage());
-            return false;
-        }
+            $type    = $budgetData['percentage'] >= 100 ? 'excedido' : 'em alerta';
+            $subject = "Orçamento {$type}: {$budgetData['name']} ({$budgetData['percentage']}%)";
+            return $this->sendMail($email, $subject, $this->tplBudgetAlert($username, $budgetData));
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar email de verificacao de alteracao de email
-     */
     public function sendEmailChangeVerification($newEmail, $username, $token) {
         try {
-            $subject = 'Confirma a alteracao de email - FreeCard';
-            $verificationLink = $this->baseUrl . "/auth/verify_email_change.php?token=" . urlencode($token);
-            $body = $this->getEmailChangeTemplate($username, $newEmail, $verificationLink);
-            return $this->sendMail($newEmail, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar verificacao de email: " . $e->getMessage());
-            return false;
-        }
+            $link = $this->baseUrl . '/auth/verify_email_change.php?token=' . urlencode($token);
+            return $this->sendMail($newEmail, 'Confirma a alteração de email — FreeCard', $this->tplEmailChange($username, $newEmail, $link));
+        } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
-    /**
-     * Enviar notificacao de alteracao de password
-     */
     public function sendPasswordChangedNotification($email, $username) {
-        try {
-            $subject = 'Password alterada - FreeCard';
-            $body = $this->getPasswordChangedTemplate($username);
-            return $this->sendMail($email, $subject, $body);
-        } catch (Exception $e) {
-            error_log("Erro ao enviar notificacao de password: " . $e->getMessage());
-            return false;
+        try { return $this->sendMail($email, 'Palavra-passe alterada — FreeCard', $this->tplPasswordChanged($username)); }
+        catch (Exception $e) { error_log($e->getMessage()); return false; }
+    }
+
+    // ── Base HTML ────────────────────────────────────────────────────────
+
+    private function base(string $preheader, string $body): string {
+        return <<<HTML
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>FreeCard</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <style>
+    body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
+    table,td{mso-table-lspace:0;mso-table-rspace:0}
+    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
+    body{margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+    a{color:#3498db}
+    @media(prefers-color-scheme:dark){
+      body{background-color:#0e1420 !important}
+      .wrap{background-color:#252936 !important;border-color:#34495e !important}
+      .txt-main{color:#ecf0f1 !important}
+      .txt-muted{color:#9ca3af !important}
+      .info-box{background-color:#1e2535 !important;border-color:#34495e !important}
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f0f2f5">
+  <!-- preheader -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#f0f2f5;line-height:1px">{$preheader}&nbsp;‌​‍‎‏‌​‌​‍‎‏</div>
+
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;padding:32px 16px">
+    <tr><td align="center">
+      <table class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden">
+
+        {$body}
+
+        <!-- Footer -->
+        <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:28px 32px;text-align:center;border-radius:0 0 16px 16px">
+          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:6px">FreeCard</div>
+          <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.7">
+            Gestor de finanças pessoais<br>
+            Este email foi enviado automaticamente — não respondas.<br>
+            &copy; 2025 FreeCard. Todos os direitos reservados.
+          </div>
+        </td></tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>
+HTML;
+    }
+
+    private function header(string $emoji, string $title, string $subtitle = ''): string {
+        $sub = $subtitle ? "<div style='font-size:14px;color:rgba(255,255,255,0.7);margin-top:6px'>{$subtitle}</div>" : '';
+        return <<<HTML
+        <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:40px 32px;text-align:center;border-radius:16px 16px 0 0">
+          <div style="font-size:36px;margin-bottom:14px">{$emoji}</div>
+          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">{$title}</div>
+          {$sub}
+          <div style="margin-top:18px;font-size:16px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase">FREECARD</div>
+        </td></tr>
+HTML;
+    }
+
+    private function divider(): string {
+        return '<tr><td style="padding:0 32px"><div style="height:1px;background:#e2e8f0"></div></td></tr>';
+    }
+
+    // ── Templates ────────────────────────────────────────────────────────
+
+    private function tplVerification(string $username, string $code): string {
+        $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares o FreeCard');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Obrigado por te registares. Para ativares a tua conta, usa o código de verificação abaixo:</p>
+
+          <!-- Código -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:8px 0 28px">
+            <div style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;font-size:36px;font-weight:700;letter-spacing:12px;padding:20px 36px;border-radius:14px;font-family:'Courier New',monospace">{$code}</div>
+          </td></tr></table>
+
+          <!-- Info box -->
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Código temporário</div>
+            <div style="font-size:13px;color:#b45309">Este código é válido durante <strong>24 horas</strong>. Não o partilhes com ninguém.</div>
+          </td></tr></table>
+
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se não criaste uma conta no FreeCard, podes ignorar este email com segurança.</p>
+        </td></tr>
+HTML;
+        return $this->base("O teu código de verificação FreeCard é {$code}", $body);
+    }
+
+    private function tplWelcome(string $username): string {
+        $dashUrl = $this->baseUrl . '/dashboard.php';
+        $h = $this->header('🎉', 'Bem-vindo ao FreeCard!', 'A tua conta está verificada e pronta a usar');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">A tua conta foi verificada com sucesso. Podes começar agora a gerir os teus cartões, transações e orçamentos.</p>
+
+          <!-- Feature list -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px">
+            <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
+              <table cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">💳</td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">Adiciona os teus <strong style="color:#2c3e50">cartões e contas</strong></td>
+              </tr></table>
+            </td></tr>
+            <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
+              <table cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">📊</td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">Regista <strong style="color:#2c3e50">transações</strong> e analisa os teus gastos</td>
+              </tr></table>
+            </td></tr>
+            <tr><td style="padding:10px 0">
+              <table cellpadding="0" cellspacing="0" border="0"><tr>
+                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">🔔</td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">Define <strong style="color:#2c3e50">orçamentos e lembretes</strong> de pagamento</td>
+              </tr></table>
+            </td></tr>
+          </table>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">Ir para o meu FreeCard →</a>
+          </td></tr></table>
+        </td></tr>
+HTML;
+        return $this->base("Bem-vindo ao FreeCard, {$username}! A tua conta está ativa.", $body);
+    }
+
+    private function tplPasswordReset(string $username, string $resetLink): string {
+        $h = $this->header('🔑', 'Recuperar palavra-passe', 'Recebemos um pedido para redefinir a tua palavra-passe');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para redefinir a palavra-passe da tua conta FreeCard. Clica no botão abaixo para definires uma nova:</p>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px"><tr><td align="center">
+            <a href="{$resetLink}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">Definir nova palavra-passe</a>
+          </td></tr></table>
+
+          <!-- Info boxes -->
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Link temporário</div>
+            <div style="font-size:13px;color:#b45309">Este link é válido durante <strong>1 hora</strong> e só pode ser usado uma vez.</div>
+          </td></tr></table>
+
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
+            <div style="font-size:13px;color:#b91c1c">Se não pediste esta recuperação, ignora este email. A tua palavra-passe não será alterada.</div>
+          </td></tr></table>
+
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se o botão não funcionar, copia e cola este link no teu browser:<br><span style="color:#3498db;word-break:break-all">{$resetLink}</span></p>
+        </td></tr>
+HTML;
+        return $this->base("Pedido de recuperação de palavra-passe FreeCard", $body);
+    }
+
+    private function tplPaymentReminder(string $username, array $r): string {
+        $isToday   = $r['days_until'] == 0;
+        $isOverdue = $r['days_until'] < 0;
+        $urgency   = $isOverdue ? '🔴 Pagamento em atraso' : ($isToday ? '🟠 Vence hoje' : "🔔 Vence em {$r['days_until']} dias");
+        $emoji     = $isOverdue ? '⚠️' : '🔔';
+        $subtitle  = $isOverdue ? 'Tens um pagamento em atraso' : 'Tens um pagamento a vencer em breve';
+        $boxBg     = $isOverdue ? '#fdf2f2' : ($isToday ? '#fef9e7' : '#f0f9ff');
+        $boxBorder = $isOverdue ? '#fca5a5' : ($isToday ? '#f59e0b' : '#93c5fd');
+        $boxColor  = $isOverdue ? '#991b1b'  : ($isToday ? '#92400e'  : '#1e40af');
+
+        $h = $this->header($emoji, 'Lembrete de Pagamento', $subtitle);
+        $dashUrl = $this->baseUrl . '/pages/reminders.php';
+
+        $amount    = number_format((float)$r['amount'], 2, ',', '.');
+        $dueDate   = date('d/m/Y', strtotime($r['due_date']));
+
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">Tens um pagamento que requer a tua atenção:</p>
+
+          <!-- Payment card -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:600;color:{$boxColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">{$urgency}</div>
+            <div style="font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px">{$r['name']}</div>
+            <div style="font-size:28px;font-weight:800;color:#3498db;margin-bottom:12px">{$amount} €</div>
+            <table cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="font-size:13px;color:#5d6778;padding-right:24px">📅 <strong>Data:</strong> {$dueDate}</td>
+HTML;
+        if (!empty($r['category'])) {
+            $body .= "<td style='font-size:13px;color:#5d6778'>🏷 <strong>Categoria:</strong> {$r['category']}</td>";
         }
+        $body .= <<<HTML
+            </tr></table>
+          </td></tr></table>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">Ver lembretes</a>
+          </td></tr></table>
+        </td></tr>
+HTML;
+        return $this->base("Lembrete de pagamento: {$r['name']} — {$amount} €", $body);
     }
 
-    // =====================
-    // TEMPLATES
-    // =====================
+    private function tplBudgetAlert(string $username, array $b): string {
+        $exceeded = $b['percentage'] >= 100;
+        $emoji    = $exceeded ? '🚨' : '⚡';
+        $title    = $exceeded ? 'Orçamento Excedido!' : 'Alerta de Orçamento';
+        $subtitle = $exceeded ? 'Ultrapassaste o limite definido' : "Já usaste {$b['percentage']}% do teu orçamento";
 
-    private function getVerificationTemplate($username, $code) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Confirmar Conta');
-        $footer = $this->getEmailFooter();
+        $pct     = min((int)$b['percentage'], 100);
+        $barColor = $exceeded ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#3498db');
+        $boxBg    = $exceeded ? '#fdf2f2' : '#fef9e7';
+        $boxBorder = $exceeded ? '#fca5a5' : '#f59e0b';
+        $boxColor  = $exceeded ? '#991b1b' : '#92400e';
 
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">Obrigado por te registares no FreeCard! Para ativares a tua conta, introduz o codigo de verificacao abaixo:</div>
-            <div style="text-align:center;margin:30px 0;"><div class="code-box">' . $code . '</div></div>
-            <div class="message" style="text-align:center;color:#7f8c8d;">Introduz este codigo na pagina de verificacao.</div>
-            <div class="info-box warning"><div class="info-box-title">Codigo temporario</div><div class="info-box-text">Este codigo e valido durante 24 horas.</div></div>
-            <div class="small-text">Se nao criaste uma conta no FreeCard, ignora este email.</div>
-        </div>' . $footer . '</div></body></html>';
+        $spent  = number_format((float)$b['amount_spent'], 2, ',', '.');
+        $limit  = number_format((float)$b['limit'], 2, ',', '.');
+        $dashUrl = $this->baseUrl . '/pages/budgets.php';
+
+        $h = $this->header($emoji, $title, $subtitle);
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">O teu orçamento <strong style="color:#2c3e50">{$b['name']}</strong> atingiu <strong style="color:{$barColor}">{$b['percentage']}%</strong> do limite definido.</p>
+
+          <!-- Budget card -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:{$boxColor};margin-bottom:12px">{$b['name']}</div>
+
+            <!-- Barra de progresso -->
+            <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:4px;margin-bottom:14px">
+              <div style="height:8px;width:{$pct}%;background:{$barColor};border-radius:4px"></div>
+            </div>
+
+            <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+              <td style="font-size:14px;color:#5d6778">💸 Gasto: <strong style="color:{$barColor}">{$spent} €</strong></td>
+              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 Limite: <strong style="color:#2c3e50">{$limit} €</strong></td>
+            </tr></table>
+          </td></tr></table>
+
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">Ver orçamentos</a>
+          </td></tr></table>
+        </td></tr>
+HTML;
+        return $this->base("Alerta de orçamento: {$b['name']} a {$b['percentage']}%", $body);
     }
 
-    private function getWelcomeTemplate($username) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Conta Verificada');
-        $footer = $this->getEmailFooter();
-        $dashboardUrl = $this->baseUrl . '/dashboard.php';
+    private function tplEmailChange(string $username, string $newEmail, string $link): string {
+        $h = $this->header('📧', 'Confirmar novo email', 'Verifica que és tu antes de alterarmos o email');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para alterar o email da tua conta para:</p>
+          <div style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:16px;font-weight:600;color:#1e40af;text-align:center">{$newEmail}</div>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">Clica no botão abaixo para confirmares a alteração:</p>
 
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">A tua conta foi verificada com sucesso! Bem-vindo ao FreeCard.</div>
-            <div class="btn-container"><a href="' . $dashboardUrl . '" class="btn-primary">Ir para o FreeCard</a></div>
-        </div>' . $footer . '</div></body></html>';
+          <!-- CTA -->
+          <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px"><tr><td align="center">
+            <a href="{$link}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">Confirmar novo email</a>
+          </td></tr></table>
+
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Link temporário</div>
+            <div style="font-size:13px;color:#b45309">Este link é válido durante <strong>1 hora</strong>.</div>
+          </td></tr></table>
+
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
+            <div style="font-size:13px;color:#b91c1c">Se não pediste esta alteração, o teu email atual continua ativo. Não precisas de fazer nada.</div>
+          </td></tr></table>
+
+          <p style="margin:0;font-size:12px;color:#9ca3af">Se o botão não funcionar: <span style="color:#3498db;word-break:break-all">{$link}</span></p>
+        </td></tr>
+HTML;
+        return $this->base("Confirma o teu novo email no FreeCard", $body);
     }
 
-    private function getPasswordResetTemplate($username, $resetLink) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Recuperar Palavra-passe');
-        $footer = $this->getEmailFooter();
+    private function tplPasswordChanged(string $username): string {
+        $h = $this->header('🔒', 'Palavra-passe alterada', 'A tua palavra-passe foi atualizada com sucesso');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A palavra-passe da tua conta FreeCard foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.</p>
 
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">Recebemos um pedido para recuperar a tua palavra-passe. Clica no botao abaixo:</div>
-            <div class="btn-container"><a href="' . $resetLink . '" class="btn-primary">Definir Nova Palavra-passe</a></div>
-            <div class="info-box warning"><div class="info-box-title">Link temporario</div><div class="info-box-text">Este link e valido apenas durante 1 hora.</div></div>
-        </div>' . $footer . '</div></body></html>';
-    }
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:3px">✅ Alteração confirmada</div>
+            <div style="font-size:13px;color:#15803d">A tua nova palavra-passe está ativa imediatamente.</div>
+          </td></tr></table>
 
-    private function getPaymentReminderTemplate($username, $reminderData) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Lembrete de Pagamento');
-        $footer = $this->getEmailFooter();
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:28px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
+            <div style="font-size:13px;color:#b91c1c">Se não alteraste a palavra-passe, a tua conta pode ter sido comprometida. Usa a opção <em>Esqueci a palavra-passe</em> imediatamente e contacta o suporte.</div>
+          </td></tr></table>
 
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">Tens um pagamento a vencer em breve:</div>
-            <div class="info-box"><strong>' . $reminderData['name'] . '</strong><br>Valor: EUR ' . $reminderData['amount'] . '<br>Data: ' . $reminderData['due_date'] . '<br>Dias restantes: ' . $reminderData['days_until'] . '</div>
-        </div>' . $footer . '</div></body></html>';
-    }
-
-    private function getBudgetAlertTemplate($username, $budgetData) {
-        $styles = $this->getBaseStyles();
-        $isExceeded = $budgetData['percentage'] >= 100;
-        $header = $this->getEmailHeader($isExceeded ? 'Orcamento Excedido' : 'Alerta de Orcamento');
-        $footer = $this->getEmailFooter();
-
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">O teu orcamento <strong>' . $budgetData['name'] . '</strong> atingiu ' . $budgetData['percentage'] . '%.</div>
-            <div class="info-box ' . ($isExceeded ? 'danger' : 'warning') . '">Limite: EUR ' . $budgetData['limit'] . '<br>Gasto: EUR ' . $budgetData['amount_spent'] . '</div>
-        </div>' . $footer . '</div></body></html>';
-    }
-
-    private function getEmailChangeTemplate($username, $newEmail, $verificationLink) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Confirmar Novo Email');
-        $footer = $this->getEmailFooter();
-
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">Recebemos um pedido para alterar o teu email para: <strong>' . $newEmail . '</strong></div>
-            <div class="btn-container"><a href="' . $verificationLink . '" class="btn-primary">Confirmar Novo Email</a></div>
-            <div class="info-box warning"><div class="info-box-title">Link temporario</div><div class="info-box-text">Este link e valido apenas durante 1 hora.</div></div>
-        </div>' . $footer . '</div></body></html>';
-    }
-
-    private function getPasswordChangedTemplate($username) {
-        $styles = $this->getBaseStyles();
-        $header = $this->getEmailHeader('Password Alterada');
-        $footer = $this->getEmailFooter();
-
-        return '<!DOCTYPE html><html><head><meta charset="UTF-8"><style>' . $styles . '</style></head><body>
-        <div class="email-container">' . $header . '
-        <div class="email-content">
-            <div class="greeting">Ola <strong>' . $username . '</strong>,</div>
-            <div class="message">A tua password foi alterada com sucesso.</div>
-            <div class="info-box success"><div class="info-box-title">Alteracao confirmada</div><div class="info-box-text">A tua nova password esta ativa.</div></div>
-            <div class="info-box danger"><div class="info-box-title">Nao foste tu?</div><div class="info-box-text">Se nao fizeste esta alteracao, contacta o suporte imediatamente.</div></div>
-        </div>' . $footer . '</div></body></html>';
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Este email é um aviso de segurança automático.</p>
+        </td></tr>
+HTML;
+        return $this->base("A tua palavra-passe FreeCard foi alterada", $body);
     }
 }
 ?>

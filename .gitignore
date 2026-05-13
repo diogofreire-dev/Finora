@@ -7,3 +7,4 @@ node_modules/
 /config/nif_pt_config.php
 site/test.php
 /site/assets/avatars/
+/config/google_oauth.php
