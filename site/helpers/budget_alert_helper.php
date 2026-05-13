@@ -48,50 +48,57 @@ function checkAndSendBudgetAlerts($pdo, $userId, $email, $username) {
         $percentage = $budget['limit_amount'] > 0 
             ? ($budget['amount_spent'] / $budget['limit_amount']) * 100 
             : 0;
-        
-        // Enviar alerta se atingiu 80% ou mais
-        if ($percentage >= 80) {
-            // Verificar se já foi enviado alerta hoje
-            $checkStmt = $pdo->prepare('
-                SELECT id FROM budget_alerts 
-                WHERE budget_id = ? 
-                AND DATE(triggered_at) = CURDATE()
-                AND percentage >= ?
-                LIMIT 1
+
+        // Determinar o threshold atingido (80% ou 100%)
+        $threshold = null;
+        if ($percentage >= 100) $threshold = 100;
+        elseif ($percentage >= 80) $threshold = 80;
+
+        if ($threshold === null) continue;
+
+        $alertType = $threshold >= 100 ? 'exceeded' : 'warning';
+
+        // Verificar se já foi enviado alerta para este threshold neste período
+        // Só envia UMA vez por threshold por período de orçamento
+        $checkStmt = $pdo->prepare('
+            SELECT id FROM budget_alerts 
+            WHERE budget_id = ? 
+            AND alert_type = ?
+            AND triggered_at >= ?
+            LIMIT 1
+        ');
+        $checkStmt->execute([
+            $budget['id'],
+            $alertType,
+            $budget['start_date']
+        ]);
+
+        if ($checkStmt->fetch()) continue; // já foi enviado para este período
+
+        // Preparar dados para email
+        $budgetData = [
+            'name'         => $budget['name'],
+            'limit'        => number_format($budget['limit_amount'], 2, ',', '.'),
+            'amount_spent' => number_format($budget['amount_spent'], 2, ',', '.'),
+            'percentage'   => round($percentage, 1),
+            'category'     => $budget['category'] ?? 'Todas as categorias'
+        ];
+
+        // Enviar email
+        if ($emailService->sendBudgetAlert($email, $username, $budgetData)) {
+            $insertStmt = $pdo->prepare('
+                INSERT INTO budget_alerts 
+                (budget_id, user_id, alert_type, percentage, amount_spent, triggered_at)
+                VALUES (?, ?, ?, ?, ?, NOW())
             ');
-            $checkStmt->execute([$budget['id'], $percentage]);
-            
-            if (!$checkStmt->fetch()) {
-                // Preparar dados para email
-                $budgetData = [
-                    'name' => $budget['name'],
-                    'limit' => number_format($budget['limit_amount'], 2, ',', '.'),
-                    'amount_spent' => number_format($budget['amount_spent'], 2, ',', '.'),
-                    'percentage' => round($percentage, 1),
-                    'category' => $budget['category'] ?? 'Todas as categorias'
-                ];
-                
-                // Enviar email
-                if ($emailService->sendBudgetAlert($email, $username, $budgetData)) {
-                    // Registar alerta na BD
-                    $insertStmt = $pdo->prepare('
-                        INSERT INTO budget_alerts 
-                        (budget_id, user_id, alert_type, percentage, amount_spent, triggered_at)
-                        VALUES (?, ?, ?, ?, ?, NOW())
-                    ');
-                    
-                    $alertType = $percentage >= 100 ? 'exceeded' : 'warning';
-                    $insertStmt->execute([
-                        $budget['id'],
-                        $userId,
-                        $alertType,
-                        $percentage,
-                        $budget['amount_spent']
-                    ]);
-                    
-                    $alertsSent++;
-                }
-            }
+            $insertStmt->execute([
+                $budget['id'],
+                $userId,
+                $alertType,
+                $percentage,
+                $budget['amount_spent']
+            ]);
+            $alertsSent++;
         }
     }
     
