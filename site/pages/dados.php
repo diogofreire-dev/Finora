@@ -120,7 +120,8 @@ if (!empty($_GET['import_error'])) {
     .btn-s-purple:hover { background: #9333ea; color: #fff; border-color: #9333ea; }
     .btn-s-teal   { background: #14b8a6; color: #fff; border-color: #14b8a6; }
     .btn-s-teal:hover { background: #0d9488; color: #fff; border-color: #0d9488; }
-    .btn-s:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+.btn-s:disabled { opacity: 1; cursor: not-allowed; pointer-events: none; filter: grayscale(.2); }
+
     .stats-row { display: flex; gap: 0; }
     .stat-cell { flex: 1; padding: 14px 20px; text-align: center; }
     .stat-cell:not(:last-child) { border-right: 1px solid var(--border-color); }
