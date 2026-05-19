@@ -172,3 +172,8 @@ function closeSidebar() {
   draw();
 })();
 </script>
+
+<?php /* ── Tutorial System ── */ ?>
+<link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css">
+<script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
+<script src="<?= $_sp ?>js/tutorial.js"></script>
