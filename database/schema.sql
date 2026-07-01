@@ -241,41 +241,7 @@ CREATE TABLE IF NOT EXISTS future_goals (
 CREATE INDEX idx_goals_user ON future_goals(user_id);
 
 -- ========================================
--- 13. INVOICES  (faturas importadas)
--- ========================================
-CREATE TABLE IF NOT EXISTS invoices (
-  id          INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  user_id     INT UNSIGNED  NOT NULL,
-  name        VARCHAR(255)  NOT NULL,
-  file_path   VARCHAR(500)  DEFAULT NULL,
-  imported    TINYINT(1)    DEFAULT 0 COMMENT '1 = fatura completamente importada',
-  imported_at DATETIME      DEFAULT NULL,
-  created_at  DATETIME      DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_invoices_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_invoices_user ON invoices(user_id);
-
--- ========================================
--- 14. INVOICE_LINES  (linhas de fatura)
--- ========================================
-CREATE TABLE IF NOT EXISTS invoice_lines (
-  id               INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  invoice_id       INT UNSIGNED   NOT NULL,
-  description      VARCHAR(500)   NOT NULL,
-  amount           DECIMAL(10,2)  NOT NULL DEFAULT 0.00,
-  category         VARCHAR(100)   DEFAULT NULL,
-  transaction_date DATE           DEFAULT NULL,
-  imported         TINYINT(1)     DEFAULT 0 COMMENT '1 = já importada como transação',
-  transaction_id   INT UNSIGNED   DEFAULT NULL COMMENT 'id da transação gerada',
-  CONSTRAINT fk_invoice_lines_invoice FOREIGN KEY (invoice_id)     REFERENCES invoices(id)     ON DELETE CASCADE,
-  CONSTRAINT fk_invoice_lines_tx      FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-CREATE INDEX idx_invoice_lines_invoice  ON invoice_lines(invoice_id);
-CREATE INDEX idx_invoice_lines_imported ON invoice_lines(imported);
-
-
+-- Dados de exemplo para nif_empresas
 -- (principais cadeias portuguesas por categoria)
 -- ========================================
 
