@@ -49,7 +49,6 @@ CREATE TABLE IF NOT EXISTS cards (
   balance      DECIMAL(10,2)   DEFAULT 0,
   color        VARCHAR(20)     DEFAULT 'purple',
   active       TINYINT(1)      DEFAULT 1,
-  bank         VARCHAR(50)     DEFAULT '' COMMENT 'key do banco (ex: revolut, cgd, santander, ...)',
   created_at   DATETIME        DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_cards_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -67,17 +66,14 @@ CREATE TABLE IF NOT EXISTS transactions (
   description      VARCHAR(255),
   category         VARCHAR(100)   DEFAULT NULL,
   transaction_date DATE           NOT NULL,
-  source           VARCHAR(20)    DEFAULT NULL COMMENT 'origem: invoice, manual, csv, etc',
-  source_id        INT            DEFAULT NULL COMMENT 'id da linha na tabela de origem',
   created_at       DATETIME       DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_transactions_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_transaction_date        ON transactions(transaction_date);
-CREATE INDEX idx_transactions_user_date  ON transactions(user_id, transaction_date);
-CREATE INDEX idx_transactions_category   ON transactions(category);
-CREATE INDEX idx_transactions_card_date  ON transactions(card_id, transaction_date);
+CREATE INDEX idx_transaction_date       ON transactions(transaction_date);
+CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date);
+CREATE INDEX idx_transactions_category  ON transactions(category);
 
 -- ========================================
 -- 4. USER_SETTINGS
@@ -147,7 +143,6 @@ CREATE TABLE IF NOT EXISTS payment_reminders (
   due_date               DATE          NOT NULL,
   recurrence             ENUM('once','weekly','monthly','yearly') NOT NULL DEFAULT 'once',
   active                 TINYINT(1)    DEFAULT 1,
-  paid                   TINYINT(1)    DEFAULT 0 COMMENT '1 = pagamento confirmado (apenas para recurrence=once)',
   notify_days_before     INT           DEFAULT 3,
   notify_method          ENUM('email','site','both') DEFAULT 'email',
   last_notification_sent DATETIME      NULL,
