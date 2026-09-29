@@ -1,14 +1,8 @@
--- ============================================================
--- FreeCard Database Schema — Versão Completa
--- ============================================================
-
 DROP DATABASE IF EXISTS pap;
 CREATE DATABASE pap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE pap;
 
--- ========================================
 -- 1. USERS
--- ========================================
 CREATE TABLE IF NOT EXISTS users (
   id                    INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   username              VARCHAR(50)  NOT NULL UNIQUE,
@@ -38,9 +32,7 @@ CREATE INDEX idx_verification_token   ON users(verification_token);
 CREATE INDEX idx_password_reset_token ON users(password_reset_token);
 CREATE INDEX idx_google_id            ON users(google_id);
 
--- ========================================
 -- 2. CARDS
--- ========================================
 CREATE TABLE IF NOT EXISTS cards (
   id           INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id      INT UNSIGNED    NOT NULL,
@@ -55,9 +47,7 @@ CREATE TABLE IF NOT EXISTS cards (
 
 CREATE INDEX idx_cards_user_active ON cards(user_id, active);
 
--- ========================================
 -- 3. TRANSACTIONS
--- ========================================
 CREATE TABLE IF NOT EXISTS transactions (
   id               INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id          INT UNSIGNED   NOT NULL,
@@ -75,9 +65,7 @@ CREATE INDEX idx_transaction_date       ON transactions(transaction_date);
 CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date);
 CREATE INDEX idx_transactions_category  ON transactions(category);
 
--- ========================================
 -- 4. USER_SETTINGS
--- ========================================
 CREATE TABLE IF NOT EXISTS user_settings (
   id            INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id       INT UNSIGNED NOT NULL UNIQUE,
@@ -90,9 +78,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   CONSTRAINT fk_settings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ========================================
 -- 5. BUDGETS
--- ========================================
 CREATE TABLE IF NOT EXISTS budgets (
   id         INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id    INT UNSIGNED  NOT NULL,
@@ -112,9 +98,7 @@ CREATE TABLE IF NOT EXISTS budgets (
 
 CREATE INDEX idx_budgets_user_active ON budgets(user_id, active);
 
--- ========================================
 -- 6. BUDGET_ALERTS
--- ========================================
 CREATE TABLE IF NOT EXISTS budget_alerts (
   id           INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   budget_id    INT UNSIGNED  NOT NULL,
@@ -130,9 +114,7 @@ CREATE TABLE IF NOT EXISTS budget_alerts (
 
 CREATE INDEX idx_alerts_user_unack ON budget_alerts(user_id, acknowledged);
 
--- ========================================
 -- 7. PAYMENT_REMINDERS
--- ========================================
 CREATE TABLE IF NOT EXISTS payment_reminders (
   id                     INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id                INT UNSIGNED  NOT NULL,
@@ -157,9 +139,7 @@ CREATE TABLE IF NOT EXISTS payment_reminders (
 CREATE INDEX idx_reminders_user_due ON payment_reminders(user_id, due_date);
 CREATE INDEX idx_reminders_active   ON payment_reminders(active);
 
--- ========================================
 -- 8. REMINDER_HISTORY
--- ========================================
 CREATE TABLE IF NOT EXISTS reminder_history (
   id             INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   reminder_id    INT UNSIGNED  NOT NULL,
@@ -175,9 +155,7 @@ CREATE TABLE IF NOT EXISTS reminder_history (
 CREATE INDEX idx_history_reminder  ON reminder_history(reminder_id);
 CREATE INDEX idx_history_paid_date ON reminder_history(paid_date);
 
--- ========================================
 -- 9. NOTIFICATIONS
--- ========================================
 CREATE TABLE IF NOT EXISTS notifications (
   id         INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id    INT UNSIGNED NOT NULL,
@@ -195,11 +173,7 @@ CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
 CREATE INDEX idx_notifications_type        ON notifications(type);
 CREATE INDEX idx_notifications_created     ON notifications(created_at);
 
--- ========================================
--- 10. NIF_EMPRESAS  (tabela unificada)
--- ========================================
--- Substitui as antigas nif_empresas + nif_empresas_cache
--- (ver config/migrate_nif_unified.php)
+-- 10. NIF_EMPRESAS
 CREATE TABLE IF NOT EXISTS nif_empresas (
   nif          VARCHAR(9)   NOT NULL,
   nome_empresa VARCHAR(255) NOT NULL,
@@ -214,9 +188,7 @@ CREATE TABLE IF NOT EXISTS nif_empresas (
 CREATE INDEX idx_nif_fonte    ON nif_empresas(fonte);
 CREATE INDEX idx_nif_verified ON nif_empresas(verified);
 
--- ========================================
 -- 11. NIF_CACHE  (cache de pesquisas ao nif.pt)
--- ========================================
 CREATE TABLE IF NOT EXISTS nif_cache (
   nif        VARCHAR(20)  NOT NULL,
   name       VARCHAR(255) NOT NULL,
@@ -224,9 +196,7 @@ CREATE TABLE IF NOT EXISTS nif_cache (
   PRIMARY KEY (nif)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- ========================================
 -- 12. FUTURE_GOALS  (objetivos de poupança)
--- ========================================
 CREATE TABLE IF NOT EXISTS future_goals (
   id             INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id        INT UNSIGNED  NOT NULL,
@@ -240,10 +210,8 @@ CREATE TABLE IF NOT EXISTS future_goals (
 
 CREATE INDEX idx_goals_user ON future_goals(user_id);
 
--- ========================================
 -- Dados de exemplo para nif_empresas
 -- (principais cadeias portuguesas por categoria)
--- ========================================
 
 -- Supermercados / Alimentação
 INSERT INTO nif_empresas (nif, nome_empresa, id_categoria, fonte) VALUES
