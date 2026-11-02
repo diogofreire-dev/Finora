@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount           = floatval($_POST['amount'] ?? 0);
     $description      = trim($_POST['description'] ?? '');
     $category         = trim($_POST['category'] ?? '');
-    $card_id          = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+    $card_id          = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
     $transaction_date = trim($_POST['transaction_date'] ?? '');
 
     if ($amount <= 0)               { $errors[] = 'O valor deve ser maior que zero.'; }

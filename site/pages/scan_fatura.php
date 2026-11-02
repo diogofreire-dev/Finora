@@ -23,7 +23,7 @@ $catMap = [
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save') {
     $amount           = floatval(str_replace(',', '.', $_POST['amount'] ?? 0));
     $description      = trim($_POST['description'] ?? '');
-    $card_id          = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+    $card_id          = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
     $transaction_date = trim($_POST['transaction_date'] ?? date('Y-m-d'));
     $nif_emitente     = trim($_POST['nif_emitente'] ?? '');
     $id_categoria     = !empty($_POST['id_categoria']) ? intval($_POST['id_categoria']) : null;

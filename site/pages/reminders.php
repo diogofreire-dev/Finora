@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name = trim($_POST['name'] ?? '');
         $amount = floatval($_POST['amount'] ?? 0);
         $category = trim($_POST['category'] ?? '');
-        $card_id = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+        $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
         $due_date = $_POST['due_date'] ?? '';
         $recurrence = $_POST['recurrence'] ?? 'once';
         $notify_days = intval($_POST['notify_days_before'] ?? 3);
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'edit') {
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
         $name = trim($_POST['name'] ?? ''); $amount = floatval($_POST['amount'] ?? 0);
-        $category = trim($_POST['category'] ?? ''); $card_id = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+        $category = trim($_POST['category'] ?? ''); $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
         $due_date = $_POST['due_date'] ?? ''; $recurrence = $_POST['recurrence'] ?? 'once';
         $notify_days = intval($_POST['notify_days_before'] ?? 3);
         if ($amount > 0 && strlen($name) >= 3 && $due_date) {
