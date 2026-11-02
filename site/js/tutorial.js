@@ -10,10 +10,16 @@
 
     dashboard: [
       {
-        selector: '#appSidebar',
-        title: '🗺️ Barra de Navegação',
-        text: 'Esta é a tua barra lateral. Usa-a para navegar entre todas as secções: Cartões, Transações, Orçamentos, Análise e muito mais.',
-        position: 'right'
+        selector: '#appMenuBtn',
+        title: '🗺️ Menu',
+        text: 'Abre o menu aqui para navegar entre todas as secções: Transações, Cartões, Orçamentos, Metas, Análise e muito mais.',
+        position: 'bottom'
+      },
+      {
+        selector: '.app-header-actions',
+        title: '⚡ Ações rápidas',
+        text: 'Regista uma nova transação ou lê o QR de uma fatura a partir de qualquer página. O teu nome dá acesso às definições e a terminar sessão.',
+        position: 'bottom'
       },
       {
         selector: '.stats-row.stats-row-3',
@@ -26,30 +32,6 @@
         title: '📋 Painel Principal',
         text: 'O teu painel central mostra os teus cartões, transações recentes, distribuição de despesas por categoria e orçamentos ativos — tudo num só lugar.',
         position: 'top'
-      },
-      {
-        selector: '.sidebar-link[href*="cards"]',
-        title: '💳 Gerir Cartões',
-        text: 'Clica em "Cartões" para adicionar e gerir os teus cartões bancários, ver limites, saldos e histórico de utilização.',
-        position: 'right'
-      },
-      {
-        selector: '.sidebar-link[href*="transactions"]',
-        title: '↔️ Transações',
-        text: 'Em "Transações" podes registar novos movimentos e filtrar por data, categoria ou cartão para acompanhar os teus gastos.',
-        position: 'right'
-      },
-      {
-        selector: '.sidebar-link[href*="budgets"]',
-        title: '🐷 Orçamentos',
-        text: 'Cria orçamentos por categoria para controlar os teus gastos e receber alertas quando estiveres perto do limite.',
-        position: 'right'
-      },
-      {
-        selector: '.sidebar-link[href*="analytics"]',
-        title: '📈 Análise',
-        text: 'A página de Análise mostra gráficos detalhados dos teus gastos ao longo do tempo, para tomares decisões financeiras informadas.',
-        position: 'right'
       }
     ],
 
