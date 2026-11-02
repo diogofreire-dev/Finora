@@ -17,6 +17,8 @@ CREATE TABLE IF NOT EXISTS users (
   verification_sent_at  DATETIME     NULL,
   password_reset_token  VARCHAR(64)  NULL,
   password_reset_expires DATETIME   NULL,
+  failed_login_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  login_locked_until    DATETIME     NULL,
   last_password_change  DATETIME     NULL,
   last_email_change     DATETIME     NULL,
   pending_email         VARCHAR(255) NULL,
