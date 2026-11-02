@@ -61,7 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $messageType = 'success';
         } catch (PDOException $e) {
             $pdo->rollBack();
-            $message = 'Erro ao guardar: ' . $e->getMessage();
+            error_log('[scan_fatura] Erro ao guardar: ' . $e->getMessage());
+            $message = 'Erro ao guardar a transação. Tenta novamente.';
             $messageType = 'danger';
         }
     }

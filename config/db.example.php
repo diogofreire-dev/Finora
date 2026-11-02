@@ -20,7 +20,10 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => false,
     ]);
 } catch (PDOException $e) {
-    die('Erro de ligação à base de dados: ' . $e->getMessage());
+    // O detalhe (host, utilizador...) vai só para o log, nunca para o ecrã
+    error_log('Erro de ligação à base de dados: ' . $e->getMessage());
+    http_response_code(500);
+    die('Serviço temporariamente indisponível. Tenta mais tarde.');
 }
 
 // Groq API key (Assistente IA) — https://console.groq.com/keys
