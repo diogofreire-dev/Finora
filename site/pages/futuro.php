@@ -218,7 +218,7 @@ $activePage='futuro'; $sidebarPrefix='../';
           </div>
           <div style="display:flex;gap:4px">
             <button type="button" class="btn-icon" onclick="openEditModal(<?=$g['id']?>, '<?=htmlspecialchars(addslashes($g['name']))?>', '<?=$g['target_amount']?>', '<?=$g['monthly_income']?>', '<?=$g['target_date']?>')"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="display:inline">
+            <form method="post" style="display:inline"><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="goal_id" value="<?=$g['id']?>">
               <button type="submit" class="btn-icon" onclick="return confirm('Remover este objetivo?')"><i class="bi bi-trash3"></i></button>
@@ -251,7 +251,7 @@ $activePage='futuro'; $sidebarPrefix='../';
     <div class="a-card">
       <div class="a-card-body">
         <p class="a-card-title"><i class="bi bi-plus-circle"></i> Criar objetivo</p>
-        <form method="post">
+        <form method="post"><?= csrf_field() ?>
           <input type="hidden" name="action" value="create">
           <div class="row g-3">
             <div class="col-md-6">
@@ -293,7 +293,7 @@ $activePage='futuro'; $sidebarPrefix='../';
       <h3 style="font-size:16px;font-weight:600;margin:0">Editar objetivo</h3>
       <button onclick="closeEditModal()" style="background:none;border:none;color:var(--text-secondary);font-size:20px;cursor:pointer;padding:0;line-height:1">&times;</button>
     </div>
-    <form method="post">
+    <form method="post"><?= csrf_field() ?>
       <input type="hidden" name="action" value="update">
       <input type="hidden" name="goal_id" id="edit_goal_id">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">

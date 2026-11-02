@@ -358,7 +358,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
+            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
             </form>
@@ -388,7 +388,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
+            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
             </form>
@@ -417,7 +417,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')">
+            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
             </form>
@@ -447,12 +447,12 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span style="font-size:15px;font-weight:600;color:var(--text-secondary)">€<?=number_format($r['amount'],2)?></span>
             <!-- Reverter pagamento -->
-            <form method="post" style="margin:0" onsubmit="return confirm('Reverter pagamento?')">
+            <form method="post" style="margin:0" onsubmit="return confirm('Reverter pagamento?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="unmark_paid">
               <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s" style="padding:5px 10px;font-size:12px" type="submit" title="Reverter para ativo"><i class="bi bi-arrow-counterclockwise"></i></button>
             </form>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')">
+            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
               <button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button>
@@ -477,8 +477,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
             <span style="font-size:15px;font-weight:600;color:var(--text-secondary)">€<?=number_format($r['amount'],2)?></span>
-            <form method="post" style="margin:0"><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
+            <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
+            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
           </div>
         </div>
         <?php endforeach; ?>
@@ -499,7 +499,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
         <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Novo Lembrete</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post" class="m-form">
+      <form method="post" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="create">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
           <div><label class="form-label">Nome do Pagamento *</label><input type="text" name="name" class="form-control" placeholder="ex: Netflix, Renda, Conta da Luz" required></div>
@@ -532,7 +532,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
         <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Marcar Como Pago</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post" id="markPaidForm" class="m-form">
+      <form method="post" id="markPaidForm" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="mark_paid">
         <input type="hidden" name="reminder_id" id="mark_paid_reminder_id">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
@@ -560,7 +560,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
         <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Lembrete</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-      <form method="post" class="m-form">
+      <form method="post" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="edit">
         <input type="hidden" name="reminder_id" id="edit_reminder_id">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">

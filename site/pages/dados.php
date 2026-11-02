@@ -356,7 +356,7 @@ include __DIR__ . '/../components/sidebar.php';
           </div>
           <p style="font-size:11px;color:var(--text-secondary);margin-top:6px">A coluna <strong>cartao</strong> é opcional. O valor deve ser em euros (ex: 45.90).</p>
         </div>
-        <form action="../helpers/import_csv.php" method="post" enctype="multipart/form-data" id="csvImportForm">
+        <form action="../helpers/import_csv.php" method="post" enctype="multipart/form-data" id="csvImportForm"><?= csrf_field() ?>
           <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFile').click()">
             <i class="bi bi-cloud-upload d-block"></i>
             <p class="fw-semibold" style="color:var(--text-primary)">Clica ou arrasta o ficheiro CSV aqui</p>
@@ -384,7 +384,7 @@ include __DIR__ . '/../components/sidebar.php';
           </div>
         </div>
         <div class="s-row-action">
-          <form action="../helpers/import_json.php" method="post" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px">
+          <form action="../helpers/import_json.php" method="post" enctype="multipart/form-data" style="display:flex;align-items:center;gap:8px"><?= csrf_field() ?>
             <label class="btn-s" style="cursor:pointer;margin:0">
               <i class="bi bi-folder2-open"></i> Escolher
               <input type="file" name="json_file" accept=".json" style="display:none"

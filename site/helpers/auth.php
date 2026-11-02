@@ -11,3 +11,7 @@ if (empty($_SESSION['user_id'])) {
     header("Location: /site/auth/login.php?next={$return}");
     exit;
 }
+
+// Todas as páginas autenticadas ficam protegidas contra CSRF
+require_once __DIR__ . '/csrf.php';
+csrf_verify();

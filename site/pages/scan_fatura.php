@@ -201,7 +201,7 @@ include __DIR__ . '/../components/sidebar.php';
       <div class="scan-card-body">
         <div class="parsed-badge"><i class="bi bi-check-circle-fill"></i> QR Code lido com sucesso</div>
 
-        <form method="post">
+        <form method="post"><?= csrf_field() ?>
           <input type="hidden" name="action" value="save">
           <input type="hidden" name="nif_emitente" id="fNif">
 

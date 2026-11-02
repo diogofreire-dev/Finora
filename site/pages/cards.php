@@ -393,7 +393,7 @@ foreach ($activeCards as $c) {
             <!-- Actions -->
             <div class="card-actions">
               <a href="edit_card.php?id=<?=$c['id']?>" class="btn-s"><i class="bi bi-pencil"></i> Editar</a>
-              <form method="post">
+              <form method="post"><?= csrf_field() ?>
                 <input type="hidden" name="card_id" value="<?=$c['id']?>">
                 <input type="hidden" name="action" value="toggle">
                 <button type="submit" class="btn-s"><i class="bi bi-pause-circle"></i> Desativar</button>
@@ -428,7 +428,7 @@ foreach ($activeCards as $c) {
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">
             <a href="edit_card.php?id=<?=$c['id']?>" class="btn-s" style="padding:5px 10px;font-size:12px"><i class="bi bi-pencil"></i></a>
-            <form method="post" style="margin:0">
+            <form method="post" style="margin:0"><?= csrf_field() ?>
               <input type="hidden" name="card_id" value="<?=$c['id']?>">
               <input type="hidden" name="action" value="toggle">
               <button type="submit" class="btn-s" style="padding:5px 12px;font-size:12px"><i class="bi bi-play-circle"></i> Ativar</button>
