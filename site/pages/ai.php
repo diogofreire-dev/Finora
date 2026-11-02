@@ -207,39 +207,17 @@ function formatAI(text) {
 }
 
 async function callAI(type, message = '') {
-  // 1. Buscar o prompt ao PHP via POST
+  // O PHP chama a Groq no servidor e devolve só o texto da resposta
   const res = await fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ t: type, m: message })
   });
-  const raw = await res.text();
   let data;
-  try { data = JSON.parse(raw); } catch(e) { throw new Error('RAW: ' + raw.substring(0, 300)); }
+  try { data = await res.json(); } catch(e) { throw new Error('Erro ao contactar o servidor. Tenta novamente.'); }
   if (data.error) throw new Error(data.error);
-
-  // 2. Chamar a Groq diretamente do browser
-  const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + data.apiKey
-    },
-    body: JSON.stringify({
-      model: 'openai/gpt-oss-120b',
-      messages: [{ role: 'user', content: data.prompt }],
-      temperature: 0.7,
-      max_tokens: 800
-    })
-  });
-  if (!groqRes.ok) {
-    const errText = await groqRes.text();
-    throw new Error('Groq erro ' + groqRes.status + ': ' + errText.substring(0, 200));
-  }
-  const groqData = await groqRes.json();
-  const text = groqData?.choices?.[0]?.message?.content ?? '';
-  if (!text) throw new Error('IA sem resposta. Tenta novamente.');
-  return text;
+  if (!data.reply) throw new Error('IA sem resposta. Tenta novamente.');
+  return data.reply;
 }
 
 // ── Insights ───────────────────────────────────────────────────────────────

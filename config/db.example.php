@@ -25,3 +25,6 @@ try {
 
 // Groq API key (Assistente IA) — https://console.groq.com/keys
 define('GROQ_API_KEY', 'SUA_CHAVE_GROQ');
+
+// Modelo da Groq — https://console.groq.com/docs/models
+define('GROQ_MODEL', 'openai/gpt-oss-120b');
