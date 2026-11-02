@@ -99,7 +99,7 @@ foreach ($activeCards as $c) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Gerir Cartões - FreeCard</title>
+  <title>Gerir Cartões - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="../css/sidebar.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -266,14 +266,14 @@ foreach ($activeCards as $c) {
   <script>
   (function(){
     const overdrafts = <?=json_encode(array_values(array_map(fn($c)=>['name'=>$c['name'],'excess'=>abs($c['available']),'days'=>$c['days_since']],$overdraftCards)))?>;
-    const KEY = 'freecard_overdraft_notif_' + <?=$uid?>;
+    const KEY = 'finora_overdraft_notif_' + <?=$uid?>;
     const last = parseInt(localStorage.getItem(KEY) || '0');
     const now  = Date.now();
     const WEEK = 7 * 24 * 60 * 60 * 1000;
     if (now - last > WEEK && overdrafts.length > 0 && 'Notification' in window) {
       if (Notification.permission === 'granted') {
         overdrafts.forEach(o => {
-          new Notification('⚠️ FreeCard — Cartão acima do limite', {
+          new Notification('⚠️ Finora — Cartão acima do limite', {
             body: `${o.name}: excedido em €${o.excess.toFixed(2)} há ${o.days} dias`,
             icon: '/favicon.ico'
           });
@@ -283,7 +283,7 @@ foreach ($activeCards as $c) {
         Notification.requestPermission().then(p => {
           if (p === 'granted') {
             overdrafts.forEach(o => {
-              new Notification('⚠️ FreeCard — Cartão acima do limite', {
+              new Notification('⚠️ Finora — Cartão acima do limite', {
                 body: `${o.name}: excedido em €${o.excess.toFixed(2)} há ${o.days} dias`,
                 icon: '/favicon.ico'
               });

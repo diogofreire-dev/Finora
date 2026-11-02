@@ -3,7 +3,7 @@
 
 -- Utilizador demo
 INSERT INTO users (username, email, password_hash, email_verified, last_password_change, last_email_change) VALUES
-('demo', 'demo@freecard.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, NOW(), NOW());
+('demo', 'demo@finora.pt', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1, NOW(), NOW());
 
 -- Configuracoes
 INSERT INTO user_settings (user_id, theme, notifications) VALUES

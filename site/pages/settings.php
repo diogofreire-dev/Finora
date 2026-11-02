@@ -295,7 +295,7 @@ $currentTheme = $settings['theme'] ?? 'light';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Definições - FreeCard</title>
+  <title>Definições - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -607,7 +607,7 @@ include __DIR__ . '/../components/sidebar.php';
     <div class="page-header-icon"><i class="bi bi-gear"></i></div>
     <div>
       <h2>Definições</h2>
-      <p>Personalize a sua experiência FreeCard</p>
+      <p>Personalize a sua experiência Finora</p>
     </div>
   </div>
 
@@ -876,7 +876,7 @@ include __DIR__ . '/../components/sidebar.php';
         </div>
         <div class="account-cell">
           <p class="cell-label">Versão</p>
-          <p class="cell-value">FreeCard 2.0.0</p>
+          <p class="cell-value">Finora 2.0.0</p>
         </div>
       </div>
     </div>

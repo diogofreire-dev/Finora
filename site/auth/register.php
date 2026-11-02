@@ -82,8 +82,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Criar conta gratuita — FreeCard</title>
-  <meta name="description" content="Cria a tua conta FreeCard gratuitamente e começa a gerir os teus cartões e despesas hoje.">
+  <title>Criar conta gratuita — Finora</title>
+  <meta name="description" content="Cria a tua conta Finora gratuitamente e começa a gerir os teus cartões e despesas hoje.">
   <meta name="robots" content="noindex, follow">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -224,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </button>
 
 <div class="brand-panel">
-  <div class="bp-logo"><img src="../assets/logo2.png" alt="FreeCard"></div>
+  <div class="bp-logo"><img src="../assets/logo2.png" alt="Finora"></div>
   <h1>Cria a tua conta grátis</h1>
   <p>Em menos de 2 minutos começas a gerir as tuas finanças.</p>
   <div class="brand-steps">
@@ -237,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="form-panel">
   <div class="auth-card">
     <div class="auth-card-header">
-      <img class="logo-sm" src="../assets/logo2.png" alt="FreeCard">
+      <img class="logo-sm" src="../assets/logo2.png" alt="Finora">
       <h2>Criar conta</h2>
       <p>Preenche os campos abaixo para te registares</p>
     </div>

@@ -1,8 +1,8 @@
-# Sistema de Email - FreeCard
+# Sistema de Email - Finora
 
 ## Visão Geral
 
-Sistema automático de notificações por email integrado no FreeCard para:
+Sistema automático de notificações por email integrado no Finora para:
 - Lembretes de pagamento antes do vencimento
 - Alertas de orçamento excedido
 - Recuperação de palavra-passe
@@ -110,7 +110,7 @@ if ($percentage >= 80) {
 crontab -e
 
 # Adicionar linha (executa diariamente às 09:00)
-0 9 * * * /usr/bin/php /caminho/para/cron/send_reminders.php >> /var/log/freecard-cron.log 2>&1
+0 9 * * * /usr/bin/php /caminho/para/cron/send_reminders.php >> /var/log/finora-cron.log 2>&1
 ```
 
 ### **Windows (Agendador de Tarefas):**

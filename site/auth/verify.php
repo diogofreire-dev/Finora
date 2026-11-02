@@ -113,7 +113,7 @@ $autoRedirect = ($status === 'success');
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificação de Email - FreeCard</title>
+  <title>Verificação de Email - Finora</title>
   <?php if ($autoRedirect): ?>
   <meta http-equiv="refresh" content="3;url=../dashboard.php">
   <?php endif; ?>
@@ -174,7 +174,7 @@ $autoRedirect = ($status === 'success');
     <div class="auth-card-header">
       <div class="hdr-icon success"><i class="bi bi-check-lg"></i></div>
       <h2>Email verificado!</h2>
-      <p>Bem-vindo ao FreeCard, <strong><?=htmlspecialchars($username)?></strong>! A tua conta está ativa.</p>
+      <p>Bem-vindo ao Finora, <strong><?=htmlspecialchars($username)?></strong>! A tua conta está ativa.</p>
     </div>
     <div class="auth-card-body">
       <div class="status-body">

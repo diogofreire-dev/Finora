@@ -1,5 +1,5 @@
 /*!
- * FreeCard Interactive Tutorial System
+ * Finora Interactive Tutorial System
  * Guides users through each page with highlighted steps and tooltips.
  */
 (function () {

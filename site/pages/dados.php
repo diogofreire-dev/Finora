@@ -40,7 +40,7 @@ if (!empty($_GET['import_error'])) {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dados & Relatórios - FreeCard</title>
+  <title>Dados & Relatórios - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -453,7 +453,7 @@ function downloadTemplate() {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'template_freecard.csv';
+  a.download = 'template_finora.csv';
   a.click();
 }
 function handleFileSelect(input) {

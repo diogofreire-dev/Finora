@@ -18,8 +18,8 @@ function _sidebarClass($page, $current) {
   <!-- Logo -->
   <div class="sidebar-logo">
     <a href="<?= $_sp ?>dashboard.php" class="sidebar-brand">
-      <img src="<?= $_sp ?>assets/logo2.png" alt="FreeCard">
-      <span>FreeCard</span>
+      <img src="<?= $_sp ?>assets/logo2.png" alt="Finora">
+      <span>Finora</span>
     </a>
   </div>
 

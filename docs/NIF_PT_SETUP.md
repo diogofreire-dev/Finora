@@ -12,7 +12,7 @@
 2. Cria conta gratuita
 3. Recebes uma chave API por email
 
-### 2. Configurar no FreeCard
+### 2. Configurar no Finora
 1. Abre `config/db.php`
 2. Adiciona esta linha no topo (depois dos comentários):
 

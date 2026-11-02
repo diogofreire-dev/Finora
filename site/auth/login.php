@@ -85,8 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Entrar — FreeCard</title>
-  <meta name="description" content="Entra na tua conta FreeCard e controla os teus cartões, transações e orçamentos.">
+  <title>Entrar — Finora</title>
+  <meta name="description" content="Entra na tua conta Finora e controla os teus cartões, transações e orçamentos.">
   <meta name="robots" content="noindex, follow">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -301,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <!-- Brand panel -->
 <div class="brand-panel">
-  <div class="bp-logo"><img src="../assets/logo2.png" alt="FreeCard"></div>
+  <div class="bp-logo"><img src="../assets/logo2.png" alt="Finora"></div>
   <h1>Bem-vindo de volta!</h1>
   <p>Gere os teus cartões e despesas num só lugar, de forma simples e visual.</p>
   <div class="brand-features">
@@ -328,7 +328,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="form-panel">
   <div class="auth-card">
     <div class="auth-card-header">
-      <img class="logo-sm" src="../assets/logo2.png" alt="FreeCard">
+      <img class="logo-sm" src="../assets/logo2.png" alt="Finora">
       <h2>Entrar na conta</h2>
       <p>Introduz o teu email e palavra-passe para continuar</p>
     </div>

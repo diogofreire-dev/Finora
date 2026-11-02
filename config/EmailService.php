@@ -8,7 +8,7 @@ class EmailService {
     private $apiKey    = BREVO_API_KEY;
     private $apiUrl    ='https://api.brevo.com/v3/smtp/email';
     private $fromEmail = 'freecardadmin@gmail.com';
-    private $fromName  = 'FreeCard';
+    private $fromName  = 'Finora';
     private $baseUrl   = APP_URL;
 
     private function sendMail($to, $subject, $htmlBody, $textBody = '') {
@@ -46,19 +46,19 @@ class EmailService {
     // ── Envio público ────────────────────────────────────────────────────
 
     public function sendVerificationEmail($email, $username, $code) {
-        try { return $this->sendMail($email, 'Código de verificação — FreeCard', $this->tplVerification($username, $code)); }
+        try { return $this->sendMail($email, 'Código de verificação — Finora', $this->tplVerification($username, $code)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendWelcomeEmail($email, $username) {
-        try { return $this->sendMail($email, 'Bem-vindo ao FreeCard!', $this->tplWelcome($username)); }
+        try { return $this->sendMail($email, 'Bem-vindo ao Finora!', $this->tplWelcome($username)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendPasswordResetEmail($email, $username, $token) {
         try {
             $link = $this->baseUrl . '/auth/reset_password.php?token=' . urlencode($token);
-            return $this->sendMail($email, 'Recuperar palavra-passe — FreeCard', $this->tplPasswordReset($username, $link));
+            return $this->sendMail($email, 'Recuperar palavra-passe — Finora', $this->tplPasswordReset($username, $link));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
@@ -80,12 +80,12 @@ class EmailService {
     public function sendEmailChangeVerification($newEmail, $username, $token) {
         try {
             $link = $this->baseUrl . '/auth/verify_email_change.php?token=' . urlencode($token);
-            return $this->sendMail($newEmail, 'Confirma a alteração de email — FreeCard', $this->tplEmailChange($username, $newEmail, $link));
+            return $this->sendMail($newEmail, 'Confirma a alteração de email — Finora', $this->tplEmailChange($username, $newEmail, $link));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendPasswordChangedNotification($email, $username) {
-        try { return $this->sendMail($email, 'Palavra-passe alterada — FreeCard', $this->tplPasswordChanged($username)); }
+        try { return $this->sendMail($email, 'Palavra-passe alterada — Finora', $this->tplPasswordChanged($username)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
@@ -99,7 +99,7 @@ class EmailService {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>FreeCard</title>
+  <title>Finora</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
   <style>
     body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
@@ -128,11 +128,11 @@ class EmailService {
 
         <!-- Footer -->
         <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:28px 32px;text-align:center;border-radius:0 0 16px 16px">
-          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:6px">FreeCard</div>
+          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:6px">Finora</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.7">
             Gestor de finanças pessoais<br>
             Este email foi enviado automaticamente — não respondas.<br>
-            &copy; 2025 FreeCard. Todos os direitos reservados.
+            &copy; 2025 Finora. Todos os direitos reservados.
           </div>
         </td></tr>
 
@@ -151,7 +151,7 @@ HTML;
           <div style="font-size:36px;margin-bottom:14px">{$emoji}</div>
           <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">{$title}</div>
           {$sub}
-          <div style="margin-top:18px;font-size:16px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase">FREECARD</div>
+          <div style="margin-top:18px;font-size:16px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase">FINORA</div>
         </td></tr>
 HTML;
     }
@@ -163,7 +163,7 @@ HTML;
     // ── Templates ────────────────────────────────────────────────────────
 
     private function tplVerification(string $username, string $code): string {
-        $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares o FreeCard');
+        $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares o Finora');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
           <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
@@ -180,15 +180,15 @@ HTML;
             <div style="font-size:13px;color:#b45309">Este código é válido durante <strong>15 minutos</strong>. Não o partilhes com ninguém.</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se não criaste uma conta no FreeCard, podes ignorar este email com segurança.</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se não criaste uma conta no Finora, podes ignorar este email com segurança.</p>
         </td></tr>
 HTML;
-        return $this->base("O teu código de verificação FreeCard é {$code}", $body);
+        return $this->base("O teu código de verificação Finora é {$code}", $body);
     }
 
     private function tplWelcome(string $username): string {
         $dashUrl = $this->baseUrl . '/dashboard.php';
-        $h = $this->header('🎉', 'Bem-vindo ao FreeCard!', 'A tua conta está verificada e pronta a usar');
+        $h = $this->header('🎉', 'Bem-vindo ao Finora!', 'A tua conta está verificada e pronta a usar');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
           <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
@@ -218,11 +218,11 @@ HTML;
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">Ir para o meu FreeCard →</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">Ir para o meu Finora →</a>
           </td></tr></table>
         </td></tr>
 HTML;
-        return $this->base("Bem-vindo ao FreeCard, {$username}! A tua conta está ativa.", $body);
+        return $this->base("Bem-vindo ao Finora, {$username}! A tua conta está ativa.", $body);
     }
 
     private function tplPasswordReset(string $username, string $resetLink): string {
@@ -230,7 +230,7 @@ HTML;
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
           <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para redefinir a palavra-passe da tua conta FreeCard. Clica no botão abaixo para definires uma nova:</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para redefinir a palavra-passe da tua conta Finora. Clica no botão abaixo para definires uma nova:</p>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px"><tr><td align="center">
@@ -251,7 +251,7 @@ HTML;
           <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se o botão não funcionar, copia e cola este link no teu browser:<br><span style="color:#3498db;word-break:break-all">{$resetLink}</span></p>
         </td></tr>
 HTML;
-        return $this->base("Pedido de recuperação de palavra-passe FreeCard", $body);
+        return $this->base("Pedido de recuperação de palavra-passe Finora", $body);
     }
 
     private function tplPaymentReminder(string $username, array $r): string {
@@ -372,7 +372,7 @@ HTML;
           <p style="margin:0;font-size:12px;color:#9ca3af">Se o botão não funcionar: <span style="color:#3498db;word-break:break-all">{$link}</span></p>
         </td></tr>
 HTML;
-        return $this->base("Confirma o teu novo email no FreeCard", $body);
+        return $this->base("Confirma o teu novo email no Finora", $body);
     }
 
     private function tplPasswordChanged(string $username): string {
@@ -380,7 +380,7 @@ HTML;
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
           <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A palavra-passe da tua conta FreeCard foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A palavra-passe da tua conta Finora foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.</p>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
             <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:3px">✅ Alteração confirmada</div>
@@ -395,7 +395,7 @@ HTML;
           <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Este email é um aviso de segurança automático.</p>
         </td></tr>
 HTML;
-        return $this->base("A tua palavra-passe FreeCard foi alterada", $body);
+        return $this->base("A tua palavra-passe Finora foi alterada", $body);
     }
 }
 ?>

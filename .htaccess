@@ -1,4 +1,4 @@
-# FreeCard — só o que está em site/ (e as páginas da raiz) deve ser público.
+# Finora — só o que está em site/ (e as páginas da raiz) deve ser público.
 # O resto é código interno, configuração ou dados: o Apache responde 404.
 
 # Sem listagem de pastas
