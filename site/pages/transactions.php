@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
 // Quando uma fatura é confirmada/importada, ela chega aqui via POST action=import_invoice
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST['action'] === 'import_invoice') {
     $invoice_id  = intval($_POST['invoice_id'] ?? 0);
-    $card_id_imp = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+    $card_id_imp = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
     try {
         $pdo->beginTransaction();
         // Buscar linhas da fatura que ainda não foram importadas

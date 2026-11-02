@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amount   = floatval($_POST['amount'] ?? 0);
     $period   = $_POST['period'] ?? 'monthly';
     $category = !empty($_POST['category']) ? trim($_POST['category']) : null;
-    $card_id  = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+    $card_id  = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
 
     if (strlen($name) < 3) $errors[] = 'O nome deve ter pelo menos 3 caracteres.';
     if ($amount <= 0)       $errors[] = 'O valor deve ser maior que zero.';

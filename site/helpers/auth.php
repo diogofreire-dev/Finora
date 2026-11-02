@@ -15,3 +15,6 @@ if (empty($_SESSION['user_id'])) {
 // Todas as páginas autenticadas ficam protegidas contra CSRF
 require_once __DIR__ . '/csrf.php';
 csrf_verify();
+
+// Verificação de dono dos recursos (IDOR) — ver owned_card_id()
+require_once __DIR__ . '/ownership.php';

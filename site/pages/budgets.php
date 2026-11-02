@@ -19,14 +19,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
             $name = trim($_POST['name'] ?? ''); $amount = floatval($_POST['amount'] ?? 0);
             $period = $_POST['period'] ?? 'monthly';
             $category = !empty($_POST['category']) ? trim($_POST['category']) : null;
-            $card_id = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+            $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
             if ($amount > 0 && strlen($name) >= 3) {
                 try { $stmt = $pdo->prepare("INSERT INTO budgets (user_id, name, amount, period, category, card_id, start_date) VALUES (:uid,:name,:amount,:period,:category,:card_id,CURDATE())"); $stmt->execute([':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = 'Orçamento criado com sucesso!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro ao criar orçamento.'; $messageType = 'danger'; }
             } else { $message = 'Dados inválidos.'; $messageType = 'danger'; }
             break;
         case 'edit':
             $budget_id = intval($_POST['budget_id'] ?? 0); $name = trim($_POST['name'] ?? ''); $amount = floatval($_POST['amount'] ?? 0);
-            $period = $_POST['period'] ?? 'monthly'; $category = !empty($_POST['category']) ? trim($_POST['category']) : null; $card_id = !empty($_POST['card_id']) ? intval($_POST['card_id']) : null;
+            $period = $_POST['period'] ?? 'monthly'; $category = !empty($_POST['category']) ? trim($_POST['category']) : null; $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
             if ($amount > 0 && strlen($name) >= 3) {
                 try { $stmt = $pdo->prepare("UPDATE budgets SET name=:name,amount=:amount,period=:period,category=:category,card_id=:card_id WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = 'Orçamento atualizado!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro ao atualizar.'; $messageType = 'danger'; }
             } else { $message = 'Dados inválidos.'; $messageType = 'danger'; }
