@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified        TINYINT(1)   DEFAULT 0,
   verification_token    VARCHAR(64)  NULL,
   verification_expires  DATETIME     NULL,
+  verification_attempts TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  verification_sent_at  DATETIME     NULL,
   password_reset_token  VARCHAR(64)  NULL,
   password_reset_expires DATETIME   NULL,
   last_password_change  DATETIME     NULL,

@@ -177,7 +177,7 @@ HTML;
           <!-- Info box -->
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
             <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Código temporário</div>
-            <div style="font-size:13px;color:#b45309">Este código é válido durante <strong>24 horas</strong>. Não o partilhes com ninguém.</div>
+            <div style="font-size:13px;color:#b45309">Este código é válido durante <strong>15 minutos</strong>. Não o partilhes com ninguém.</div>
           </td></tr></table>
 
           <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se não criaste uma conta no FreeCard, podes ignorar este email com segurança.</p>

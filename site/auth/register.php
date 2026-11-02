@@ -52,10 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $verificationCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
+            $tokenExpiry = date('Y-m-d H:i:s', strtotime('+15 minutes'));
             try {
                 $pdo->beginTransaction();
-                $ins = $pdo->prepare('INSERT INTO users (username, email, password_hash, email_verified, verification_token, verification_expires) VALUES (:u, :e, :p, 0, :token, :expires)');
+                $ins = $pdo->prepare('INSERT INTO users (username, email, password_hash, email_verified, verification_token, verification_expires, verification_sent_at) VALUES (:u, :e, :p, 0, :token, :expires, NOW())');
                 $ins->execute([':u' => $username, ':e' => $email, ':p' => $hash, ':token' => $verificationCode, ':expires' => $tokenExpiry]);
                 $emailService = new EmailService();
                 if (!$emailService->sendVerificationEmail($email, $username, $verificationCode)) throw new RuntimeException('Falha ao enviar email.');

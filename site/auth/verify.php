@@ -5,6 +5,12 @@ require_once __DIR__ . '/../../config/EmailService.php';
 
 if (isset($_SESSION['user_id'])) { header('Location: ../dashboard.php'); exit; }
 
+// Proteção contra força bruta: o código só vale para a conta desta sessão,
+// tem poucas tentativas e expira depressa.
+const VERIFY_MAX_ATTEMPTS   = 5;
+const VERIFY_CODE_MINUTES   = 15;
+const VERIFY_RESEND_SECONDS = 60;
+
 $status   = 'pending';
 $message  = '';
 $username = '';
@@ -20,48 +26,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
     }
     if ($digits === '') $digits = trim($_POST['code'] ?? '');
 
-    if (strlen($digits) !== 6 || !ctype_digit($digits)) {
+    if ($email === '') {
+        $errors[] = 'Sessão expirada. Faz login para receberes um novo código.';
+    } elseif (strlen($digits) !== 6 || !ctype_digit($digits)) {
         $errors[] = 'Por favor, introduz um código válido de 6 dígitos.';
     } else {
-        $stmt = $pdo->prepare('SELECT id, username, email, email_verified, verification_expires FROM users WHERE verification_token = :code LIMIT 1');
-        $stmt->execute([':code' => $digits]);
+        // Procurar a conta pelo email da sessão — nunca só pelo código
+        $stmt = $pdo->prepare('SELECT id, username, email, email_verified, verification_token, verification_expires, verification_attempts FROM users WHERE email = :email LIMIT 1');
+        $stmt->execute([':email' => $email]);
         $user = $stmt->fetch();
-        if ($user) {
-            $username = $user['username'];
-            if ($user['email_verified'] == 1) {
-                $status = 'already_verified';
-            } elseif (strtotime($user['verification_expires']) < time()) {
-                $status = 'expired';
-            } else {
-                $pdo->prepare('UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires = NULL WHERE id = :id')
-                    ->execute([':id' => $user['id']]);
-                try { (new EmailService())->sendWelcomeEmail($user['email'], $user['username']); } catch (Exception $e) {}
-                $status = 'success';
-                unset($_SESSION['pending_verification_email']);
-                $_SESSION['user_id']  = $user['id'];
-                $_SESSION['username'] = $user['username'];
-                session_regenerate_id(true);
-            }
-        } else {
+
+        // Gastar uma tentativa ANTES de comparar. Um único UPDATE atómico evita que
+        // pedidos em paralelo leiam o mesmo contador e ultrapassem o limite.
+        $reserved = false;
+        if ($user && !$user['email_verified']) {
+            $upd = $pdo->prepare('UPDATE users SET verification_attempts = verification_attempts + 1
+                                  WHERE id = :id AND email_verified = 0 AND verification_token IS NOT NULL
+                                    AND verification_expires > NOW() AND verification_attempts < :max');
+            $upd->execute([':id' => $user['id'], ':max' => VERIFY_MAX_ATTEMPTS]);
+            $reserved = $upd->rowCount() === 1;
+        }
+
+        if (!$user) {
             $errors[] = 'Código de verificação inválido.';
+        } elseif ($user['email_verified'] == 1) {
+            $status = 'already_verified';
+        } elseif (!$reserved && $user['verification_token'] !== null && strtotime($user['verification_expires']) < time()) {
+            $status = 'expired';
+        } elseif (!$reserved) {
+            $errors[] = 'Demasiadas tentativas. Pede um novo código.';
+        } elseif (hash_equals($user['verification_token'], $digits)) {
+            $pdo->prepare('UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires = NULL, verification_attempts = 0 WHERE id = :id')
+                ->execute([':id' => $user['id']]);
+            try { (new EmailService())->sendWelcomeEmail($user['email'], $user['username']); } catch (Exception $e) {}
+            $username = $user['username'];
+            $status = 'success';
+            session_regenerate_id(true);
+            unset($_SESSION['pending_verification_email']);
+            $_SESSION['user_id']  = $user['id'];
+            $_SESSION['username'] = $user['username'];
+        } else {
+            $remaining = VERIFY_MAX_ATTEMPTS - ($user['verification_attempts'] + 1);
+            if ($remaining <= 0) {
+                // Esgotou as tentativas: o código deixa de existir
+                $pdo->prepare('UPDATE users SET verification_token = NULL WHERE id = :id')->execute([':id' => $user['id']]);
+                $errors[] = 'Demasiadas tentativas. Pede um novo código.';
+            } else {
+                $errors[] = "Código de verificação inválido. Restam $remaining tentativa" . ($remaining > 1 ? 's' : '') . '.';
+            }
         }
     }
 }
 
 // Reenviar código
 if (isset($_POST['resend']) && $email) {
-    $stmt = $pdo->prepare('SELECT id, username, email_verified FROM users WHERE email = :email LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, username, email_verified, verification_sent_at FROM users WHERE email = :email LIMIT 1');
     $stmt->execute([':email' => $email]);
     $user = $stmt->fetch();
     if ($user && $user['email_verified'] == 0) {
-        $newCode     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-        $tokenExpiry = date('Y-m-d H:i:s', strtotime('+24 hours'));
-        $pdo->prepare('UPDATE users SET verification_token = :code, verification_expires = :expires WHERE id = :id')
-            ->execute([':code' => $newCode, ':expires' => $tokenExpiry, ':id' => $user['id']]);
-        try {
-            if ((new EmailService())->sendVerificationEmail($email, $user['username'], $newCode)) $message = 'Novo código enviado!';
-            else $errors[] = 'Erro ao enviar email. Tenta novamente.';
-        } catch (Exception $e) { $errors[] = 'Erro ao enviar email.'; }
+        $wait = $user['verification_sent_at'] ? strtotime($user['verification_sent_at']) + VERIFY_RESEND_SECONDS - time() : 0;
+        if ($wait > 0) {
+            $errors[] = "Aguarda $wait segundos antes de pedires um novo código.";
+        } else {
+            $newCode     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $tokenExpiry = date('Y-m-d H:i:s', strtotime('+' . VERIFY_CODE_MINUTES . ' minutes'));
+            $pdo->prepare('UPDATE users SET verification_token = :code, verification_expires = :expires, verification_attempts = 0, verification_sent_at = NOW() WHERE id = :id')
+                ->execute([':code' => $newCode, ':expires' => $tokenExpiry, ':id' => $user['id']]);
+            try {
+                if ((new EmailService())->sendVerificationEmail($email, $user['username'], $newCode)) $message = 'Novo código enviado!';
+                else $errors[] = 'Erro ao enviar email. Tenta novamente.';
+            } catch (Exception $e) { $errors[] = 'Erro ao enviar email.'; }
+        }
     }
 }
 
