@@ -1,8 +1,8 @@
 <?php
-// sidebar.php
-// Required variables before including:
-//   $activePage    — 'dashboard','cards','transactions','budgets','reminders','analytics','settings'
-//   $sidebarPrefix — '' for dashboard.php, '../' for pages/*.php
+// sidebar.php — cabeçalho fixo + menu lateral (escondido até ser aberto)
+// Variáveis necessárias antes do include:
+//   $activePage    — 'dashboard','cards','transactions','budgets','reminders','analytics','settings', ...
+//   $sidebarPrefix — '' para dashboard.php, '../' para pages/*.php
 
 $_sp  = $sidebarPrefix ?? '../';
 $_ap  = $activePage    ?? '';
@@ -10,121 +10,192 @@ $_ap  = $activePage    ?? '';
 function _sidebarClass($page, $current) {
     return $page === $current ? 'sidebar-link active' : 'sidebar-link';
 }
+function _ariaCurrent($page, $current) {
+    return $page === $current ? ' aria-current="page"' : '';
+}
+
+// Título mostrado no cabeçalho, para saberes onde estás com o menu fechado
+$_pageTitles = [
+    'dashboard'    => 'Dashboard',
+    'transactions' => 'Transações',
+    'cards'        => 'Cartões',
+    'budgets'      => 'Orçamentos',
+    'futuro'       => 'Metas',
+    'reminders'    => 'Lembretes',
+    'analytics'    => 'Análise',
+    'persona'      => 'Personalidade financeira',
+    'ai'           => 'Assistente IA',
+    'scan_fatura'  => 'Ler fatura',
+    'dados'        => 'Dados e relatórios',
+    'settings'     => 'Definições',
+];
+$_pageTitle = $_pageTitles[$_ap] ?? '';
+
+// Avatar do utilizador
+$_avatarPath = null;
+if (isset($pdo) && isset($uid)) {
+    try {
+        $_s = $pdo->prepare("SELECT avatar_path FROM users WHERE id = :uid");
+        $_s->execute([':uid' => $uid]);
+        $_avatarPath = $_s->fetchColumn();
+    } catch (Exception $_e) {}
+}
+$_username = $_SESSION['username'] ?? '';
+$_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 ?>
 <!-- Particles canvas (visible in all post-login pages) -->
 <canvas id="particles-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 
-<aside class="sidebar" id="appSidebar">
-  <!-- Logo -->
-  <div class="sidebar-logo">
-    <a href="<?= $_sp ?>dashboard.php" class="sidebar-brand">
-      <img src="<?= $_sp ?>assets/logo2.png" alt="Finora">
+<header class="app-header">
+  <button class="app-header-menu" id="appMenuBtn" type="button"
+          aria-controls="appSidebar" aria-expanded="false" aria-label="Abrir menu">
+    <i class="bi bi-list"></i>
+  </button>
+
+  <a href="<?= $_sp ?>dashboard.php" class="app-brand">
+    <img src="<?= $_sp ?>assets/logo2.png" alt="">
+    <span>Finora</span>
+  </a>
+
+  <?php if ($_pageTitle !== '' && $_ap !== 'dashboard'): ?>
+    <span class="app-header-title"><?= htmlspecialchars($_pageTitle) ?></span>
+  <?php endif; ?>
+
+  <div class="app-header-actions">
+    <a href="<?= $_sp ?>pages/scan_fatura.php" class="app-header-btn app-header-btn-ghost" title="Ler fatura">
+      <i class="bi bi-qr-code-scan"></i><span>Ler fatura</span>
+    </a>
+    <a href="<?= $_sp ?>pages/create_transaction.php" class="app-header-btn app-header-btn-primary">
+      <i class="bi bi-plus-lg"></i><span>Nova transação</span>
+    </a>
+
+    <div class="app-user">
+      <button class="app-user-btn" id="appUserBtn" type="button"
+              aria-haspopup="menu" aria-expanded="false" aria-controls="appUserMenu">
+        <span class="app-user-avatar">
+          <?php if ($_avatarPath): ?>
+            <img src="<?= $_sp ?><?= htmlspecialchars($_avatarPath) ?>" alt="">
+          <?php else: ?>
+            <?= htmlspecialchars($_initial) ?>
+          <?php endif; ?>
+        </span>
+        <span class="app-user-name"><?= htmlspecialchars($_username) ?></span>
+        <i class="bi bi-chevron-down"></i>
+      </button>
+      <div class="app-user-menu" id="appUserMenu" role="menu" hidden>
+        <a href="<?= $_sp ?>pages/settings.php" role="menuitem"><i class="bi bi-gear"></i> Definições</a>
+        <a href="<?= $_sp ?>pages/dados.php" role="menuitem"><i class="bi bi-database"></i> Dados e relatórios</a>
+        <a href="<?= $_sp ?>auth/logout.php" role="menuitem" class="app-user-logout"><i class="bi bi-box-arrow-right"></i> Terminar sessão</a>
+      </div>
+    </div>
+  </div>
+</header>
+
+<aside class="sidebar" id="appSidebar" aria-label="Menu principal" aria-hidden="true">
+  <div class="sidebar-top">
+    <a href="<?= $_sp ?>dashboard.php" class="app-brand">
+      <img src="<?= $_sp ?>assets/logo2.png" alt="">
       <span>Finora</span>
     </a>
+    <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fechar menu">
+      <i class="bi bi-x-lg"></i>
+    </button>
   </div>
 
-  <!-- Navigation -->
   <nav class="sidebar-nav">
-
-    <div class="sidebar-section-label">Principal</div>
-    <a href="<?= $_sp ?>dashboard.php"         class="<?= _sidebarClass('dashboard',    $_ap) ?>">
-      <i class="bi bi-speedometer2"></i> Dashboard
+    <a href="<?= $_sp ?>dashboard.php"          class="<?= _sidebarClass('dashboard',    $_ap) ?>"<?= _ariaCurrent('dashboard', $_ap) ?>>
+      <i class="bi bi-grid-1x2"></i> Dashboard
     </a>
-    <a href="<?= $_sp ?>pages/cards.php"       class="<?= _sidebarClass('cards',        $_ap) ?>">
-      <i class="bi bi-wallet2"></i> Cartões
-    </a>
-    <a href="<?= $_sp ?>pages/transactions.php" class="<?= _sidebarClass('transactions', $_ap) ?>">
+    <a href="<?= $_sp ?>pages/transactions.php" class="<?= _sidebarClass('transactions', $_ap) ?>"<?= _ariaCurrent('transactions', $_ap) ?>>
       <i class="bi bi-arrow-left-right"></i> Transações
     </a>
+    <a href="<?= $_sp ?>pages/cards.php"        class="<?= _sidebarClass('cards',        $_ap) ?>"<?= _ariaCurrent('cards', $_ap) ?>>
+      <i class="bi bi-credit-card-2-front"></i> Cartões
+    </a>
 
-    <div class="sidebar-section-label">Gestão</div>
-    <a href="<?= $_sp ?>pages/budgets.php"     class="<?= _sidebarClass('budgets',      $_ap) ?>">
+    <div class="sidebar-section-label">Planeamento</div>
+    <a href="<?= $_sp ?>pages/budgets.php"      class="<?= _sidebarClass('budgets',      $_ap) ?>"<?= _ariaCurrent('budgets', $_ap) ?>>
       <i class="bi bi-piggy-bank"></i> Orçamentos
     </a>
-    <a href="<?= $_sp ?>pages/futuro.php"      class="<?= _sidebarClass('futuro',      $_ap) ?>">
-      <i class="bi bi-hourglass-split"></i> Metas
+    <a href="<?= $_sp ?>pages/futuro.php"       class="<?= _sidebarClass('futuro',       $_ap) ?>"<?= _ariaCurrent('futuro', $_ap) ?>>
+      <i class="bi bi-flag"></i> Metas
     </a>
-    <a href="<?= $_sp ?>pages/reminders.php"   class="<?= _sidebarClass('reminders',    $_ap) ?>">
-      <i class="bi bi-bell"></i> Lembretes
-    </a>
-    <a href="<?= $_sp ?>pages/analytics.php"   class="<?= _sidebarClass('analytics',    $_ap) ?>">
-      <i class="bi bi-bar-chart-line"></i> Análise
+    <a href="<?= $_sp ?>pages/reminders.php"    class="<?= _sidebarClass('reminders',    $_ap) ?>"<?= _ariaCurrent('reminders', $_ap) ?>>
+      <i class="bi bi-calendar-check"></i> Lembretes
     </a>
 
-    <div class="sidebar-section-label">Percepções</div>
-    <a href="<?= $_sp ?>pages/persona.php"     class="<?= _sidebarClass('persona',     $_ap) ?> sidebar-link-special sidebar-link-persona">
-      <i class="bi bi-person-hearts"></i> Personalidade Financeira <span class="sidebar-ai-badge">Novo</span>
+    <div class="sidebar-section-label">Perceber os gastos</div>
+    <a href="<?= $_sp ?>pages/analytics.php"    class="<?= _sidebarClass('analytics',    $_ap) ?>"<?= _ariaCurrent('analytics', $_ap) ?>>
+      <i class="bi bi-bar-chart-line"></i> Análise
+    </a>
+    <a href="<?= $_sp ?>pages/persona.php"      class="<?= _sidebarClass('persona',      $_ap) ?>"<?= _ariaCurrent('persona', $_ap) ?>>
+      <i class="bi bi-person-hearts"></i> Personalidade financeira
+    </a>
+    <a href="<?= $_sp ?>pages/ai.php"           class="<?= _sidebarClass('ai',           $_ap) ?>"<?= _ariaCurrent('ai', $_ap) ?>>
+      <i class="bi bi-stars"></i> Assistente IA
     </a>
 
     <div class="sidebar-section-label">Ferramentas</div>
-    <a href="<?= $_sp ?>pages/scan_fatura.php"  class="<?= _sidebarClass('scan_fatura',  $_ap) ?>">
-      <i class="bi bi-qr-code-scan"></i> Ler Fatura QR
+    <a href="<?= $_sp ?>pages/scan_fatura.php"  class="<?= _sidebarClass('scan_fatura',  $_ap) ?>"<?= _ariaCurrent('scan_fatura', $_ap) ?>>
+      <i class="bi bi-qr-code-scan"></i> Ler fatura
     </a>
-    <a href="<?= $_sp ?>pages/dados.php"       class="<?= _sidebarClass('dados',        $_ap) ?>">
-      <i class="bi bi-database"></i> Dados & Relatórios
+    <a href="<?= $_sp ?>pages/dados.php"        class="<?= _sidebarClass('dados',        $_ap) ?>"<?= _ariaCurrent('dados', $_ap) ?>>
+      <i class="bi bi-database"></i> Dados e relatórios
     </a>
-    <a href="<?= $_sp ?>pages/ai.php"          class="<?= _sidebarClass('ai',           $_ap) ?> sidebar-link-special sidebar-link-ai">
-      <i class="bi bi-stars"></i> Assistente IA <span class="sidebar-ai-badge">Novo</span>
-    </a>
-    <a href="<?= $_sp ?>pages/settings.php"    class="<?= _sidebarClass('settings',     $_ap) ?>">
-      <i class="bi bi-gear"></i> Definições
-    </a>
-
   </nav>
 
-  <!-- User footer -->
   <div class="sidebar-footer">
-    <div class="sidebar-user">
-      <?php
-        // Buscar avatar do utilizador
-        $_avatarPath = null;
-        if (isset($pdo) && isset($uid)) {
-            try {
-                $_s = $pdo->prepare("SELECT avatar_path FROM users WHERE id = :uid");
-                $_s->execute([':uid' => $uid]);
-                $_avatarPath = $_s->fetchColumn();
-            } catch (Exception $_e) {}
-        }
-      ?>
-      <div class="sidebar-user-avatar" style="overflow:hidden;padding:0">
-        <?php if ($_avatarPath): ?>
-          <img src="<?=$_sp?><?=htmlspecialchars($_avatarPath)?>?v=<?=time()?>"
-               alt="avatar"
-               style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block">
-        <?php else: ?>
-          <?= strtoupper(substr($_SESSION['username'] ?? 'U', 0, 1)) ?>
-        <?php endif; ?>
-      </div>
-      <div class="sidebar-user-info">
-        <div class="sidebar-user-name"><?= htmlspecialchars($_SESSION['username'] ?? '') ?></div>
-        <div class="sidebar-user-email">Conta pessoal</div>
-      </div>
-    </div>
+    <a href="<?= $_sp ?>pages/settings.php" class="<?= _sidebarClass('settings', $_ap) ?>"<?= _ariaCurrent('settings', $_ap) ?>>
+      <i class="bi bi-gear"></i> Definições
+    </a>
     <a href="<?= $_sp ?>auth/logout.php" class="sidebar-logout">
-      <i class="bi bi-box-arrow-right"></i> Terminar Sessão
+      <i class="bi bi-box-arrow-right"></i> Terminar sessão
     </a>
   </div>
 </aside>
 
-<!-- Mobile overlay -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-<!-- Mobile toggle button -->
-<button class="sidebar-mobile-toggle" id="sidebarToggle" onclick="toggleSidebar()" aria-label="Menu">
-  <i class="bi bi-list"></i>
-</button>
-
 <script>
-function toggleSidebar() {
-  const sb = document.getElementById('appSidebar');
-  const ov = document.getElementById('sidebarOverlay');
-  sb.classList.toggle('open');
-  ov.classList.toggle('visible');
-}
-function closeSidebar() {
-  document.getElementById('appSidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('visible');
-}
+(function () {
+  const sb   = document.getElementById('appSidebar');
+  const ov   = document.getElementById('sidebarOverlay');
+  const btn  = document.getElementById('appMenuBtn');
+  const uBtn = document.getElementById('appUserBtn');
+  const uMenu = document.getElementById('appUserMenu');
+
+  function openSidebar() {
+    sb.classList.add('open'); ov.classList.add('visible');
+    sb.setAttribute('aria-hidden', 'false'); btn.setAttribute('aria-expanded', 'true');
+    (sb.querySelector('.sidebar-link.active') || sb.querySelector('.sidebar-link')).focus();
+  }
+  function closeSidebar() {
+    if (!sb.classList.contains('open')) return;
+    sb.classList.remove('open'); ov.classList.remove('visible');
+    sb.setAttribute('aria-hidden', 'true'); btn.setAttribute('aria-expanded', 'false');
+    btn.focus();
+  }
+  function toggleUserMenu(force) {
+    const open = force ?? uMenu.hidden;
+    uMenu.hidden = !open;
+    uBtn.setAttribute('aria-expanded', String(open));
+    if (open) uMenu.querySelector('a').focus();
+  }
+
+  btn.addEventListener('click', () => sb.classList.contains('open') ? closeSidebar() : openSidebar());
+  uBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleUserMenu(); });
+  document.addEventListener('click', (e) => { if (!uMenu.hidden && !uMenu.contains(e.target)) toggleUserMenu(false); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape') return;
+    if (!uMenu.hidden) { toggleUserMenu(false); uBtn.focus(); }
+    else closeSidebar();
+  });
+
+  // Usados pelo overlay, pelo botão de fechar e pelo tutorial
+  window.openSidebar  = openSidebar;
+  window.closeSidebar = closeSidebar;
+  window.toggleSidebar = () => sb.classList.contains('open') ? closeSidebar() : openSidebar();
+})();
 </script>
 <script>
 // ── Partículas (injetadas pelo sidebar em todas as páginas) ─
@@ -176,4 +247,4 @@ function closeSidebar() {
 <?php /* ── Tutorial System ── */ ?>
 <link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js"></script>
+<script src="<?= $_sp ?>js/tutorial.js?v=2"></script>
