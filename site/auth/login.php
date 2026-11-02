@@ -16,6 +16,10 @@ header('Expires: 0');
 
 require_once __DIR__ . '/../../config/db.php';
 
+// Proteção contra força bruta à password: bloqueio TEMPORÁRIO da conta
+const LOGIN_MAX_ATTEMPTS = 5;
+const LOGIN_LOCK_MINUTES = 15;
+
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -25,11 +29,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === '' || $password === '') {
         $errors[] = 'Preenche todos os campos.';
     } else {
-        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified FROM users WHERE email = :e LIMIT 1');
+        // O tempo de bloqueio é calculado pelo MySQL (mesmo relógio que grava o NOW())
+        $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified,
+                                      GREATEST(TIMESTAMPDIFF(SECOND, NOW(), login_locked_until), 0) AS lock_seconds
+                               FROM users WHERE email = :e LIMIT 1');
         $stmt->execute([':e' => $email]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($password, $user['password_hash'])) {
+        // Conta bloqueada: recusar sem sequer verificar a password
+        if ($user && $user['lock_seconds'] > 0) {
+            $min = (int) ceil($user['lock_seconds'] / 60);
+            $errors[] = "Demasiadas tentativas. Tenta novamente daqui a $min minuto" . ($min > 1 ? 's' : '') . '.';
+        } elseif ($user && password_verify($password, $user['password_hash'])) {
+            // Login certo: o contador volta a zero
+            $pdo->prepare('UPDATE users SET failed_login_attempts = 0, login_locked_until = NULL WHERE id = :id')
+                ->execute([':id' => $user['id']]);
+
             if (!$user['email_verified']) {
                 $_SESSION['pending_verification_email'] = $user['email'];
                 header('Location: verify.php');
@@ -42,6 +57,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
         } else {
+            if ($user) {
+                // Contar a falha num UPDATE atómico (pedidos em paralelo não se perdem)
+                $pdo->prepare('UPDATE users SET failed_login_attempts = failed_login_attempts + 1 WHERE id = :id')
+                    ->execute([':id' => $user['id']]);
+                // À 5.ª falha: bloqueio temporário e o contador recomeça
+                $pdo->prepare('UPDATE users SET login_locked_until = NOW() + INTERVAL ' . LOGIN_LOCK_MINUTES . ' MINUTE, failed_login_attempts = 0
+                               WHERE id = :id AND failed_login_attempts >= :max')
+                    ->execute([':id' => $user['id'], ':max' => LOGIN_MAX_ATTEMPTS]);
+            }
+            // Mesma mensagem para email inexistente e password errada (evita enumeração de contas)
             $errors[] = 'Credenciais inválidas.';
         }
     }
