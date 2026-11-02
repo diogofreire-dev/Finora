@@ -1,8 +1,8 @@
 <?php
 /**
- * get_company_by_nif.php  (v3 — com debug e fallback local)
- * Coloca em: site/pages/get_company_by_nif.php
+ * get_company_by_nif.php — devolve o nome da empresa de um NIF (usado no scan de faturas)
  */
+require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/nif_lookup.php';
 
@@ -14,8 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
     exit;
 }
 
-$nif   = trim($_GET['nif'] ?? '');
-$debug = !empty($_GET['debug']); // ?debug=1 para ver erros internos
+$nif = trim($_GET['nif'] ?? '');
 
 if (!preg_match('/^\d{9}$/', $nif)) {
     echo json_encode(['found' => false, 'error' => 'nif_invalido']);
@@ -32,11 +31,6 @@ $response = [
     'fonte'        => $result['fonte']    ?? null,
     'verified'     => $result['verified'] ?? false,
 ];
-
-// Em modo debug mostra mais info para diagnosticar
-if ($debug) {
-    $response['_debug'] = $result;
-}
 
 echo json_encode($response);
 

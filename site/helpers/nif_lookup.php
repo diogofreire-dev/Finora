@@ -93,7 +93,8 @@ function _nif_http_get(string $url): string|false {
             ]),
             'ignore_errors' => true,
         ],
-        'ssl' => ['verify_peer' => false, 'verify_peer_name' => false],
+        // Verificar sempre o certificado: sem isto, quem estiver na rede pode responder pelo site
+        'ssl' => ['verify_peer' => true, 'verify_peer_name' => true],
     ];
     return @file_get_contents($url, false, stream_context_create($opts));
 }
