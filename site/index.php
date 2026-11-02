@@ -10,7 +10,7 @@
 </script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FreeCard — Gestão de Cartões e Transações gratuita em Portugal</title>
+  <title>Finora — Gestão de Cartões e Transações gratuita em Portugal</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
@@ -18,24 +18,24 @@
   <link rel="apple-touch-icon" href="/favicon.png">
 
   <!-- SEO -->
-  <meta name="description" content="FreeCard é uma aplicação gratuita para gerir os teus cartões de crédito e débito, controlar transações e orçamentos mensais. Simples, seguro e 100% gratuito.">
+  <meta name="description" content="Finora é uma aplicação gratuita para gerir os teus cartões de crédito e débito, controlar transações e orçamentos mensais. Simples, seguro e 100% gratuito.">
   <meta name="keywords" content="gestão de cartões, controlo de gastos, orçamento mensal, transações, finanças pessoais, app gratuita, Portugal">
-  <meta name="author" content="FreeCard">
+  <meta name="author" content="Finora">
   <meta name="robots" content="index, follow">
   <link rel="canonical" href="https://freecard.infinityfreeapp.com/site/">
 
   <!-- Open Graph (Facebook, WhatsApp, etc.) -->
   <meta property="og:type"        content="website">
   <meta property="og:url"         content="https://freecard.infinityfreeapp.com/site/">
-  <meta property="og:title"       content="FreeCard — Gestão de Cartões gratuita">
+  <meta property="og:title"       content="Finora — Gestão de Cartões gratuita">
   <meta property="og:description" content="Gere cartões, transações e orçamentos num só lugar. Acompanha os teus gastos e mantém-te sempre dentro do orçamento. 100% gratuito.">
   <meta property="og:image"       content="https://freecard.infinityfreeapp.com/site/assets/logo2.png">
   <meta property="og:locale"      content="pt_PT">
-  <meta property="og:site_name"   content="FreeCard">
+  <meta property="og:site_name"   content="Finora">
 
   <!-- Twitter Card -->
   <meta name="twitter:card"        content="summary">
-  <meta name="twitter:title"       content="FreeCard — Gestão de Cartões gratuita">
+  <meta name="twitter:title"       content="Finora — Gestão de Cartões gratuita">
   <meta name="twitter:description" content="Gere cartões, transações e orçamentos num só lugar. 100% gratuito.">
   <meta name="twitter:image"       content="https://freecard.infinityfreeapp.com/site/assets/logo2.png">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -1033,8 +1033,8 @@
 <!-- NAV -->
 <nav class="top-nav">
   <a href="index.php" class="nav-brand">
-    <img src="assets/logo2.png" alt="FreeCard">
-    <span>FreeCard</span>
+    <img src="assets/logo2.png" alt="Finora">
+    <span>Finora</span>
   </a>
   <div class="nav-links">
     <a href="#quem-somos" class="nav-link-plain">Quem somos</a>
@@ -1079,12 +1079,12 @@
         <div class="dot dot-r"></div>
         <div class="dot dot-y"></div>
         <div class="dot dot-g"></div>
-        <div class="mockup-bar"><span>freecard.app/dashboard</span></div>
+        <div class="mockup-bar"><span>finora.app/dashboard</span></div>
       </div>
       <div class="mockup-body">
         <div class="mock-sidebar">
           <div class="mock-logo">
-            <img src="assets/logo2.png" alt=""> FreeCard
+            <img src="assets/logo2.png" alt=""> Finora
           </div>
           <div class="mock-label">Principal</div>
           <div class="mock-item active"><i class="bi bi-speedometer2"></i> Dashboard</div>
@@ -1300,8 +1300,8 @@
   <div class="container">
     <div class="quem-somos-inner fade-up">
       <p class="sect-label">Quem somos</p>
-      <h2 class="sect-title">A equipa por trás do FreeCard</h2>
-      <p class="sect-sub">O FreeCard nasceu como Prova de Aptidão Profissional, com o objetivo de criar uma ferramenta simples e acessível para qualquer pessoa gerir os seus cartões e finanças pessoais sem custos.</p>
+      <h2 class="sect-title">A equipa por trás do Finora</h2>
+      <p class="sect-sub">O Finora nasceu como Prova de Aptidão Profissional, com o objetivo de criar uma ferramenta simples e acessível para qualquer pessoa gerir os seus cartões e finanças pessoais sem custos.</p>
     </div>
     <div class="team-grid">
       <div class="team-card fade-up">
@@ -1344,8 +1344,8 @@
     <div class="row">
       <div class="col-md-5 mb-4 mb-md-0">
         <a href="index.php" class="footer-brand">
-          <img src="assets/logo2.png" alt="FreeCard">
-          FreeCard
+          <img src="assets/logo2.png" alt="Finora">
+          Finora
         </a>
         <p class="footer-copy">Gestão de cartões e transações.<br>Simples, rápido e gratuito.</p>
       </div>
@@ -1360,7 +1360,7 @@
       </div>
     </div>
     <hr class="footer-divider">
-    <p class="footer-copy text-center mb-0">&copy; <?=date('Y')?> FreeCard. Todos os direitos reservados.</p>
+    <p class="footer-copy text-center mb-0">&copy; <?=date('Y')?> Finora. Todos os direitos reservados.</p>
   </div>
 </footer>
 

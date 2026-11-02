@@ -1,6 +1,6 @@
 {
-    "name": "freecard/app",
-    "description": "FreeCard - Credit Card Management System",
+    "name": "finora/app",
+    "description": "Finora - Credit Card Management System",
     "require": {
         "phpmailer/phpmailer": "^6.8",
         "tecnickcom/tcpdf": "^6.10"

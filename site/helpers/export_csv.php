@@ -35,7 +35,7 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-$filename = 'freecard_transacoes_' . date('Y-m-d') . '.csv';
+$filename = 'finora_transacoes_' . date('Y-m-d') . '.csv';
 
 header('Content-Type: text/csv; charset=UTF-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

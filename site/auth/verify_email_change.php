@@ -68,7 +68,7 @@ if ($token !== '') {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificar Alteração de Email - FreeCard</title>
+  <title>Verificar Alteração de Email - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <style>
@@ -255,7 +255,7 @@ if ($token !== '') {
   <div class="verify-card">
     <div class="verify-header">
       <div class="logo-container">
-        <img src="../assets/logo.png" alt="Freecard">
+        <img src="../assets/logo2.png" alt="Finora">
       </div>
       <h1>Verificação de Email</h1>
       <p>Confirmação de alteração de email</p>

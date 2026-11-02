@@ -1,4 +1,4 @@
-# FreeCard
+# Finora
 
 Aplicação web de gestão financeira pessoal desenvolvida em PHP/MySQL como Projeto de Aptidão Profissional.
 

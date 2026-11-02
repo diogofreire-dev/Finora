@@ -39,7 +39,7 @@ $stmt->execute([':uid' => $uid]);
 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 $backup = [
-    'app'          => 'FreeCard',
+    'app'          => 'Finora',
     'version'      => '1.0',
     'exported_at'  => date('Y-m-d H:i:s'),
     'user'         => $user,
@@ -53,7 +53,7 @@ $backup = [
     'budgets'      => $budgets,
 ];
 
-$filename = 'freecard_backup_' . date('Y-m-d') . '.json';
+$filename = 'finora_backup_' . date('Y-m-d') . '.json';
 
 header('Content-Type: application/json; charset=UTF-8');
 header('Content-Disposition: attachment; filename="' . $filename . '"');

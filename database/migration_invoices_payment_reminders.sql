@@ -1,5 +1,5 @@
 -- ============================================================
--- FreeCard — Migrações necessárias para as novas funcionalidades
+-- Finora — Migrações necessárias para as novas funcionalidades
 -- Executar 1 vez na base de dados do projeto (MySQL/MariaDB)
 -- ============================================================
 

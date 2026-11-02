@@ -133,7 +133,7 @@ try {
     jsonOut(['error' => 'Não foi possível carregar os teus dados. Tenta novamente.']);
 }
 
-$ctx  = "Es um assistente financeiro da app FreeCard.\n";
+$ctx  = "Es um assistente financeiro da app Finora.\n";
 $ctx .= "Respondes SEMPRE em Portugues de Portugal.\n";
 $ctx .= "Regras: respostas curtas e diretas (max 4 linhas), sem introducoes, sem despedidas, sem asteriscos, usa tu em vez de voce.\n";
 $ctx .= "\n=== DADOS ===\n\nMes atual - Total gasto: EUR{$totalMes}\n";

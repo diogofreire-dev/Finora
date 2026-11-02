@@ -8,7 +8,7 @@
 - ✅ Dados oficiais e verificados
 - ✅ Funciona para Portugal (PT) e toda a UE
 
-## Como Funciona no FreeCard?
+## Como Funciona no Finora?
 
 ### Fluxo de Lookup (get_company_by_nif.php)
 

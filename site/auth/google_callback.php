@@ -103,7 +103,7 @@ if (empty($googleId) || empty($googleEmail)) {
 }
 
 // Só confiar no email se o Google o tiver verificado. Sem isto, uma conta Google criada
-// com o email de outra pessoa (ainda por verificar) entrava na conta FreeCard dessa pessoa.
+// com o email de outra pessoa (ainda por verificar) entrava na conta Finora dessa pessoa.
 if ($emailVerified !== true) {
     googleError('O email da tua conta Google ainda não está verificado.');
 }

@@ -82,7 +82,7 @@ if ($includeStats) {
 }
 
 $reportTitle = $type === 'full' ? 'Relatório Completo' : 'Relatório Resumido';
-$filename = 'freecard-relatorio-' . date('Y-m-d') . '.pdf';
+$filename = 'finora-relatorio-' . date('Y-m-d') . '.pdf';
 
 $monthLabel = $month ? date('m/Y', strtotime($month . '-01')) : 'Todos os meses';
 $filters = [];
@@ -101,7 +101,7 @@ if ($card_id) {
 <html lang="pt">
 <head>
     <meta charset="UTF-8">
-    <title><?= htmlspecialchars($reportTitle) ?> - FreeCard</title>
+    <title><?= htmlspecialchars($reportTitle) ?> - Finora</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -299,7 +299,7 @@ if ($card_id) {
 <div class="header">
     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
         <div>
-            <h1>FreeCard</h1>
+            <h1>Finora</h1>
             <div class="subtitle">Gestão Financeira Pessoal</div>
         </div>
         <div style="text-align:right;">
@@ -424,7 +424,7 @@ if ($card_id) {
 
 <!-- RODAPÉ -->
 <div class="footer">
-    <span>FreeCard — Gestão Financeira Pessoal</span>
+    <span>Finora — Gestão Financeira Pessoal</span>
     <span>Gerado em <?= date('d/m/Y \à\s H:i') ?></span>
 </div>
 

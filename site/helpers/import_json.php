@@ -20,7 +20,7 @@ $content = file_get_contents($file['tmp_name']);
 $backup  = json_decode($content, true);
 
 if (!$backup || !isset($backup['transactions'])) {
-    header('Location: ../pages/dados.php?import_error=' . urlencode('Ficheiro JSON inválido ou incompatível com FreeCard.'));
+    header('Location: ../pages/dados.php?import_error=' . urlencode('Ficheiro JSON inválido ou incompatível com Finora.'));
     exit;
 }
 

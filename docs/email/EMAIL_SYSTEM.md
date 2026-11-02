@@ -1,4 +1,4 @@
-# Sistema de Email - FreeCard
+# Sistema de Email - Finora
 
 (Copiado para pasta docs/email)
 
