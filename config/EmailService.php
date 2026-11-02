@@ -1,12 +1,15 @@
 <?php
 // config/EmailService.php
 
+// A chave fica em brevo.php (ignorado pelo git) — ver brevo.example.php
+require_once __DIR__ . '/brevo.php';
+
 class EmailService {
-    private $apiKey    = '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';
-    private $apiUrl    = 'https://api.brevo.com/v3/smtp/email';
-    private $fromEmail = 'freecardssuporte@gmail.com';
+    private $apiKey    = BREVO_API_KEY;
+    private $apiUrl    ='https://api.brevo.com/v3/smtp/email';
+    private $fromEmail = 'freecardadmin@gmail.com';
     private $fromName  = 'FreeCard';
-    private $baseUrl   = 'http://freecard.infinityfreeapp.com/site';
+    private $baseUrl   = APP_URL;
 
     private function sendMail($to, $subject, $htmlBody, $textBody = '') {
         $data = [

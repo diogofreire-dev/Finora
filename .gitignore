@@ -8,3 +8,4 @@ node_modules/
 site/test.php
 /site/assets/avatars/
 /config/google_oauth.php
+/config/brevo.php
