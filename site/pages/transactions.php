@@ -95,7 +95,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
         $messageType = 'success';
     } catch (PDOException $e) {
         $pdo->rollBack();
-        $message     = 'Erro ao importar fatura: ' . $e->getMessage();
+        error_log('[transactions] Erro ao importar fatura: ' . $e->getMessage());
+        $message     = 'Erro ao importar fatura. Tenta novamente.';
         $messageType = 'danger';
     }
 }

@@ -199,9 +199,15 @@ function loadingDots() {
   return '<span class="ai-loading-dot"></span><span class="ai-loading-dot"></span><span class="ai-loading-dot"></span>';
 }
 
-function formatAI(text) {
+// Escapar sempre antes de pôr texto em innerHTML
+function escapeHtml(text) {
   return text
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function formatAI(text) {
+  return escapeHtml(text)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
 }
@@ -271,7 +277,7 @@ function appendMessage(role, text) {
     <div class="chat-avatar ${role}">
       <i class="bi ${isUser ? 'bi-person' : 'bi-stars'}"></i>
     </div>
-    <div class="chat-bubble ${role}">${role === 'ai' ? formatAI(text) : text.replace(/\n/g,'<br>')}</div>
+    <div class="chat-bubble ${role}">${role === 'ai' ? formatAI(text) : escapeHtml(text).replace(/\n/g,'<br>')}</div>
   `;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;

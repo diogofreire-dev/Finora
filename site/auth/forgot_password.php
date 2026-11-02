@@ -24,16 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update = $pdo->prepare('UPDATE users SET password_reset_token = :token, password_reset_expires = :expires WHERE id = :id');
             $update->execute([':token' => $resetToken, ':expires' => $tokenExpiry, ':id' => $user['id']]);
             $emailService = new EmailService();
-            if ($emailService->sendPasswordResetEmail($user['email'], $user['username'], $resetToken)) {
-                $success = true;
-                $message = 'Email de recuperação enviado com sucesso!';
-            } else {
-                $errors[] = 'Erro ao enviar email. Tenta novamente.';
+            if (!$emailService->sendPasswordResetEmail($user['email'], $user['username'], $resetToken)) {
+                error_log('[forgot_password] Falha ao enviar email de recuperação para o utilizador ' . $user['id']);
             }
-        } else {
-            $success = true;
-            $message = 'Se o email existir na nossa base de dados, receberás um link de recuperação.';
         }
+        // Resposta igual quer o email exista quer não (evita enumeração de contas)
+        $success = true;
+        $message = 'Se o email existir na nossa base de dados, receberás um link de recuperação.';
     }
 }
 ?>
@@ -97,8 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php if ($success): ?>
       <div class="a-success">
         <i class="bi bi-envelope-check s-icon"></i>
-        <h3>Email enviado!</h3>
-        <p>Verifica a tua caixa de entrada e a pasta de spam.</p>
+        <h3>Pedido recebido</h3>
+        <p><?= htmlspecialchars($message) ?> Verifica também a pasta de spam.</p>
       </div>
       <div class="text-center">
         <a href="login.php" class="btn-back"><i class="bi bi-arrow-left"></i> Voltar ao login</a>
