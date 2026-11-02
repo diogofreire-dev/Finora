@@ -55,7 +55,7 @@ if (!$tokenResponse) {
             'redirect_uri'  => GOOGLE_REDIRECT_URI,
             'grant_type'    => 'authorization_code',
         ]),
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
     ]);
     $tokenResponse = curl_exec($ch);
     curl_close($ch);
@@ -81,7 +81,7 @@ if (!$userInfoResponse) {
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_HTTPHEADER     => ["Authorization: Bearer $accessToken"],
-        CURLOPT_SSL_VERIFYPEER => false,
+        CURLOPT_SSL_VERIFYPEER => true,
     ]);
     $userInfoResponse = curl_exec($ch);
     curl_close($ch);
@@ -100,6 +100,12 @@ $emailVerified = $googleUser['verified_email'] ?? false;
 
 if (empty($googleId) || empty($googleEmail)) {
     googleError('Não foi possível obter o teu email do Google.');
+}
+
+// Só confiar no email se o Google o tiver verificado. Sem isto, uma conta Google criada
+// com o email de outra pessoa (ainda por verificar) entrava na conta FreeCard dessa pessoa.
+if ($emailVerified !== true) {
+    googleError('O email da tua conta Google ainda não está verificado.');
 }
 
 // Verificar se já existe conta com este google_id ou email
