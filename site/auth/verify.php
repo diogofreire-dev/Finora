@@ -32,7 +32,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
         $errors[] = 'Por favor, introduz um código válido de 6 dígitos.';
     } else {
         // Procurar a conta pelo email da sessão — nunca só pelo código
-        $stmt = $pdo->prepare('SELECT id, username, email, email_verified, verification_token, verification_expires, verification_attempts FROM users WHERE email = :email LIMIT 1');
+        $stmt = $pdo->prepare('SELECT id, username, email, email_verified, verification_token, verification_attempts,
+                                      verification_expires < NOW() AS is_expired
+                               FROM users WHERE email = :email LIMIT 1');
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch();
 
@@ -51,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
             $errors[] = 'Código de verificação inválido.';
         } elseif ($user['email_verified'] == 1) {
             $status = 'already_verified';
-        } elseif (!$reserved && $user['verification_token'] !== null && strtotime($user['verification_expires']) < time()) {
+        } elseif (!$reserved && $user['verification_token'] !== null && $user['is_expired']) {
             $status = 'expired';
         } elseif (!$reserved) {
             $errors[] = 'Demasiadas tentativas. Pede um novo código.';
@@ -80,18 +82,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
 
 // Reenviar código
 if (isset($_POST['resend']) && $email) {
-    $stmt = $pdo->prepare('SELECT id, username, email_verified, verification_sent_at FROM users WHERE email = :email LIMIT 1');
+    // Todos os cálculos de tempo são feitos pelo MySQL, para usar um só relógio
+    $stmt = $pdo->prepare('SELECT id, username, email_verified,
+                                  TIMESTAMPDIFF(SECOND, NOW(), verification_sent_at + INTERVAL ' . VERIFY_RESEND_SECONDS . ' SECOND) AS wait_seconds
+                           FROM users WHERE email = :email LIMIT 1');
     $stmt->execute([':email' => $email]);
     $user = $stmt->fetch();
     if ($user && $user['email_verified'] == 0) {
-        $wait = $user['verification_sent_at'] ? strtotime($user['verification_sent_at']) + VERIFY_RESEND_SECONDS - time() : 0;
+        $wait = (int) $user['wait_seconds'];
         if ($wait > 0) {
             $errors[] = "Aguarda $wait segundos antes de pedires um novo código.";
         } else {
-            $newCode     = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
-            $tokenExpiry = date('Y-m-d H:i:s', strtotime('+' . VERIFY_CODE_MINUTES . ' minutes'));
-            $pdo->prepare('UPDATE users SET verification_token = :code, verification_expires = :expires, verification_attempts = 0, verification_sent_at = NOW() WHERE id = :id')
-                ->execute([':code' => $newCode, ':expires' => $tokenExpiry, ':id' => $user['id']]);
+            $newCode = str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            $pdo->prepare('UPDATE users SET verification_token = :code, verification_expires = NOW() + INTERVAL ' . VERIFY_CODE_MINUTES . ' MINUTE,
+                                  verification_attempts = 0, verification_sent_at = NOW() WHERE id = :id')
+                ->execute([':code' => $newCode, ':id' => $user['id']]);
             try {
                 if ((new EmailService())->sendVerificationEmail($email, $user['username'], $newCode)) $message = 'Novo código enviado!';
                 else $errors[] = 'Erro ao enviar email. Tenta novamente.';
