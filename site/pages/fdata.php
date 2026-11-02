@@ -13,6 +13,46 @@ function jsonOut($data) {
     exit;
 }
 
+/**
+ * Envia o prompt à Groq a partir do servidor e devolve o texto da resposta.
+ * A chave (GROQ_API_KEY) nunca sai do servidor.
+ * Em caso de erro devolve null e regista o detalhe com error_log().
+ */
+function groqChat(string $prompt): ?string {
+    $body = [
+        'model'       => GROQ_MODEL,
+        'messages'    => [['role' => 'user', 'content' => $prompt]],
+        'temperature' => 0.7,
+        'max_tokens'  => 800,
+    ];
+
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL            => 'https://api.groq.com/openai/v1/chat/completions',
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($body),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT        => 30,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'Authorization: Bearer ' . GROQ_API_KEY,
+        ],
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $error    = curl_error($ch);
+    curl_close($ch);
+
+    if ($error) { error_log("Groq CURL Error: $error"); return null; }
+    if ($httpCode < 200 || $httpCode >= 300) {
+        error_log("Groq API Error: HTTP $httpCode - $response");
+        return null;
+    }
+
+    $data = json_decode($response, true);
+    return $data['choices'][0]['message']['content'] ?? null;
+}
+
 $uid = $_SESSION['user_id'] ?? null;
 if (!$uid) jsonOut(['error' => 'Não autenticado.']);
 
@@ -89,7 +129,8 @@ try {
     $stmt->execute([':uid' => $uid]);
     $porCartao = $stmt->fetchAll();
 } catch (Exception $e) {
-    jsonOut(['error' => 'Erro BD: ' . $e->getMessage()]);
+    error_log('[fdata] Erro BD: ' . $e->getMessage());
+    jsonOut(['error' => 'Não foi possível carregar os teus dados. Tenta novamente.']);
 }
 
 $ctx  = "Es um assistente financeiro da app FreeCard.\n";
@@ -119,7 +160,7 @@ if ($type === 'insights') {
     $prompt = $ctx . "\nPERGUNTA: " . $message . "\nResponde em 1-3 frases diretas sem introducao. Usa **negrito** nos valores e categorias importantes. Sem emojis.";
 }
 
-jsonOut([
-    'prompt' => $prompt,
-    'apiKey' => GROQ_API_KEY,
-]);
+$reply = groqChat($prompt);
+if ($reply === null) jsonOut(['error' => 'O assistente não está disponível de momento. Tenta mais tarde.']);
+
+jsonOut(['reply' => $reply]);
