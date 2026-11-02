@@ -92,7 +92,7 @@
         <i class="bi bi-pencil"></i> Editar
       </button>
 
-      <form method="post" class="d-inline">
+      <form method="post" class="d-inline"><?= csrf_field() ?>
         <input type="hidden" name="action" value="toggle">
         <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
         <button type="submit" class="btn btn-sm btn-outline-secondary">
@@ -102,7 +102,7 @@
       </form>
     </div>
 
-    <form method="post" class="d-inline" onsubmit="return confirm('Tens a certeza? O histórico será mantido.');">
+    <form method="post" class="d-inline" onsubmit="return confirm('Tens a certeza? O histórico será mantido.');"><?= csrf_field() ?>
       <input type="hidden" name="action" value="delete">
       <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
       <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">

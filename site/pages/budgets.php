@@ -190,8 +190,8 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0;margin-top:2px">
               <a href="edit_budget.php?id=<?=$b['id']?>" class="btn-s" style="padding:5px 10px" title="Editar"><i class="bi bi-pencil"></i></a>
-              <form method="post" style="margin:0"><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 10px" type="submit" title="Desativar"><i class="bi bi-pause-circle"></i></button></form>
-              <form method="post" style="margin:0" onsubmit="return confirm('Eliminar orçamento?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
+              <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 10px" type="submit" title="Desativar"><i class="bi bi-pause-circle"></i></button></form>
+              <form method="post" style="margin:0" onsubmit="return confirm('Eliminar orçamento?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
             </div>
           </div>
         </div>
@@ -213,8 +213,8 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
               &nbsp;<span style="font-size:13px;color:var(--text-secondary)">€<?=number_format($b['amount'],2)?></span>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
-              <form method="post" style="margin:0"><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 12px;font-size:12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
-              <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><input type="hidden" name="action" value="delete"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
+              <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 12px;font-size:12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
+              <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
             </div>
           </div>
         </div>

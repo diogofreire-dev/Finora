@@ -195,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
       </div>
 
-      <form method="post" class="m-form">
+      <form method="post" class="m-form"><?= csrf_field() ?>
 
         <!-- Data -->
         <div class="form-section">

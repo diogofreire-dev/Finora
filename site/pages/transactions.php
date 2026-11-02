@@ -369,7 +369,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
                 <a href="edit_transaction.php?id=<?=$t['id']?>" class="btn-s" style="padding:4px 10px;font-size:12px">
                   <i class="bi bi-pencil"></i>
                 </a>
-                <form method="post" style="margin:0" onsubmit="return confirm('Remover esta transação? Esta ação não pode ser revertida.')">
+                <form method="post" style="margin:0" onsubmit="return confirm('Remover esta transação? Esta ação não pode ser revertida.')"><?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="transaction_id" value="<?=$t['id']?>">
                   <button class="btn-s btn-s-danger" style="padding:4px 10px;font-size:12px" type="submit">

@@ -107,6 +107,7 @@ function dismissNotification(notificationId) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRF-Token': <?= json_encode(csrf_token()) ?>,
             },
             body: 'notification_id=' + notificationId
         }).then(() => {

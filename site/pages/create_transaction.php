@@ -182,7 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="settings-group">
     <p class="group-label">Detalhes da transação</p>
     <div class="settings-card">
-      <form method="post" class="m-form">
+      <form method="post" class="m-form"><?= csrf_field() ?>
 
         <!-- Data -->
         <div class="form-section">

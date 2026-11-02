@@ -645,12 +645,12 @@ include __DIR__ . '/../components/sidebar.php';
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
-          <form method="post" enctype="multipart/form-data" id="avatarForm">
+          <form method="post" enctype="multipart/form-data" id="avatarForm"><?= csrf_field() ?>
             <input type="hidden" name="action" value="upload_avatar">
             <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none">
           </form>
           <?php if (!empty($user['avatar_path'])): ?>
-          <form method="post" id="removeAvatarForm">
+          <form method="post" id="removeAvatarForm"><?= csrf_field() ?>
             <input type="hidden" name="action" value="remove_avatar">
             <button type="submit" class="btn-s btn-s-danger"
                     onclick="return confirm('Remover foto de perfil?')">
@@ -673,7 +673,7 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
       <div class="collapse" id="formUsername">
         <div class="s-form">
-          <form method="post">
+          <form method="post"><?= csrf_field() ?>
             <input type="hidden" name="action" value="change_username">
             <div class="mb-3">
               <label class="form-label">Novo nome</label>
@@ -716,7 +716,7 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
       <div class="collapse" id="formPassword">
         <div class="s-form">
-          <form method="post">
+          <form method="post"><?= csrf_field() ?>
             <input type="hidden" name="action" value="change_password">
             <div class="mb-3">
               <label class="form-label">Password atual</label>
@@ -776,7 +776,7 @@ include __DIR__ . '/../components/sidebar.php';
             <i class="bi bi-envelope-exclamation"></i>
             Enviamos um email para <strong><?=htmlspecialchars($user['pending_email'])?></strong>. Clica no link para confirmar. O link expira em 1 hora.
           </div>
-          <form method="post">
+          <form method="post"><?= csrf_field() ?>
             <input type="hidden" name="action" value="cancel_email_change">
             <button type="submit" class="btn-s"><i class="bi bi-x-circle"></i> Cancelar pedido</button>
           </form>
@@ -784,7 +784,7 @@ include __DIR__ . '/../components/sidebar.php';
       <?php else: ?>
         <div class="collapse" id="formEmail">
           <div class="s-form">
-            <form method="post">
+            <form method="post"><?= csrf_field() ?>
               <input type="hidden" name="action" value="change_email">
               <div class="mb-3">
                 <label class="form-label">Password (para confirmar)</label>
@@ -812,7 +812,7 @@ include __DIR__ . '/../components/sidebar.php';
   <div class="settings-group">
     <p class="group-label">Aparência</p>
     <div class="settings-card">
-      <form method="post">
+      <form method="post"><?= csrf_field() ?>
         <input type="hidden" name="action" value="update_theme">
 
         <div class="s-row">
@@ -899,7 +899,7 @@ include __DIR__ . '/../components/sidebar.php';
           <?php endif; ?>
         </div>
         <?php if (!empty($user['google_id'])): ?>
-          <form method="post" onsubmit="return confirm('Tens a certeza que queres desvincular a conta Google?')">
+          <form method="post" onsubmit="return confirm('Tens a certeza que queres desvincular a conta Google?')"><?= csrf_field() ?>
             <input type="hidden" name="action" value="unlink_google">
             <button class="btn-s btn-s-danger" style="font-size:12px;padding:5px 12px" type="submit">
               <i class="bi bi-x-circle"></i> Desvincular

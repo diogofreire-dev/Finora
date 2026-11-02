@@ -210,7 +210,7 @@ async function callAI(type, message = '') {
   // O PHP chama a Groq no servidor e devolve só o texto da resposta
   const res = await fetch(API_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': <?= json_encode(csrf_token()) ?> },
     body: JSON.stringify({ t: type, m: message })
   });
   let data;
