@@ -1,8 +1,11 @@
-<<?php
+<?php
 /**
  * SAFE DB Migration: Unify nif_empresas + nif_empresas_cache
- * Run: php database/migrate_nif_unified.php
+ * Run: php config/migrate_nif_unified.php
  */
+
+// Só pode correr pela linha de comandos, nunca por um pedido web
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 require_once __DIR__ . '/../config/db.php';
 

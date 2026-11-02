@@ -1,0 +1,16 @@
+# FreeCard — só o que está em site/ (e as páginas da raiz) deve ser público.
+# O resto é código interno, configuração ou dados: o Apache responde 404.
+
+# Sem listagem de pastas
+Options -Indexes
+
+# Ficheiros e pastas escondidos (.git, .env, .gitignore, .htaccess, .DS_Store)
+RedirectMatch 404 /\.
+
+# Pastas internas: configuração, scripts de linha de comandos, BD, dependências e documentação
+RedirectMatch 404 ^/(.*/)?(config|cron|database|vendor|docs|aprendizagem)(/|$)
+
+# Ficheiros do Composer e imagens/ficheiros de desenvolvimento da raiz
+<FilesMatch "^(composer\.(json|lock)|ModeloER\.png|README\.md|LICENSE)$">
+    Require all denied
+</FilesMatch>

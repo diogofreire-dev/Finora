@@ -11,6 +11,9 @@
  * php /caminho/para/cron/send_reminders.php
  */
 
+// Só pode correr pela linha de comandos (cron), nunca por um pedido web
+if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
+
 // ===== CONFIGURAÇÃO =====
 define('ROOT_PATH', __DIR__ . '/..');
 require_once ROOT_PATH . '/vendor/autoload.php';
