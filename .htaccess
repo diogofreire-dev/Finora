@@ -14,3 +14,14 @@ RedirectMatch 404 ^/(.*/)?(config|cron|database|vendor|docs|aprendizagem)(/|$)
 <FilesMatch "^(composer\.(json|lock)|ModeloER\.png|README\.md|LICENSE)$">
     Require all denied
 </FilesMatch>
+
+# Cookie de sessão mais seguro
+#   httponly    → o JavaScript não consegue ler o cookie (um XSS não rouba a sessão)
+#   samesite    → o browser não envia o cookie em pedidos vindos de outros sites (camada extra contra CSRF)
+#   strict_mode → o PHP recusa IDs de sessão que não foi ele a criar (session fixation)
+# Em produção com HTTPS, acrescentar também: php_flag session.cookie_secure On
+<IfModule php_module>
+    php_flag  session.cookie_httponly On
+    php_value session.cookie_samesite Lax
+    php_flag  session.use_strict_mode On
+</IfModule>
