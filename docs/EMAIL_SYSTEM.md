@@ -35,7 +35,7 @@ Sistema automático de notificações por email integrado no FreeCard para:
 ### **Credenciais de Email**
 ```php
 // config/EmailService.php
-$this->fromEmail = 'freecardssuporte@gmail.com';
+$this->fromEmail = 'freecardadmin@gmail.com';
 $this->appPassword = 'aanu cxbs zehl bddy'; // App Password do Gmail
 ```
 
