@@ -4,11 +4,12 @@
 // Uso: require_once __DIR__ . '/auth.php';
 
 session_start();
+require_once __DIR__ . '/paths.php';
 
 if (empty($_SESSION['user_id'])) {
-    // podes redirecionar para login com uma query string para voltar depois
-    $return = urlencode($_SERVER['REQUEST_URI'] ?? '/');
-    header("Location: /site/auth/login.php?next={$return}");
+    // Volta para o login, lembrando a página pedida (o login valida o ?next=)
+    $return = urlencode($_SERVER['REQUEST_URI'] ?? '');
+    header('Location: ' . site_base_path() . "/auth/login.php?next={$return}");
     exit;
 }
 
