@@ -15,6 +15,7 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 require_once __DIR__ . '/../../config/db.php';
+require_once __DIR__ . '/../helpers/paths.php';
 
 // Proteção contra força bruta à password: bloqueio TEMPORÁRIO da conta
 const LOGIN_MAX_ATTEMPTS = 5;
@@ -53,7 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 session_regenerate_id(true);
                 $_SESSION['user_id']  = $user['id'];
                 $_SESSION['username'] = $user['username'];
-                header('Location: ../dashboard.php');
+                // Voltar à página pedida antes do login, só se for um caminho interno
+                header('Location: ' . (safe_next($_GET['next'] ?? null) ?? '../dashboard.php'));
                 exit;
             }
         } else {
