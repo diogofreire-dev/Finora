@@ -12,6 +12,18 @@ const SAVINGS_MAX = 1000000;
 // Metas de referência para o mealheiro grande: enche até ao próximo marco
 const SAVINGS_MILESTONES = [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
 
+const SAVINGS_PAGE = 30;   // movimentos por página ("Ver mais" junta outros 30)
+
+// Filtros da lista de movimentos, validados: só valores conhecidos passam
+function savings_filters(array $src, array $goalIds): array {
+    $p = in_array($src['p'] ?? '', ['mes', '3m', '12m', 'tudo'], true) ? $src['p'] : '3m';
+    $g = (string) ($src['g'] ?? 'todas');
+    $g = $g === 'sem' ? 'sem' : (in_array((int) $g, $goalIds, true) ? (string) (int) $g : 'todas');
+    $t = in_array($src['t'] ?? '', ['in', 'out'], true) ? $src['t'] : 'todos';
+    $n = max(1, min(50, (int) ($src['n'] ?? 1)));
+    return ['p' => $p, 'g' => $g, 't' => $t, 'n' => $n];
+}
+
 function savings_next_milestone(float $total): float {
     foreach (SAVINGS_MILESTONES as $m) if ($total < $m) return $m;
     return end(SAVINGS_MILESTONES);
