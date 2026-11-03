@@ -148,15 +148,15 @@
 
     futuro: [
       {
-        selector: '.page-header',
-        title: '⏳ Metas Futuras',
-        text: 'Define metas de poupança para objetivos futuros: viagem, carro, fundo de emergência — tudo com acompanhamento de progresso.',
-        position: 'bottom'
+        selector: '.gl-form',
+        title: '🎯 Nova meta',
+        text: 'Diz quanto queres juntar, até quando e quanto ganhas por mês. A Finora usa a tua média de gastos para prever o resultado.',
+        position: 'left'
       },
       {
-        selector: '.settings-group',
-        title: '🎯 As Tuas Metas',
-        text: 'Cada meta mostra o progresso atual versus o objetivo. A aplicação calcula automaticamente quanto precisas de poupar por mês.',
+        selector: '.gl-future',
+        title: '⏳ O teu eu do futuro',
+        text: 'Diz-te se, ao ritmo atual, chegas à meta — e quanto precisas de poupar por mês para lá chegar.',
         position: 'top'
       }
     ],
