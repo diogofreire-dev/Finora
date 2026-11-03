@@ -174,7 +174,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Lembretes de Pagamento - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
@@ -193,8 +193,8 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
     .s-row-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
     .btn-s { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
 
     /* Green paid button — softer tone */
     .btn-s-success {
@@ -268,13 +268,14 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
     .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
     .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
     .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; background: var(--bg-primary); color: var(--text-primary); }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent); box-shadow: none; background: var(--bg-primary); color: var(--text-primary); }
     [data-theme="dark"] .m-form .form-control, [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     @media (max-width:600px) { .stats-row { flex-wrap: wrap; } .stat-cell { min-width: 50%; } .stat-cell:nth-child(2) { border-right: none; } .stat-cell:nth-child(n+3) { border-top: 1px solid var(--border-color); } .s-row { flex-wrap: wrap; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -308,11 +309,11 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
     <div class="settings-card">
       <div class="stats-row">
         <div class="stat-cell">
-          <div class="stat-num" style="color:#3498db">€<?=number_format($paid_month_total,2)?></div>
+          <div class="stat-num" style="color:var(--fn-accent)"><?=fmt_eur($paid_month_total)?></div>
           <div class="stat-label">Pagos este mês</div>
         </div>
         <div class="stat-cell">
-          <div class="stat-num" style="color:#e74c3c">€<?=number_format($total_month,2)?></div>
+          <div class="stat-num" style="color:#e74c3c"><?=fmt_eur($total_month)?></div>
           <div class="stat-label">A pagar este mês</div>
         </div>
         <div class="stat-cell">
@@ -355,7 +356,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             </p>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
+            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
             <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
@@ -385,7 +386,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             </p>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
+            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
             <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
@@ -414,7 +415,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             </p>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)">€<?=number_format($r['amount'],2)?></span>
+            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
             <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
             <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
             <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
@@ -445,7 +446,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             </p>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)">€<?=number_format($r['amount'],2)?></span>
+            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)"><?=fmt_eur($r['amount'])?></span>
             <!-- Reverter pagamento -->
             <form method="post" style="margin:0" onsubmit="return confirm('Reverter pagamento?')"><?= csrf_field() ?>
               <input type="hidden" name="action" value="unmark_paid">
@@ -476,7 +477,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
             <p class="s-row-sub"><?=date('d/m/Y', strtotime($r['due_date']))?> &nbsp;<span class="s-badge s-badge-inactive">Inativo</span></p>
           </div>
           <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)">€<?=number_format($r['amount'],2)?></span>
+            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)"><?=fmt_eur($r['amount'])?></span>
             <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
             <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
           </div>

@@ -62,7 +62,7 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
@@ -79,8 +79,8 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
     .s-row-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
     .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
     .btn-s-danger { border-color: #dc2626; color: #dc2626; }
     .btn-s-danger:hover { background: rgba(239,68,68,.07); }
     .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
@@ -106,12 +106,13 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
     .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary) !important; }
     .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
     .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; background-color: var(--bg-primary) !important; color: var(--text-primary) !important; --bs-body-bg: var(--bg-primary); --bs-body-color: var(--text-primary); --bs-border-color: var(--border-color); }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db !important; box-shadow: 0 0 0 2px rgba(52,152,219,.25) !important; background: var(--bg-primary) !important; background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent) !important; box-shadow: 0 0 0 2px rgba(var(--fn-accent-rgb),.25) !important; background: var(--bg-primary) !important; background-color: var(--bg-primary) !important; color: var(--text-primary) !important; }
     .m-form .form-control::placeholder { color: var(--text-secondary) !important; opacity: 1; }
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     @media (max-width:600px) { .s-row { flex-wrap: wrap; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -180,10 +181,10 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
               </div>
               <div style="display:flex;justify-content:space-between;align-items:center">
                 <span style="font-size:12px;color:var(--text-secondary)">
-                  <strong style="color:var(--text-primary)">€<?=number_format($b['current_spent'],2)?></strong> de €<?=number_format($b['amount'],2)?>
+                  <strong style="color:var(--text-primary)"><?=fmt_eur($b['current_spent'])?></strong> de <?=fmt_eur($b['amount'])?>
                 </span>
                 <span style="font-size:12px;font-weight:600;color:<?=$pct>=100?'#ef4444':($pct>=80?'#d97706':'#16a34a')?>">
-                  <?php if($remaining<0): ?>+€<?=number_format(abs($remaining),2)?> excedido<?php else: ?>€<?=number_format($remaining,2)?> restante<?php endif; ?>
+                  <?php if($remaining<0): ?>+<?=fmt_eur(abs($remaining))?> excedido<?php else: ?><?=fmt_eur($remaining)?> restante<?php endif; ?>
                   &nbsp;(<?=round($pct)?>%)
                 </span>
               </div>
@@ -210,7 +211,7 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
             <div>
               <span style="font-size:14px;font-weight:500;color:var(--text-primary)"><?=htmlspecialchars($b['name'])?></span>
               &nbsp;<span class="s-badge"><?=$periodLabels[$b['period']]?></span>
-              &nbsp;<span style="font-size:13px;color:var(--text-secondary)">€<?=number_format($b['amount'],2)?></span>
+              &nbsp;<span style="font-size:13px;color:var(--text-secondary)"><?=fmt_eur($b['amount'])?></span>
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
               <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="budget_id" value="<?=$b['id']?>"><button class="btn-s" style="padding:5px 12px;font-size:12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>

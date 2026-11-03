@@ -196,7 +196,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Análise - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
@@ -215,13 +215,13 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     .a-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
     .a-card-body { padding:20px; }
     .a-card-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 16px; display:flex; align-items:center; gap:8px; }
-    .a-card-title i { color:#3498db; font-size:16px; }
+    .a-card-title i { color:var(--fn-accent); font-size:16px; }
 
     .metrics-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
     .metric { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:16px; }
     .metric-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
     .metric-value { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
-    .metric-value.blue { color:#3498db; }
+    .metric-value.blue { color:var(--fn-accent); }
     .metric-value.green { color:#1abc9c; }
     .metric-value.amber { color:#f39c12; }
     .metric-value.red { color:#e74c3c; }
@@ -232,9 +232,9 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     .filter-group { display:flex; flex-direction:column; gap:5px; }
     .filter-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; }
     .filter-select { font-size:13px; padding:8px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); cursor:pointer; min-width:130px; }
-    .filter-select:focus { outline:none; border-color:#3498db; }
-    .btn-filter { font-size:13px; font-weight:500; padding:8px 18px; border-radius:9px; border:none; background:#3498db; color:#fff; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
-    .btn-filter:hover { background:#2980b9; }
+    .filter-select:focus { outline:none; border-color:var(--fn-accent); }
+    .btn-filter { font-size:13px; font-weight:500; padding:8px 18px; border-radius:9px; border:none; background:var(--fn-accent); color:#fff; cursor:pointer; display:flex; align-items:center; gap:6px; white-space:nowrap; }
+    .btn-filter:hover { background:var(--fn-accent-hover); }
 
     .chart-wrap { position:relative; }
 
@@ -258,16 +258,16 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     .sub-filter { display:flex; gap:8px; align-items:center; flex-wrap:wrap; padding:12px 20px; border-bottom:1px solid var(--border-color); background:var(--bg-primary); }
     .sub-filter-label { font-size:11px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
     .sub-filter-select { font-size:12px; padding:5px 10px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-secondary); color:var(--text-primary); cursor:pointer; }
-    .sub-filter-select:focus { outline:none; border-color:#3498db; }
-    .btn-sub-filter { font-size:12px; font-weight:500; padding:5px 12px; border-radius:8px; border:none; background:#3498db; color:#fff; cursor:pointer; }
-    .btn-sub-filter:hover { background:#2980b9; }
+    .sub-filter-select:focus { outline:none; border-color:var(--fn-accent); }
+    .btn-sub-filter { font-size:12px; font-weight:500; padding:5px 12px; border-radius:8px; border:none; background:var(--fn-accent); color:#fff; cursor:pointer; }
+    .btn-sub-filter:hover { background:var(--fn-accent-hover); }
 
     .empty-state { text-align:center; padding:48px 20px; }
     .empty-state i { font-size:48px; color:var(--border-color); display:block; margin-bottom:12px; }
     .empty-state h5 { font-size:15px; color:var(--text-secondary); margin-bottom:6px; }
     .empty-state p { font-size:13px; color:var(--text-secondary); margin-bottom:20px; }
-    .btn-primary-s { font-size:13px; font-weight:500; padding:9px 20px; border-radius:9px; border:none; background:#3498db; color:#fff; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
-    .btn-primary-s:hover { background:#2980b9; color:#fff; }
+    .btn-primary-s { font-size:13px; font-weight:500; padding:9px 20px; border-radius:9px; border:none; background:var(--fn-accent); color:#fff; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:6px; }
+    .btn-primary-s:hover { background:var(--fn-accent-hover); color:#fff; }
 
     [data-theme="dark"] .filter-select,
     [data-theme="dark"] .sub-filter-select {
@@ -285,6 +285,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     }
     @media(max-width:480px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -352,7 +353,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     <div class="metrics-grid">
       <div class="metric">
         <p class="metric-label">Total gasto</p>
-        <p class="metric-value blue">€<?=number_format($totalYear,2,'.','')?></p>
+        <p class="metric-value blue"><?=fmt_eur($totalYear, 2)?></p>
         <p class="metric-sub"><?=count($categoryTotals)?> categorias</p>
       </div>
       <div class="metric">
@@ -362,12 +363,12 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
       </div>
       <div class="metric">
         <p class="metric-label">Média / transação</p>
-        <p class="metric-value amber">€<?=number_format($stats['avg_amount'],2,'.','')?></p>
+        <p class="metric-value amber"><?=fmt_eur($stats['avg_amount'], 2)?></p>
         <p class="metric-sub">por despesa</p>
       </div>
       <div class="metric">
         <p class="metric-label">Maior gasto</p>
-        <p class="metric-value red">€<?=number_format($stats['max_amount'],2,'.','')?></p>
+        <p class="metric-value red"><?=fmt_eur($stats['max_amount'], 2)?></p>
         <p class="metric-sub">transação única</p>
       </div>
     </div>
@@ -435,7 +436,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
               </p>
             </div>
             <div>
-              <p class="top-amount">€<?=number_format($t['amount'],2)?></p>
+              <p class="top-amount"><?=fmt_eur($t['amount'])?></p>
               <p class="top-pct"><?=$pct?>%</p>
             </div>
           </div>
@@ -495,18 +496,18 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
           ?>
           <div style="background:var(--bg-primary);padding:14px;text-align:center">
             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px"><?=$year?></div>
-            <div style="font-size:20px;font-weight:700;color:#3498db">€<?=number_format($totalCurrent,2)?></div>
+            <div style="font-size:20px;font-weight:700;color:var(--fn-accent)"><?=fmt_eur($totalCurrent)?></div>
           </div>
           <div style="background:var(--bg-primary);padding:14px;text-align:center;border-left:1px solid var(--border-color);border-right:1px solid var(--border-color)">
             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px">Variação</div>
             <div style="font-size:20px;font-weight:700;color:<?=$isUp?'#e74c3c':'#22c55e'?>">
               <?=$isUp?'+':''?><?=$totalPct?>%
             </div>
-            <div style="font-size:11px;color:var(--text-secondary);margin-top:2px"><?=$isUp?'+':''?>€<?=number_format(abs($totalDiff),2)?></div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:2px"><?=$isUp?'+':''?><?=fmt_eur(abs($totalDiff))?></div>
           </div>
           <div style="background:var(--bg-primary);padding:14px;text-align:center">
             <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px"><?=$compareYear?></div>
-            <div style="font-size:20px;font-weight:700;color:var(--text-secondary)">€<?=number_format($totalPrev,2)?></div>
+            <div style="font-size:20px;font-weight:700;color:var(--text-secondary)"><?=fmt_eur($totalPrev)?></div>
           </div>
         </div>
 
@@ -563,7 +564,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
           <div class="cat-bar-item">
             <div class="cat-bar-header">
               <span class="cat-bar-name"><?=htmlspecialchars($cat['category'])?></span>
-              <span class="cat-bar-val">€<?=number_format($cat['total'],2)?> · <?=$share?>%</span>
+              <span class="cat-bar-val"><?=fmt_eur($cat['total'])?> · <?=$share?>%</span>
             </div>
             <div class="cat-bar-track">
               <div class="cat-bar-fill" style="width:0%;background:<?=$color?>" data-w="<?=$pct?>%"></div>

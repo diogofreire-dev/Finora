@@ -99,7 +99,7 @@ $activePage='persona'; $sidebarPrefix='../';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background-color:var(--bg-primary); color:var(--text-primary); }
@@ -113,13 +113,13 @@ $activePage='persona'; $sidebarPrefix='../';
     .a-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
     .a-card-body { padding:20px; }
     .a-card-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 16px; display:flex; align-items:center; gap:8px; }
-    .a-card-title i { color:#3498db; font-size:16px; }
+    .a-card-title i { color:var(--fn-accent); font-size:16px; }
     /* Métricas */
     .metrics-grid { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
     .metric { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:16px; }
     .metric-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
     .metric-value { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
-    .metric-value.blue  { color:#3498db; }
+    .metric-value.blue  { color:var(--fn-accent); }
     .metric-value.green { color:#1abc9c; }
     .metric-value.amber { color:#f39c12; }
     .metric-value.red   { color:#e74c3c; }
@@ -157,6 +157,7 @@ $activePage='persona'; $sidebarPrefix='../';
     @media(max-width:900px) { .metrics-grid { grid-template-columns:repeat(3,1fr); } .two-col { grid-template-columns:1fr !important; } }
     @media(max-width:560px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -189,8 +190,8 @@ $activePage='persona'; $sidebarPrefix='../';
     <div class="metrics-grid">
       <div class="metric">
         <p class="metric-label">Total gasto</p>
-        <p class="metric-value blue">€<?=number_format($totalSpend3m,0,',','.')?></p>
-        <p class="metric-sub">~€<?=number_format($totalSpend3m/3,0,',','.')?>/mês</p>
+        <p class="metric-value blue"><?=fmt_eur($totalSpend3m, 0)?></p>
+        <p class="metric-sub">~<?=fmt_eur($totalSpend3m/3, 0)?>/mês</p>
       </div>
       <div class="metric">
         <p class="metric-label">Transações</p>
@@ -199,8 +200,8 @@ $activePage='persona'; $sidebarPrefix='../';
       </div>
       <div class="metric">
         <p class="metric-label">Média por transação</p>
-        <p class="metric-value amber">€<?=number_format($avgTx,2,',','.')?></p>
-        <p class="metric-sub">±€<?=number_format($stdTx,2,',','.')?></p>
+        <p class="metric-value amber"><?=fmt_eur($avgTx, 2)?></p>
+        <p class="metric-sub">±<?=fmt_eur($stdTx, 2)?></p>
       </div>
       <div class="metric">
         <p class="metric-label">Categorias usadas</p>
@@ -287,7 +288,7 @@ $activePage='persona'; $sidebarPrefix='../';
           <div class="cat-bar-item">
             <div class="cat-bar-header">
               <span class="cat-bar-name"><?=htmlspecialchars($c['category'])?></span>
-              <span class="cat-bar-val">€<?=number_format($c['total'],2,',','.')?> (<?=round($pct)?>%)</span>
+              <span class="cat-bar-val"><?=fmt_eur($c['total'], 2)?> (<?=round($pct)?>%)</span>
             </div>
             <div class="cat-bar-track">
               <div class="cat-bar-fill" style="width:<?=$pct?>%;background:<?=$persona['color']?>"></div>

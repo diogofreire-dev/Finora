@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary) !important; }
     .settings-wrapper { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }
@@ -78,8 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .settings-card { background: var(--bg-secondary) !important; border: 1px solid var(--border-color) !important; border-radius: 14px; overflow: hidden; }
     .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color) !important; background: var(--bg-primary) !important; color: var(--text-primary) !important; cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary) !important; }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
     .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
     .s-alert-danger { background: rgba(239,68,68,.1); border-color: rgba(239,68,68,.3); color: #7f1d1d; }
     [data-theme="dark"] .s-alert-danger { color: #fca5a5; }
@@ -98,7 +98,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .form-section:not(:last-child) { border-bottom: 1px solid var(--border-color); }
     .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary) !important; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
     .m-form .form-control { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; width: 100%; }
-    .m-form .form-control:focus { border-color: #3498db; box-shadow: none; outline: none; }
+    .m-form .form-control:focus { border-color: var(--fn-accent); box-shadow: none; outline: none; }
     [data-theme="dark"] .m-form .form-control { background: var(--bg-primary) !important; color: var(--text-primary) !important; border-color: var(--border-color) !important; }
     .m-form .form-hint { font-size: 12px; color: var(--text-secondary) !important; margin-top: 5px; }
     input[type="number"]::-webkit-outer-spin-button, input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -109,13 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .color-opt { position: relative; aspect-ratio: 1; }
     .color-opt input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .color-swatch { width: 100%; height: 100%; border-radius: 10px; border: 2px solid transparent; cursor: pointer; transition: all .15s; display: block; outline: 2px solid transparent; outline-offset: 2px; }
-    .color-opt input:checked + .color-swatch { outline-color: #3498db; }
+    .color-opt input:checked + .color-swatch { outline-color: var(--fn-accent); }
     .color-swatch:hover { transform: scale(1.05); }
     .color-row-hidden { opacity: .4; pointer-events: none; }
     .bank-logo { position: absolute; top: 14px; right: 16px; font-size: 11px; font-weight: 800; letter-spacing: .5px; color: rgba(255,255,255,.9); background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); padding: 3px 8px; border-radius: 5px; }
     .form-actions { display: flex; gap: 8px; padding: 16px 20px; }
     .form-actions .btn-s { flex: 1; justify-content: center; }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -161,8 +162,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cv-name" id="preview-name"><?=strtoupper(htmlspecialchars($name ?: 'NOME DO CARTAO'))?></div>
           </div>
           <div class="cv-meta">
-            <span>Limite: <strong id="preview-limit">€<?=number_format($limit,2)?></strong></span>
-            <span>Gasto: <strong id="preview-balance">€<?=number_format($balance,2)?></strong></span>
+            <span>Limite: <strong id="preview-limit"><?=fmt_eur($limit)?></strong></span>
+            <span>Gasto: <strong id="preview-balance"><?=fmt_eur($balance)?></strong></span>
           </div>
         </div>
         <div style="margin-top:16px">
