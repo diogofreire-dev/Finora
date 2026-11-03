@@ -33,6 +33,7 @@ $_pageTitles = [
     'scan_fatura'  => 'Ler fatura',
     'dados'        => 'Dados e relatórios',
     'settings'     => 'Definições',
+    'notifications' => 'Notificações',
 ];
 $_pageTitle = $_pageTitles[$_ap] ?? '';
 
@@ -48,6 +49,16 @@ if (isset($pdo) && isset($uid)) {
 // Só mostrar a foto se o ficheiro existir; ?v= muda quando a foto muda (evita a versão antiga em cache)
 $_avatarFile = $_avatarPath ? __DIR__ . '/../' . $_avatarPath : null;
 $_avatarPath = ($_avatarFile && is_file($_avatarFile)) ? $_avatarPath . '?v=' . filemtime($_avatarFile) : null;
+// Notificações: verificação diária (sem cron) + o que mostrar no sino
+require_once __DIR__ . '/../helpers/notifications.php';
+$_notifCount = 0; $_notifs = [];
+if (isset($pdo) && !empty($_SESSION['user_id'])) {
+    try {
+        notif_generate($pdo, (int) $_SESSION['user_id']);
+        $_notifCount = notif_unread_count($pdo, (int) $_SESSION['user_id']);
+        $_notifs     = notif_recent($pdo, (int) $_SESSION['user_id'], 8);
+    } catch (Throwable $_e) { error_log('[notifications] ' . $_e->getMessage()); }   // nunca deita a página abaixo
+}
 $_username = $_SESSION['username'] ?? '';
 $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 ?>
@@ -75,6 +86,39 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     <a href="<?= $_sp ?>pages/create_transaction.php" class="app-header-btn app-header-btn-primary">
       <i class="bi bi-plus-lg"></i><span>Nova transação</span>
     </a>
+
+    <div class="app-notif">
+      <button class="app-notif-btn" id="appNotifBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="appNotifPanel"
+              aria-label="Notificações<?= $_notifCount ? ', ' . $_notifCount . ' por ler' : '' ?>">
+        <i class="bi bi-bell" aria-hidden="true"></i>
+        <span class="app-notif-badge" id="appNotifBadge" <?= $_notifCount ? '' : 'hidden' ?>><?= $_notifCount > 9 ? '9+' : $_notifCount ?></span>
+      </button>
+      <div class="app-notif-panel" id="appNotifPanel" hidden>
+        <div class="app-notif-head">
+          <b>Notificações</b>
+          <button type="button" id="appNotifReadAll" <?= $_notifCount ? '' : 'hidden' ?>>Marcar todas como lidas</button>
+        </div>
+        <?php if (!$_notifs): ?>
+          <p class="app-notif-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i> Está tudo em dia.</p>
+        <?php else: ?>
+          <ul class="app-notif-list">
+            <?php foreach ($_notifs as $_n): [$_lbl, $_ic, $_tone] = NOTIF_TYPES[$_n['type']] ?? ['', 'bell', 'cat-1']; ?>
+              <li class="<?= $_n['is_read'] ? '' : 'unread' ?>">
+                <a href="<?= $_sp . htmlspecialchars(notif_link($_n)) ?>" data-notif-id="<?= (int) $_n['id'] ?>">
+                  <span class="app-notif-ico tone-<?= $_tone ?>" aria-hidden="true"><i class="bi bi-<?= $_ic ?>"></i></span>
+                  <span class="app-notif-txt">
+                    <b><?= htmlspecialchars($_n['title']) ?></b>
+                    <span><?= htmlspecialchars($_n['message']) ?></span>
+                    <small><?= notif_ago((int) $_n['mins']) ?></small>
+                  </span>
+                </a>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+        <a class="app-notif-all" href="<?= $_sp ?>pages/notifications.php">Ver todas</a>
+      </div>
+    </div>
 
     <div class="app-user">
       <button class="app-user-btn" id="appUserBtn" type="button"
@@ -200,11 +244,50 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   }
 
   btn.addEventListener('click', () => sb.classList.contains('open') ? closeSidebar() : openSidebar());
-  uBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleUserMenu(); });
+  uBtn.addEventListener('click', (e) => { e.stopPropagation(); if (!nPanel.hidden) toggleNotif(false); toggleUserMenu(); });
   document.addEventListener('click', (e) => { if (!uMenu.hidden && !uMenu.contains(e.target)) toggleUserMenu(false); });
+  // ── Notificações (sino) ──
+  const nBtn = document.getElementById('appNotifBtn'), nPanel = document.getElementById('appNotifPanel');
+  const nUrl = <?= json_encode($_sp . 'pages/notifications.php') ?>, nToken = <?= json_encode(csrf_token()) ?>;
+  function toggleNotif(force) {
+    const open = force ?? nPanel.hidden;
+    nPanel.hidden = !open;
+    nBtn.setAttribute('aria-expanded', String(open));
+    if (open) { toggleUserMenu(false); (nPanel.querySelector('a, button:not([hidden])') || nPanel).focus(); }
+  }
+  function notifPost(body) {
+    return fetch(nUrl, { method: 'POST', keepalive: true, credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': nToken, 'Accept': 'application/json' },
+      body: new URLSearchParams(body) }).then(r => r.ok ? r.json() : null).catch(() => null);
+  }
+  function setBadge(n) {
+    const b = document.getElementById('appNotifBadge');
+    b.hidden = n <= 0; b.textContent = n > 9 ? '9+' : String(n);
+    nBtn.setAttribute('aria-label', 'Notificações' + (n > 0 ? ', ' + n + ' por ler' : ''));
+    document.getElementById('appNotifReadAll').hidden = n <= 0;
+  }
+  nBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleNotif(); });
+  nPanel.addEventListener('click', (e) => e.stopPropagation());
+  document.addEventListener('click', () => { if (!nPanel.hidden) toggleNotif(false); });
+  // Abrir uma notificação: marca como lida e segue para a página
+  nPanel.querySelectorAll('a[data-notif-id]').forEach(a => a.addEventListener('click', (e) => {
+    const li = a.closest('li');
+    if (!li.classList.contains('unread')) return;
+    e.preventDefault();
+    notifPost({ action: 'read', id: a.dataset.notifId }).finally(() => { location.href = a.href; });
+  }));
+  document.getElementById('appNotifReadAll').addEventListener('click', () => {
+    notifPost({ action: 'read_all' }).then(res => {
+      if (!res) return;
+      nPanel.querySelectorAll('li.unread').forEach(li => li.classList.remove('unread'));
+      setBadge(0);
+    });
+  });
+
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (!uMenu.hidden) { toggleUserMenu(false); uBtn.focus(); }
+    if (!nPanel.hidden) { toggleNotif(false); nBtn.focus(); }
+    else if (!uMenu.hidden) { toggleUserMenu(false); uBtn.focus(); }
     else closeSidebar();
   });
 
@@ -269,5 +352,6 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
 <?php /* ── Tutorial System ── */ ?>
 <link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=3">
+<link rel="stylesheet" href="<?= $_sp ?>css/notifications.css?v=1">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js?v=19"></script>
+<script src="<?= $_sp ?>js/tutorial.js?v=20"></script>

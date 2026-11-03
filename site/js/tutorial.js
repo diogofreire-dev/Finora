@@ -22,6 +22,12 @@
         position: 'bottom'
       },
       {
+        selector: '#appNotifBtn',
+        title: 'Notificações',
+        text: 'Pagamentos a vencer, orçamentos quase no fim, metas atrasadas e mais. Escolhes o que queres receber nas Definições.',
+        position: 'bottom'
+      },
+      {
         selector: '.dsh-hero',
         title: 'O teu mês',
         text: 'Quanto já gastaste este mês e a comparação com o mesmo ponto do mês passado. A linha dourada é este mês; a tracejada é o anterior.',

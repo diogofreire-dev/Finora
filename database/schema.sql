@@ -77,6 +77,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   currency      VARCHAR(3)   DEFAULT 'EUR',
   language      VARCHAR(5)   DEFAULT 'pt-PT',
   notifications TINYINT(1)   DEFAULT 1,
+  notif_prefs   JSON         NULL,               -- tipos de notificação ligados/desligados
+  notif_checked_on DATE      NULL,               -- última verificação diária
   created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_settings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -165,12 +167,14 @@ CREATE TABLE IF NOT EXISTS notifications (
   id         INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id    INT UNSIGNED NOT NULL,
   type       VARCHAR(50)  NOT NULL,
+  dedupe_key VARCHAR(80)  NULL,                 -- o mesmo aviso só entra uma vez (ver helpers/notifications.php)
   title      VARCHAR(255) NOT NULL,
   message    TEXT         NOT NULL,
   data       JSON         NULL,
   is_read    TINYINT(1)   DEFAULT 0,
   read_at    DATETIME     NULL,
   created_at DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_notif_dedupe (user_id, dedupe_key),
   CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
