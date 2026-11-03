@@ -91,7 +91,10 @@ unset($_SESSION['flash_scan']);
 
     .sc-grid { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; align-items: start; }
     .sc-card { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; padding: 20px; }
-    .sc-card h2 { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--fn-text); }
+    .sc-card h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--fn-text); }
+    .sc-title { display: flex; align-items: center; gap: 12px; margin: -20px -20px 18px; padding: 16px 20px; border-bottom: 1px solid var(--fn-line);
+      background: color-mix(in srgb, var(--tone) 6%, var(--fn-surface)); border-radius: 16px 16px 0 0; }
+    .main-content .sc-title .pg-ico { background: var(--tone); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--tone) 30%, transparent); }
 
     /* Câmara / imagem */
     .sc-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--fn-paper); border: 1px solid var(--fn-line); margin-bottom: 14px; }
@@ -115,7 +118,7 @@ unset($_SESSION['flash_scan']);
     .sc-drop { display: grid; place-items: center; align-content: center; gap: 8px; aspect-ratio: 1; border: 2px dashed var(--fn-line); border-radius: 14px; text-align: center; padding: 20px; cursor: pointer; margin: 0; position: relative; transition: border-color .15s, background .15s; }
     .sc-drop:hover, .sc-drop.over { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb), .05); }
     .sc-drop:focus-within { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
-    .sc-drop i { font-size: 34px; color: var(--fn-accent); }
+    .sc-drop i { font-size: 34px; color: var(--cat-1); }
     .sc-drop b { font-size: 15px; color: var(--fn-text); }
     .sc-drop span { font-size: 13px; color: var(--fn-muted); }
     .sc-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -151,7 +154,7 @@ unset($_SESSION['flash_scan']);
       .sc-form .row2 { grid-template-columns: 1fr; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
 <body>
 <div class="app-layout">
@@ -180,7 +183,7 @@ include __DIR__ . '/../components/sidebar.php';
   <div class="sc-grid">
     <!-- LEITOR -->
     <section class="sc-card" aria-labelledby="scTitle">
-      <h2 id="scTitle">Código QR</h2>
+      <div class="sc-title" style="--tone:var(--cat-4)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-qr-code-scan"></i></span><h2 id="scTitle">Código QR</h2></div>
       <div class="sc-switch" role="group" aria-label="Como ler o código">
         <button type="button" id="modeCam" aria-pressed="true"><i class="bi bi-camera"></i> Câmara</button>
         <button type="button" id="modeImg" aria-pressed="false"><i class="bi bi-image"></i> Imagem</button>
@@ -215,7 +218,7 @@ include __DIR__ . '/../components/sidebar.php';
 
     <!-- DESPESA -->
     <section class="sc-card" aria-labelledby="formTitle">
-      <h2 id="formTitle">Despesa</h2>
+      <div class="sc-title" style="--tone:var(--cat-1)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-receipt"></i></span><h2 id="formTitle">Despesa</h2></div>
       <div class="sc-read" id="readOk"><i class="bi bi-check-circle-fill"></i> Fatura lida. Confirma os dados e guarda.</div>
 
       <form method="post" class="sc-form" id="form">

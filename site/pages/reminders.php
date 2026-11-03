@@ -191,7 +191,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=6">
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
   <style>
     .lm { max-width: 1000px; margin: 0 auto; padding-bottom: 56px; }
     .lm-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }

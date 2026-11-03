@@ -296,3 +296,20 @@ dialog .btn-s-primary, dialog .btn-s-primary:hover { background: var(--fn-accent
 dialog .btn-s-primary:hover { background: var(--fn-accent-hover); border-color: var(--fn-accent-hover); }
 dialog .btn-s:focus-visible, dialog .form-control:focus-visible, dialog .form-select:focus-visible { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
 dialog .form-control:focus, dialog .form-select:focus { border-color: var(--fn-accent); box-shadow: 0 0 0 3px rgba(var(--fn-accent-rgb), .18); }
+
+/* ── Cartões de secção com ícone colorido (Definições, Dados, Ler fatura) ──
+   Cada secção tem um tom (--tone) da paleta validada das categorias, como no dashboard. */
+.main-content .pg-wrap { max-width: 860px; margin: 0 auto; padding: 0 0 60px; }
+.main-content .pg-head { margin-bottom: 22px; }
+.main-content .pg-head h1 { margin: 0; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
+.main-content .pg-head p { margin: 4px 0 0; font-size: 15px; color: var(--fn-muted); }
+.main-content .pg-card { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 18px; margin-bottom: 18px; overflow: hidden; }
+.main-content .pg-card-head { display: flex; align-items: center; gap: 14px; padding: 18px 20px; background: color-mix(in srgb, var(--tone, var(--fn-accent)) 6%, var(--fn-surface)); }
+.main-content .pg-card-head h2 { margin: 0; font-size: 17px; font-weight: 700; color: var(--fn-text); }
+.main-content .pg-card-head p { margin: 2px 0 0; font-size: 14px; color: var(--fn-muted); }
+.main-content .pg-ico { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; flex-shrink: 0; font-size: 19px;
+  background: color-mix(in srgb, var(--tone, var(--fn-accent)) 16%, transparent); color: var(--tone, var(--fn-accent)); }
+.main-content .pg-ico.sm { width: 36px; height: 36px; border-radius: 10px; font-size: 16px; }
+.main-content .pg-grow { flex: 1; min-width: 0; }
+@media (max-width: 520px) { .main-content .pg-head h1 { font-size: 26px; } }
+.main-content .pg-card-head .pg-ico { background: var(--tone, var(--fn-accent)); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--tone, var(--fn-accent)) 30%, transparent); }

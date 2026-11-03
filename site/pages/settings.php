@@ -265,9 +265,6 @@ $since        = strtotime($user['created_at']);
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
-    .st-wrap { max-width: 1000px; margin: 0 auto; padding: 0 0 60px; }
-    .st-head { margin-bottom: 22px; }
-    .st-head h1 { margin: 0; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
 
     .st-flash { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; margin-bottom: 22px; font-size: 14px; border: 1px solid transparent; }
     .st-flash.success { background: #ecfdf3; border-color: #abefc6; color: #067647; }
@@ -277,14 +274,10 @@ $since        = strtotime($user['created_at']);
     [data-theme="dark"] .st-flash.danger  { background: rgba(253,162,155,.1); border-color: rgba(253,162,155,.25); color: #fda29b; }
 
     /* Cada secção: título à esquerda, cartão à direita */
-    .st-section { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; padding: 26px 0; }
-    .st-section + .st-section { border-top: 1px solid var(--fn-line); }
-    .st-section h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: var(--fn-text); }
-    .st-section > div:first-child p { margin: 0; font-size: 14px; color: var(--fn-muted); line-height: 1.45; }
 
-    .st-card { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
     .st-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; }
     .st-card > * + * { border-top: 1px solid var(--fn-line); }
+    .st-row .btn-s, .st-row form { flex-shrink: 0; }
     .st-label { font-size: 15px; font-weight: 600; color: var(--fn-text); margin: 0; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .st-sub { font-size: 14px; color: var(--fn-muted); margin: 2px 0 0; overflow-wrap: anywhere; }
     .st-sub b { color: var(--fn-text); font-weight: 600; }
@@ -297,7 +290,9 @@ $since        = strtotime($user['created_at']);
     [data-theme="dark"] .st-tag.wait { background: rgba(254,200,75,.12); color: #fedf89; }
 
     /* Perfil */
-    .st-profile { display: flex; align-items: center; gap: 18px; padding: 20px; }
+    .st-profile { display: flex; align-items: center; gap: 18px; padding: 22px 20px;
+      background: linear-gradient(120deg, color-mix(in srgb, var(--fn-gold) 16%, var(--fn-surface)), color-mix(in srgb, var(--cat-1) 10%, var(--fn-surface)) 70%); }
+    .st-avatar img, .st-avatar .letter { box-shadow: 0 0 0 3px var(--fn-surface); }
     .st-avatar { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
     .st-avatar img, .st-avatar .letter { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; }
     .st-avatar .letter { background: var(--fn-ink); color: var(--fn-gold); font-family: var(--fn-font-brand); font-size: 30px; font-weight: 700; }
@@ -324,7 +319,7 @@ $since        = strtotime($user['created_at']);
     .pw-meter[data-score="5"] i { background: #079455; }
 
     /* Tema: miniaturas da app */
-    .st-themes { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 20px; }
+    .st-themes { display: grid; grid-template-columns: repeat(2, minmax(0, 220px)); gap: 16px; padding: 20px; }
     .st-theme { position: relative; margin: 0; cursor: pointer; }
     .st-theme input { position: absolute; opacity: 0; pointer-events: none; }
     .st-theme .mini { display: block; border-radius: 12px; border: 2px solid var(--fn-line); overflow: hidden; aspect-ratio: 16 / 10; transition: border-color .15s, box-shadow .15s; }
@@ -350,8 +345,6 @@ $since        = strtotime($user['created_at']);
 
     @media (prefers-reduced-motion: reduce) { .st-switch, .st-switch::after, .pw-meter i { transition: none; } }
     @media (max-width: 760px) {
-      .st-section { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 22px 0; }
-      .st-head h1 { font-size: 26px; }
     }
     @media (max-width: 520px) {
       .st-profile { flex-wrap: wrap; }
@@ -362,7 +355,7 @@ $since        = strtotime($user['created_at']);
       .st-themes { gap: 10px; padding: 16px; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
 <body>
 <div class="app-layout">
@@ -373,9 +366,9 @@ include __DIR__ . '/../components/sidebar.php';
 ?>
 <main class="main-content">
 <div class="page-content">
-<div class="st-wrap">
+<div class="pg-wrap">
 
-  <div class="st-head"><h1>Definições</h1></div>
+  <div class="pg-head"><h1>Definições</h1></div>
 
   <?php if ($message): ?>
     <?php $icon = ['success' => 'check-circle', 'danger' => 'exclamation-circle'][$messageType] ?? 'info-circle'; ?>
@@ -385,12 +378,8 @@ include __DIR__ . '/../components/sidebar.php';
   <?php endif; ?>
 
   <!-- PERFIL -->
-  <section class="st-section" aria-labelledby="sec-perfil">
-    <div>
-      <h2 id="sec-perfil">Perfil</h2>
-      <p>O nome e a foto que aparecem no topo da Finora.</p>
-    </div>
-    <div class="st-card">
+  <section class="pg-card st-card" aria-labelledby="sec-perfil" style="--tone:var(--cat-1)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-person"></i></span><div><h2 id="sec-perfil">Perfil</h2><p>O nome e a foto que aparecem no topo da Finora.</p></div></header>
       <div class="st-profile">
         <div class="st-avatar">
           <?php if ($avatarUrl): ?>
@@ -421,7 +410,8 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
 
       <div class="st-row">
-        <div>
+        <span class="pg-ico sm" style="--tone:var(--cat-5)" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
+        <div class="pg-grow">
           <p class="st-label">Nome</p>
           <p class="st-sub"><?= htmlspecialchars($user['username']) ?></p>
         </div>
@@ -441,18 +431,14 @@ include __DIR__ . '/../components/sidebar.php';
           </div>
         </form>
       </div>
-    </div>
   </section>
 
   <!-- SEGURANÇA -->
-  <section class="st-section" aria-labelledby="sec-seg">
-    <div>
-      <h2 id="sec-seg">Acesso à conta</h2>
-      <p>Por segurança, a palavra-passe e o email só podem mudar uma vez a cada 30 dias.</p>
-    </div>
-    <div class="st-card">
+  <section class="pg-card st-card" aria-labelledby="sec-seg" style="--tone:var(--cat-3)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-lock"></i></span><div><h2 id="sec-seg">Acesso à conta</h2><p>A palavra-passe e o email só podem mudar uma vez a cada 30 dias.</p></div></header>
       <div class="st-row">
-        <div>
+        <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-key"></i></span>
+        <div class="pg-grow">
           <p class="st-label">Palavra-passe
             <?php if (!$canChangePassword): ?><span class="st-tag locked"><i class="bi bi-lock"></i> Daqui a <?= $daysUntilPasswordChange ?> dia(s)</span><?php endif; ?>
           </p>
@@ -488,7 +474,8 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
 
       <div class="st-row">
-        <div>
+        <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+        <div class="pg-grow">
           <p class="st-label">Email
             <?php if ($hasPendingEmail): ?><span class="st-tag wait"><i class="bi bi-clock-history"></i> À espera de confirmação</span>
             <?php elseif (!$canChangeEmail): ?><span class="st-tag locked"><i class="bi bi-lock"></i> Daqui a <?= $daysUntilEmailChange ?> dia(s)</span><?php endif; ?>
@@ -553,16 +540,11 @@ include __DIR__ . '/../components/sidebar.php';
           <a href="../auth/google_redirect.php?link=1" class="btn-s"><i class="bi bi-link-45deg"></i> Ligar</a>
         <?php endif; ?>
       </div>
-    </div>
   </section>
 
   <!-- APARÊNCIA -->
-  <section class="st-section" aria-labelledby="sec-apar">
-    <div>
-      <h2 id="sec-apar">Aparência e alertas</h2>
-      <p>As alterações ficam guardadas assim que escolhes.</p>
-    </div>
-    <div class="st-card">
+  <section class="pg-card st-card" aria-labelledby="sec-apar" style="--tone:var(--cat-7)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-palette"></i></span><div><h2 id="sec-apar">Aparência e alertas</h2><p>Fica guardado assim que escolhes.</p></div></header>
       <form method="post" id="themeForm">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_theme">
@@ -598,14 +580,14 @@ include __DIR__ . '/../components/sidebar.php';
       <form method="post" id="notifForm" class="st-row">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_notifications">
-        <div>
+        <span class="pg-ico sm" style="--tone:var(--cat-2)" aria-hidden="true"><i class="bi bi-bell"></i></span>
+        <div class="pg-grow">
           <label class="st-label" for="notifications">Alertas dos cartões</label>
           <p class="st-sub" id="notifHelp">Avisa-te quando um cartão se aproxima do limite.</p>
         </div>
         <input type="checkbox" role="switch" class="st-switch" id="notifications" name="notifications" aria-describedby="notifHelp" <?= !empty($settings['notifications']) ? 'checked' : '' ?>>
         <noscript><button type="submit" class="btn-s">Guardar</button></noscript>
       </form>
-    </div>
   </section>
 
   <p class="st-foot">Membro desde <?= date('j', $since) . ' ' . $months[(int) date('n', $since) - 1] . ' ' . date('Y', $since) ?> · Finora 2.0.0</p>

@@ -46,9 +46,6 @@ $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
-    .dt-wrap { max-width: 1000px; margin: 0 auto; padding: 0 0 60px; }
-    .dt-head { margin-bottom: 22px; }
-    .dt-head h1 { margin: 0; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
 
     .dt-flash { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; margin-bottom: 22px; font-size: 14px; border: 1px solid transparent; }
     .dt-flash.success { background: #ecfdf3; border-color: #abefc6; color: #067647; }
@@ -58,22 +55,16 @@ $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
     [data-theme="dark"] .dt-flash.danger  { background: rgba(253,162,155,.1); border-color: rgba(253,162,155,.25); color: #fda29b; }
     [data-theme="dark"] .dt-flash.info    { background: rgba(254,200,75,.1); border-color: rgba(254,200,75,.25); color: #fedf89; }
 
-    .dt-section { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 28px; padding: 26px 0; }
-    .dt-section + .dt-section { border-top: 1px solid var(--fn-line); }
-    .dt-section h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; color: var(--fn-text); }
-    .dt-section > div:first-child p { margin: 0; font-size: 14px; color: var(--fn-muted); line-height: 1.45; }
 
-    .dt-card { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
-    .dt-card:not(.dt-pad) > * + * { border-top: 1px solid var(--fn-line); }
+    .pg-card > .dt-body { border-top: 1px solid var(--fn-line); }
+    .dt-body:not(.dt-pad) > * + * { border-top: 1px solid var(--fn-line); }
     .dt-pad { padding: 18px 20px; }
 
     .dt-filters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-    .dt-card .form-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--fn-text); }
-    .dt-card .form-select { min-height: 44px; border-radius: 10px; border: 1px solid var(--fn-line); background-color: var(--fn-surface); color: var(--fn-text); }
+    .dt-body .form-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--fn-text); }
+    .dt-body .form-select { min-height: 44px; border-radius: 10px; border: 1px solid var(--fn-line); background-color: var(--fn-surface); color: var(--fn-text); }
 
     .dt-row { display: flex; align-items: center; gap: 14px; padding: 16px 20px; }
-    .dt-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 18px; flex-shrink: 0; background: var(--fn-paper); color: var(--fn-ink); border: 1px solid var(--fn-line); }
-    [data-theme="dark"] .dt-ico { color: var(--fn-gold); }
     .dt-row .txt { flex: 1; min-width: 0; }
     .dt-row b { display: block; font-size: 15px; color: var(--fn-text); }
     .dt-row span { font-size: 14px; color: var(--fn-muted); }
@@ -84,7 +75,7 @@ $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
     .dt-drop { position: relative; display: block; border: 2px dashed var(--fn-line); border-radius: 12px; padding: 26px 16px; text-align: center; cursor: pointer; margin: 0; transition: border-color .15s, background .15s; }
     .dt-drop:hover, .dt-drop.over { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb), .05); }
     .dt-drop:focus-within { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
-    .dt-drop i { font-size: 26px; color: var(--fn-accent); }
+    .dt-drop i { font-size: 30px; color: var(--cat-1); }
     .dt-drop b { display: block; margin-top: 6px; font-size: 15px; color: var(--fn-text); }
     .dt-drop span { font-size: 13px; color: var(--fn-muted); }
     .dt-drop .file { color: var(--fn-accent); font-weight: 600; }
@@ -103,17 +94,15 @@ $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
     [data-theme="dark"] .dt-toggle { color: #9db4ee; }
 
     @media (max-width: 760px) {
-      .dt-section { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 22px 0; }
-      .dt-head h1 { font-size: 26px; }
       .dt-filters { grid-template-columns: 1fr; }
     }
     @media (max-width: 520px) {
       .dt-row { flex-wrap: wrap; }
-      .dt-row .txt { flex-basis: calc(100% - 54px); }
-      .dt-row .btn-s, .dt-row form { margin-left: 54px; }
+      .dt-row .txt { flex-basis: calc(100% - 50px); }
+      .dt-row .btn-s, .dt-row form { margin-left: 50px; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
 <body>
 <div class="app-layout">
@@ -124,9 +113,9 @@ include __DIR__ . '/../components/sidebar.php';
 ?>
 <main class="main-content">
 <div class="page-content">
-<div class="dt-wrap">
+<div class="pg-wrap">
 
-  <div class="dt-head"><h1>Dados</h1></div>
+  <div class="pg-head"><h1>Dados</h1></div>
 
   <?php if ($message): ?>
     <?php $icon = ['success' => 'check-circle', 'danger' => 'exclamation-circle'][$messageType] ?? 'info-circle'; ?>
@@ -136,12 +125,9 @@ include __DIR__ . '/../components/sidebar.php';
   <?php endif; ?>
 
   <!-- EXPORTAR -->
-  <section class="dt-section" aria-labelledby="sec-exp">
-    <div>
-      <h2 id="sec-exp">Exportar</h2>
-      <p>Escolhe o que queres levar e o formato. Os filtros servem para os PDF e para o CSV.</p>
-    </div>
-    <form class="dt-card" method="get" action="../helpers/export_csv.php" id="exportForm">
+  <section class="pg-card" aria-labelledby="sec-exp" style="--tone:var(--cat-2)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span><div><h2 id="sec-exp">Exportar</h2><p>Escolhe o período e o formato. Os filtros servem para os PDF e para o CSV.</p></div></header>
+    <form class="dt-body" method="get" action="../helpers/export_csv.php" id="exportForm">
       <div class="dt-pad dt-filters">
         <div>
           <label class="form-label" for="month">Mês</label>
@@ -175,17 +161,17 @@ include __DIR__ . '/../components/sidebar.php';
       <input type="hidden" name="include_stats" value="1">
 
       <div class="dt-row">
-        <span class="dt-ico" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
         <div class="txt"><b>Relatório completo (PDF)</b><span>Todas as transações, totais por categoria e resumo dos cartões.</span></div>
         <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="full"><i class="bi bi-download"></i> Exportar</button>
       </div>
       <div class="dt-row">
-        <span class="dt-ico" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
         <div class="txt"><b>Resumo (PDF)</b><span>As últimas 20 transações e os totais. Bom para uma vista rápida.</span></div>
         <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="summary"><i class="bi bi-download"></i> Exportar</button>
       </div>
       <div class="dt-row">
-        <span class="dt-ico" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-6)" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
         <div class="txt"><b>Folha de cálculo (CSV)</b><span>Abre no Excel ou no Google Sheets. No Excel usa Dados → De Texto/CSV.</span></div>
         <button type="submit" class="btn-s"><i class="bi bi-download"></i> Exportar</button>
       </div>
@@ -193,14 +179,11 @@ include __DIR__ . '/../components/sidebar.php';
   </section>
 
   <!-- BACKUP -->
-  <section class="dt-section" aria-labelledby="sec-bak">
-    <div>
-      <h2 id="sec-bak">Cópia de segurança</h2>
-      <p>Um ficheiro com tudo, para guardares fora da Finora. Faz uma por mês.</p>
-    </div>
-    <div class="dt-card">
+  <section class="pg-card" aria-labelledby="sec-bak" style="--tone:var(--cat-3)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-bak">Cópia de segurança</h2><p>Um ficheiro com tudo, para guardares fora da Finora. Faz uma por mês.</p></div></header>
+    <div class="dt-body">
       <div class="dt-row">
-        <span class="dt-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-cloud-download"></i></span>
         <div class="txt">
           <b>Descarregar cópia (JSON)</b>
           <span>Inclui <?= $plural($counts['tx'], 'transação', 'transações') ?>, <?= $plural($counts['cards'], 'cartão', 'cartões') ?> e <?= $plural($counts['budgets'], 'orçamento', 'orçamentos') ?>.</span>
@@ -209,7 +192,7 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
       <form class="dt-row" action="../helpers/import_json.php" method="post" enctype="multipart/form-data">
         <?= csrf_field() ?>
-        <span class="dt-ico" aria-hidden="true"><i class="bi bi-arrow-counterclockwise"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-7)" aria-hidden="true"><i class="bi bi-arrow-counterclockwise"></i></span>
         <div class="txt">
           <b>Restaurar uma cópia</b>
           <span id="jsonName">Repõe as transações. As que já existem não são duplicadas.</span>
@@ -223,12 +206,9 @@ include __DIR__ . '/../components/sidebar.php';
   </section>
 
   <!-- IMPORTAR -->
-  <section class="dt-section" aria-labelledby="sec-imp">
-    <div>
-      <h2 id="sec-imp">Importar transações</h2>
-      <p>Traz movimentos do extrato do teu banco ou de outra app, num ficheiro CSV.</p>
-    </div>
-    <form class="dt-card dt-pad" action="../helpers/import_csv.php" method="post" enctype="multipart/form-data" id="csvForm">
+  <section class="pg-card" aria-labelledby="sec-imp" style="--tone:var(--cat-1)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-in-down"></i></span><div><h2 id="sec-imp">Importar transações</h2><p>Traz movimentos do extrato do banco ou de outra app, num ficheiro CSV.</p></div></header>
+    <form class="dt-body dt-pad" action="../helpers/import_csv.php" method="post" enctype="multipart/form-data" id="csvForm">
       <?= csrf_field() ?>
       <label class="dt-drop" id="dropZone">
         <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>

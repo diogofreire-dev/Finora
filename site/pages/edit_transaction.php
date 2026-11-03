@@ -159,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
 <body>
 <div class="app-layout">
