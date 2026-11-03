@@ -231,6 +231,15 @@ CREATE TABLE IF NOT EXISTS investments (
 
 CREATE INDEX idx_investments_user ON investments(user_id);
 
+-- 14. AI_REQUESTS  (limite de pedidos ao assistente IA por utilizador)
+CREATE TABLE IF NOT EXISTS ai_requests (
+  id         INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  user_id    INT UNSIGNED NOT NULL,
+  created_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ai_requests_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX idx_ai_requests_user_time (user_id, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Dados de exemplo para nif_empresas
 -- (principais cadeias portuguesas por categoria)
 
