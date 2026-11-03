@@ -240,6 +240,15 @@ CREATE TABLE IF NOT EXISTS ai_requests (
   INDEX idx_ai_requests_user_time (user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- 15. AUTH_THROTTLE  (limite por IP no login, registo e recuperação; guarda só hashes)
+CREATE TABLE IF NOT EXISTS auth_throttle (
+  id         BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  action     VARCHAR(20) NOT NULL,
+  subject    CHAR(64)    NOT NULL,
+  created_at DATETIME    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_throttle (action, subject, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Dados de exemplo para nif_empresas
 -- (principais cadeias portuguesas por categoria)
 

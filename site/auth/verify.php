@@ -2,6 +2,8 @@
 session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/EmailService.php';
+require_once __DIR__ . '/../helpers/csrf.php';
+require_once __DIR__ . '/../helpers/auth_layout.php';
 
 if (isset($_SESSION['user_id'])) { header('Location: ../dashboard.php'); exit; }
 
@@ -17,14 +19,16 @@ $username = '';
 $email    = $_SESSION['pending_verification_email'] ?? '';
 $errors   = [];
 
+$isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
+if ($isPost && !hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
+    $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+    $isPost = false;
+}
+
 // Processar código de verificação
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
-    // Juntar os 6 dígitos separados ou aceitar campo único
-    $digits = '';
-    for ($i = 1; $i <= 6; $i++) {
-        $digits .= $_POST["d$i"] ?? '';
-    }
-    if ($digits === '') $digits = trim($_POST['code'] ?? '');
+if ($isPost && !isset($_POST['resend'])) {
+    // Aceita "123 456" ou "123456" (quem cola do email traz às vezes espaços)
+    $digits = preg_replace('/\s+/', '', (string) ($_POST['code'] ?? ''));
 
     if ($email === '') {
         $errors[] = 'Sessão expirada. Faz login para receberes um novo código.';
@@ -81,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !isset($_POST['resend'])) {
 }
 
 // Reenviar código
-if (isset($_POST['resend']) && $email) {
+if ($isPost && isset($_POST['resend']) && $email) {
     // Todos os cálculos de tempo são feitos pelo MySQL, para usar um só relógio
     $stmt = $pdo->prepare('SELECT id, username, email_verified,
                                   TIMESTAMPDIFF(SECOND, NOW(), verification_sent_at + INTERVAL ' . VERIFY_RESEND_SECONDS . ' SECOND) AS wait_seconds
@@ -105,204 +109,80 @@ if (isset($_POST['resend']) && $email) {
     }
 }
 
-// Auto-redirect on success after short delay
-$autoRedirect = ($status === 'success');
+auth_page_start('Verificar email');
 ?>
-<!doctype html>
-<html lang="pt-PT" data-theme="light">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificação de Email - Finora</title>
-  <?php if ($autoRedirect): ?>
-  <meta http-equiv="refresh" content="3;url=../dashboard.php">
-  <?php endif; ?>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-  <style>
-    :root[data-theme="light"] { --bg-primary:#f0f2f5;--bg-secondary:#ffffff;--bg-hover:#f0f0f0;--text-primary:#2c3e50;--text-secondary:#7f8c8d;--border-color:#e2e8f0;--shadow:rgba(0,0,0,0.08); }
-    :root[data-theme="dark"]  { --bg-primary:#1a1d29;--bg-secondary:#252936;--bg-hover:#2d3142;--text-primary:#ecf0f1;--text-secondary:#95a5a6;--border-color:#34495e;--shadow:rgba(0,0,0,0.35); }
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{min-height:100vh;background:var(--bg-primary);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;color:var(--text-primary);transition:background .3s,color .3s;display:flex;align-items:center;justify-content:center;padding:40px 16px;}
-    .theme-toggle{position:fixed;top:16px;right:16px;z-index:100;width:36px;height:36px;border-radius:10px;border:1px solid var(--border-color);background:var(--bg-secondary);color:var(--text-secondary);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;transition:all .2s;box-shadow:0 2px 8px var(--shadow);}
-    .theme-toggle:hover{color:var(--text-primary);border-color:#3498db;}
-    .auth-card{width:100%;max-width:440px;background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:18px;box-shadow:0 4px 32px var(--shadow);overflow:hidden;animation:fadeUp .45s ease-out;}
-    @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
-    .auth-card-header{padding:32px 32px 24px;border-bottom:1px solid var(--border-color);text-align:center;}
-    .hdr-icon{width:56px;height:56px;border-radius:14px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.2);display:flex;align-items:center;justify-content:center;font-size:24px;color:#3498db;margin:0 auto 16px;}
-    .hdr-icon.success{background:rgba(34,197,94,.1);border-color:rgba(34,197,94,.2);color:#22c55e;}
-    .hdr-icon.warning{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.2);color:#f59e0b;}
-    .auth-card-header h2{font-size:20px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
-    .auth-card-header p{font-size:13px;color:var(--text-secondary);margin:0;line-height:1.6;}
-    .auth-card-header .email-badge{display:inline-flex;align-items:center;gap:6px;background:var(--bg-hover);border:1px solid var(--border-color);border-radius:20px;padding:4px 12px;font-size:12px;color:var(--text-secondary);margin-top:10px;}
-    .auth-card-body{padding:28px 32px;}
-    .auth-card-footer{padding:14px 32px;border-top:1px solid var(--border-color);background:var(--bg-primary);text-align:center;}
-    .auth-card-footer a{font-size:13px;color:var(--text-secondary);text-decoration:none;display:inline-flex;align-items:center;gap:5px;}
-    .auth-card-footer a:hover{color:#3498db;}
-
-    /* OTP input row */
-    .otp-row{display:flex;gap:8px;justify-content:center;margin:8px 0 20px;}
-    .otp-digit{width:48px;height:56px;border:2px solid var(--border-color);border-radius:12px;background:var(--bg-primary);color:var(--text-primary);font-size:22px;font-weight:700;text-align:center;outline:none;transition:border-color .15s,box-shadow .15s;caret-color:transparent;}
-    .otp-digit:focus{border-color:#3498db;box-shadow:0 0 0 3px rgba(52,152,219,.15);}
-    [data-theme="dark"] .otp-digit{background:var(--bg-hover);}
-    .otp-hint{font-size:12px;color:var(--text-secondary);text-align:center;margin-bottom:20px;}
-
-    .btn-s-primary{background:#3498db;color:#fff;border:1px solid #3498db;border-radius:10px;width:100%;padding:10px 16px;font-size:14px;font-weight:500;cursor:pointer;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:7px;}
-    .btn-s-primary:hover{background:#2980b9;border-color:#2980b9;}
-    .btn-ghost{background:none;border:none;color:var(--text-secondary);font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;margin:14px auto 0;padding:6px 10px;border-radius:8px;transition:all .15s;}
-    .btn-ghost:hover{background:var(--bg-hover);color:var(--text-primary);}
-
-    .a-error{border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:16px;display:flex;align-items:flex-start;gap:9px;border:1px solid rgba(239,68,68,.3);background:rgba(239,68,68,.08);color:#b91c1c;}
-    [data-theme="dark"] .a-error{color:#fca5a5;background:rgba(239,68,68,.1);}
-    .a-info{border-radius:10px;padding:11px 14px;font-size:13px;margin-bottom:16px;display:flex;align-items:flex-start;gap:9px;border:1px solid rgba(52,152,219,.3);background:rgba(52,152,219,.07);color:#1d4ed8;}
-    [data-theme="dark"] .a-info{color:#93c5fd;background:rgba(52,152,219,.1);}
-
-    .status-body{text-align:center;padding:8px 0;}
-    .status-body p{font-size:14px;color:var(--text-secondary);margin-bottom:20px;line-height:1.6;}
-    .btn-go{display:inline-flex;align-items:center;gap:7px;background:#3498db;color:#fff;border:1px solid #3498db;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:500;text-decoration:none;transition:all .15s;}
-    .btn-go:hover{background:#2980b9;color:#fff;}
-    .progress-redirect{height:3px;background:var(--border-color);border-radius:2px;margin-top:20px;overflow:hidden;}
-    .progress-redirect-bar{height:100%;background:#22c55e;border-radius:2px;animation:countdown 3s linear forwards;}
-    @keyframes countdown{from{width:100%}to{width:0%}}
-  </style>
-</head>
-<body>
-<button class="theme-toggle" id="themeBtn"><i class="bi bi-moon-fill" id="themeIcon"></i></button>
-
-<div class="auth-card">
-  <?php if ($status === 'success'): ?>
-    <div class="auth-card-header">
-      <div class="hdr-icon success"><i class="bi bi-check-lg"></i></div>
-      <h2>Email verificado!</h2>
-      <p>Bem-vindo ao Finora, <strong><?=htmlspecialchars($username)?></strong>! A tua conta está ativa.</p>
-    </div>
-    <div class="auth-card-body">
-      <div class="status-body">
-        <p>A redirecionar para o dashboard em 3 segundos…</p>
-        <a href="../dashboard.php" class="btn-go"><i class="bi bi-speedometer2"></i> Ir para o dashboard</a>
-        <div class="progress-redirect"><div class="progress-redirect-bar"></div></div>
-      </div>
-    </div>
-
-  <?php elseif ($status === 'already_verified'): ?>
-    <div class="auth-card-header">
-      <div class="hdr-icon success"><i class="bi bi-patch-check-fill"></i></div>
-      <h2>Conta já verificada</h2>
-      <p>Esta conta já foi verificada anteriormente. Podes fazer login normalmente.</p>
-    </div>
-    <div class="auth-card-body">
-      <div class="status-body">
-        <a href="login.php" class="btn-go"><i class="bi bi-box-arrow-in-right"></i> Ir para o login</a>
-      </div>
-    </div>
-
-  <?php elseif ($status === 'expired'): ?>
-    <div class="auth-card-header">
-      <div class="hdr-icon warning"><i class="bi bi-clock-history"></i></div>
-      <h2>Código expirado</h2>
-      <p>O código de verificação expirou. Solicita um novo abaixo.</p>
-    </div>
-    <div class="auth-card-body">
-      <div class="status-body">
-        <?php if ($email): ?>
-        <form method="POST" style="display:inline">
-          <input type="hidden" name="resend" value="1">
-          <button type="submit" class="btn-go"><i class="bi bi-send"></i> Reenviar código</button>
+      <div class="au-card">
+<?php if ($status === 'success'): ?>
+        <div class="au-head au-head-center">
+          <div class="au-status ok"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
+          <h2>Conta confirmada</h2>
+          <p>Bem-vindo à Finora, <?= htmlspecialchars($username) ?>. Vamos levar-te ao painel.</p>
+        </div>
+        <a href="../dashboard.php" class="au-btn">Ir para o painel</a>
+<?php elseif ($status === 'already_verified'): ?>
+        <div class="au-head au-head-center">
+          <div class="au-status ok"><i class="bi bi-patch-check" aria-hidden="true"></i></div>
+          <h2>Esta conta já está confirmada</h2>
+          <p>Podes entrar normalmente.</p>
+        </div>
+        <a href="login.php" class="au-btn">Entrar</a>
+<?php elseif ($status === 'expired'): ?>
+        <div class="au-head au-head-center">
+          <div class="au-status bad"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i></div>
+          <h2>O código expirou</h2>
+          <p>Os códigos valem <?= VERIFY_CODE_MINUTES ?> minutos. Pede um novo e usa-o logo.</p>
+        </div>
+        <?= auth_alert('err', $errors) ?>
+        <form method="post" data-once>
+          <?= csrf_field() ?>
+          <button type="submit" name="resend" value="1" class="au-btn">Enviar código novo</button>
         </form>
-        <?php else: ?>
-        <a href="register.php" class="btn-go"><i class="bi bi-person-plus"></i> Criar nova conta</a>
-        <?php endif; ?>
+<?php elseif ($email === ''): ?>
+        <div class="au-head au-head-center">
+          <div class="au-status"><i class="bi bi-envelope" aria-hidden="true"></i></div>
+          <h2>Entra para confirmar o email</h2>
+          <p>A tua sessão terminou. Entra com o email e a palavra-passe e enviamos-te para aqui outra vez.</p>
+        </div>
+        <a href="login.php" class="au-btn">Entrar</a>
+<?php else: ?>
+        <div class="au-head au-head-center">
+          <div class="au-status"><i class="bi bi-envelope-open" aria-hidden="true"></i></div>
+          <h2>Confirma o teu email</h2>
+          <p>Enviámos um código de 6 dígitos para <b><?= htmlspecialchars($email) ?></b>.</p>
+        </div>
+
+        <?= auth_alert('err', $errors) ?>
+        <?= auth_alert('ok', $message ? [$message] : []) ?>
+
+        <form method="post" id="codeForm" data-once>
+          <?= csrf_field() ?>
+          <div class="au-field">
+            <label class="au-label" for="code">Código</label>
+            <input type="text" id="code" name="code" class="au-input au-otp" inputmode="numeric"
+                   autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus>
+          </div>
+          <button type="submit" class="au-btn">Confirmar</button>
+        </form>
+        <form method="post" class="au-foot">
+          <?= csrf_field() ?>
+          Não chegou? Vê o spam ou
+          <button type="submit" name="resend" value="1" class="au-linkbtn">envia outro código</button>.
+        </form>
+<?php endif; ?>
+<?php if (!in_array($status, ['success', 'already_verified'], true)): ?>
+        <p class="au-foot au-muted"><a href="login.php">Voltar ao login</a></p>
+<?php endif; ?>
       </div>
-    </div>
-
-  <?php else: /* pending */ ?>
-    <div class="auth-card-header">
-      <div class="hdr-icon"><i class="bi bi-envelope-open"></i></div>
-      <h2>Verifica o teu email</h2>
-      <p>Enviámos um código de 6 dígitos para</p>
-      <?php if ($email): ?>
-        <div class="email-badge"><i class="bi bi-envelope"></i><?=htmlspecialchars($email)?></div>
-      <?php endif; ?>
-    </div>
-    <div class="auth-card-body">
-      <?php if (!empty($errors)): ?>
-        <div class="a-error">
-          <i class="bi bi-exclamation-circle" style="flex-shrink:0;margin-top:1px"></i>
-          <div><?php foreach($errors as $e): ?><?=htmlspecialchars($e)?><?php endforeach; ?></div>
-        </div>
-      <?php endif; ?>
-      <?php if ($message): ?>
-        <div class="a-info">
-          <i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i>
-          <?=htmlspecialchars($message)?>
-        </div>
-      <?php endif; ?>
-
-      <form method="POST" id="otpForm">
-        <!-- Visible OTP boxes -->
-        <div class="otp-row">
-          <?php for($i=1;$i<=6;$i++): ?>
-            <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]"
-                   class="otp-digit" id="d<?=$i?>" name="d<?=$i?>" autocomplete="off">
-          <?php endfor; ?>
-        </div>
-        <p class="otp-hint">Verifica a pasta de spam se não recebeste o email.</p>
-        <button type="submit" class="btn-s-primary">
-          <i class="bi bi-shield-check"></i> Verificar código
-        </button>
-      </form>
-
-      <?php if ($email): ?>
-      <form method="POST" style="display:flex;justify-content:center">
-        <input type="hidden" name="resend" value="1">
-        <button type="submit" class="btn-ghost">
-          <i class="bi bi-arrow-clockwise"></i> Reenviar código
-        </button>
-      </form>
-      <?php endif; ?>
-    </div>
-    <div class="auth-card-footer">
-      <a href="login.php"><i class="bi bi-arrow-left"></i> Voltar ao login</a>
-    </div>
-  <?php endif; ?>
-</div>
-
-<script>
-// Theme
-const html = document.documentElement, btn = document.getElementById('themeBtn'), icon = document.getElementById('themeIcon');
-applyTheme(localStorage.getItem('fc_theme') || 'light');
-btn.addEventListener('click', () => { const n = html.dataset.theme === 'dark' ? 'light' : 'dark'; applyTheme(n); localStorage.setItem('fc_theme', n); });
-function applyTheme(t) { html.dataset.theme = t; icon.className = t === 'dark' ? 'bi bi-sun-fill' : 'bi bi-moon-fill'; }
-
-// OTP input logic
-const digits = document.querySelectorAll('.otp-digit');
-if (digits.length) {
-  digits[0].focus();
-  digits.forEach((el, i) => {
-    el.addEventListener('input', function() {
-      // Accept paste of full code
-      if (this.value.length > 1) {
-        const val = this.value.replace(/\D/g, '').slice(0, 6);
-        digits.forEach((d, j) => { d.value = val[j] || ''; });
-        if (val.length === 6) document.getElementById('otpForm').submit();
-        else digits[Math.min(val.length, 5)].focus();
-        return;
-      }
-      this.value = this.value.replace(/\D/g, '');
-      if (this.value && i < 5) digits[i + 1].focus();
-      if (digits[5].value) document.getElementById('otpForm').submit();
-    });
-    el.addEventListener('keydown', function(e) {
-      if (e.key === 'Backspace' && !this.value && i > 0) digits[i - 1].focus();
-    });
-    el.addEventListener('paste', function(e) {
-      e.preventDefault();
-      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g,'').slice(0,6);
-      digits.forEach((d, j) => { d.value = text[j] || ''; });
-      if (text.length === 6) document.getElementById('otpForm').submit();
-    });
+<?php
+auth_page_end($status === 'success' ? "setTimeout(function () { location.href = '../dashboard.php'; }, 2500);" : <<<'JS'
+(function () {
+  // Assim que houver 6 dígitos, envia sozinho (também quando o código é colado)
+  var input = document.getElementById('code');
+  if (!input) return;
+  input.addEventListener('input', function () {
+    var digits = input.value.replace(/\D/g, '').slice(0, 6);
+    input.value = digits;
+    if (digits.length === 6) document.getElementById('codeForm').requestSubmit();
   });
-}
-</script>
-</body>
-</html>
+})();
+JS);

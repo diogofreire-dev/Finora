@@ -1,0 +1,252 @@
+/* site/css/auth.css — páginas de autenticação (login, registo, recuperar, verificar).
+   Mesmas cores da app: azul-marinho do logo, dourado, papel frio. */
+
+:root {
+  --au-ink:      #14213d;
+  --au-cream:    #f3e7c8;
+  --au-gold:     #c48a12;
+  --au-gold-hi:  #e2b04a;
+  --au-paper:    #f4f6fa;
+  --au-surface:  #ffffff;
+  --au-line:     #dfe4ee;
+  --au-text:     #1b2438;
+  --au-muted:    #5f6982;
+  --au-field:    #f8f9fc;
+  --au-btn:      #14213d;
+  --au-btn-text: #f3e7c8;
+  --au-btn-hover:#1f3260;
+  --au-focus:    rgba(196, 138, 18, .35);
+  --au-err:      #b42318;  --au-err-bg: #fef1ef;  --au-err-line: #f6cfc9;
+  --au-ok:       #157a45;  --au-ok-bg:  #ecf8f1;  --au-ok-line:  #c3e8d3;
+  --au-info:     #1f3a68;  --au-info-bg:#eef2fa;  --au-info-line:#d3dcef;
+  --fn-logo-gold: #c48a12;
+  --au-font:     'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --au-display:  'Bricolage Grotesque', var(--au-font);
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  --au-paper:    #0e1420;
+  --au-surface:  #172033;
+  --au-line:     #2a3550;
+  --au-text:     #e8ecf5;
+  --au-muted:    #9aa4bb;
+  --au-field:    #111a2a;
+  --au-btn:      #e2b04a;
+  --au-btn-text: #14213d;
+  --au-btn-hover:#ebc067;
+  --au-focus:    rgba(226, 176, 74, .4);
+  --au-err:      #fda29b;  --au-err-bg: rgba(240, 68, 56, .1);  --au-err-line: rgba(240, 68, 56, .3);
+  --au-ok:       #75e0a7;  --au-ok-bg:  rgba(23, 178, 106, .1); --au-ok-line:  rgba(23, 178, 106, .3);
+  --au-info:     #b2c6f2;  --au-info-bg:rgba(74, 111, 208, .12);--au-info-line:rgba(74, 111, 208, .35);
+  --fn-logo-gold: #e2b04a;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  min-height: 100vh;
+  background: var(--au-paper);
+  color: var(--au-text);
+  font: 400 15px/1.5 var(--au-font);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+:focus-visible { outline: 3px solid var(--au-focus); outline-offset: 2px; }
+
+/* ── Estrutura ─────────────────────────────────────────── */
+.au-shell { min-height: 100vh; display: flex; }
+.au-main { flex: 1; min-width: 0; display: flex; flex-direction: column; padding: 20px 24px 40px; }
+.au-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.au-center { flex: 1; width: 100%; max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; justify-content: center; padding-top: 28px; }
+
+.au-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 38px; padding: 0 14px; border-radius: 10px;
+  border: 1px solid var(--au-line); background: var(--au-surface);
+  color: var(--au-muted); font: 500 13px var(--au-font); text-decoration: none; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.au-chip:hover { color: var(--au-text); border-color: var(--au-gold); }
+.au-chip-icon { width: 38px; padding: 0; justify-content: center; font-size: 15px; }
+
+/* Logo por cima do cartão (páginas sem painel e telemóvel) */
+.au-brand { display: block; align-self: center; margin-bottom: 26px; color: var(--au-ink); }
+[data-theme="dark"] .au-brand { color: var(--au-cream); }
+.au-brand .au-logo { display: block; height: 46px; width: auto; }
+.au-split .au-brand { display: none; }
+
+/* ── Painel azul (login e registo) ─────────────────────── */
+.au-panel {
+  position: relative; overflow: hidden;
+  width: min(44vw, 520px); flex-shrink: 0;
+  background: var(--au-ink); color: var(--au-cream);
+  display: flex; flex-direction: column; padding: 44px 48px;
+  --fn-logo-gold: #e2b04a;
+}
+.au-panel-brand { color: var(--au-cream); position: relative; z-index: 1; align-self: flex-start; }
+.au-panel-brand .au-logo { display: block; height: 52px; width: auto; }
+.au-pitch { position: relative; z-index: 1; margin-top: auto; margin-bottom: 46vh; }
+.au-pitch h1 {
+  font: 700 clamp(32px, 3.4vw, 46px)/1.06 var(--au-display);
+  letter-spacing: -.02em; margin: 0 0 14px; color: #fff; max-width: 13ch;
+}
+.au-pitch p { margin: 0; font-size: 16px; line-height: 1.6; color: rgba(243, 231, 200, .78); max-width: 34ch; }
+
+/* A linha dourada do logo, em grande, a subir por cima de uma grelha de gráfico */
+.au-rise { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 42%; pointer-events: none; }
+.au-grid path { stroke: rgba(243, 231, 200, .09); stroke-width: 1; vector-effect: non-scaling-stroke; fill: none; }
+.au-rise-line {
+  fill: none; stroke: #e2b04a; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 900; stroke-dashoffset: 900;
+  animation: au-draw 1.4s cubic-bezier(.3, .7, .2, 1) .15s forwards;
+}
+.au-rise-line + .au-rise-line { animation-delay: 1.25s; animation-duration: .35s; }
+@keyframes au-draw { to { stroke-dashoffset: 0; } }
+
+/* ── Cartão do formulário ──────────────────────────────── */
+.au-head { margin-bottom: 22px; }
+.au-head h2 { font: 700 28px/1.15 var(--au-display); letter-spacing: -.015em; margin: 0 0 6px; }
+.au-head p { margin: 0; color: var(--au-muted); font-size: 15px; }
+.au-head-center { text-align: center; }
+
+.au-card {
+  background: var(--au-surface); border: 1px solid var(--au-line); border-radius: 18px;
+  padding: 30px 30px 26px;
+  box-shadow: 0 1px 2px rgba(20, 33, 61, .04), 0 12px 32px -12px rgba(20, 33, 61, .12);
+}
+.au-split .au-card { background: transparent; border: 0; box-shadow: none; padding: 0; }
+
+/* Ícone de estado (verificar, recuperar, sucesso) */
+.au-status {
+  width: 56px; height: 56px; border-radius: 16px; margin: 0 auto 18px;
+  display: grid; place-items: center; font-size: 24px;
+  background: var(--au-ink); color: var(--au-cream);
+}
+[data-theme="dark"] .au-status { background: #24345a; }
+.au-status.ok  { background: #157a45; color: #fff; }
+.au-status.bad { background: #b42318; color: #fff; }
+
+/* ── Campos ────────────────────────────────────────────── */
+.au-field { margin-bottom: 16px; }
+.au-label { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-weight: 600; font-size: 14px; margin-bottom: 7px; }
+.au-label a { font-weight: 500; font-size: 13px; color: var(--au-muted); text-decoration: none; }
+.au-label a:hover { color: var(--au-text); text-decoration: underline; }
+.au-input-wrap { position: relative; }
+.au-input-ico { position: absolute; left: 13px; top: 50%; transform: translateY(-50%); color: var(--au-muted); font-size: 15px; pointer-events: none; }
+.au-input {
+  width: 100%; height: 46px; padding: 0 14px 0 40px;
+  border: 1px solid var(--au-line); border-radius: 11px;
+  background: var(--au-field); color: var(--au-text);
+  font: 400 15px var(--au-font);
+  transition: border-color .15s, box-shadow .15s, background .15s;
+}
+.au-input::placeholder { color: var(--au-muted); opacity: .75; }
+.au-input:focus { outline: none; border-color: var(--au-gold); box-shadow: 0 0 0 3px var(--au-focus); background: var(--au-surface); }
+.au-input[aria-invalid="true"] { border-color: var(--au-err); }
+.au-has-btn { padding-right: 46px; }
+.au-reveal {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  width: 38px; height: 38px; border: 0; border-radius: 9px; background: none;
+  color: var(--au-muted); font-size: 16px; cursor: pointer;
+}
+.au-reveal:hover { color: var(--au-text); background: var(--au-paper); }
+.au-hint { margin: 6px 0 0; font-size: 13px; color: var(--au-muted); }
+.au-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+
+/* Força da palavra-passe: 5 regras em linha */
+.au-meter { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-top: 9px; }
+.au-meter span { height: 4px; border-radius: 2px; background: var(--au-line); transition: background .2s; }
+.au-meter[data-score="1"] span:nth-child(-n+1),
+.au-meter[data-score="2"] span:nth-child(-n+2) { background: #d9534f; }
+.au-meter[data-score="3"] span:nth-child(-n+3),
+.au-meter[data-score="4"] span:nth-child(-n+4) { background: var(--au-gold-hi); }
+.au-meter[data-score="5"] span { background: #1f9d5c; }
+.au-reqs { list-style: none; margin: 9px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.au-reqs li {
+  font-size: 12.5px; padding: 3px 9px 3px 7px; border-radius: 999px;
+  border: 1px solid var(--au-line); color: var(--au-muted);
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.au-reqs li.ok { color: var(--au-ok); border-color: var(--au-ok-line); background: var(--au-ok-bg); }
+
+/* Código de 6 dígitos: um só campo (o telemóvel sugere o código do email) */
+.au-otp {
+  height: 60px; padding: 0 12px; text-align: center;
+  font: 700 28px var(--au-display); letter-spacing: .45em; text-indent: .45em;
+}
+
+/* ── Botões ────────────────────────────────────────────── */
+.au-btn {
+  width: 100%; height: 48px; border: 0; border-radius: 12px;
+  background: var(--au-btn); color: var(--au-btn-text);
+  font: 600 15px var(--au-font); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+  transition: background .15s, transform .1s;
+}
+.au-btn:hover { background: var(--au-btn-hover); }
+.au-btn:active { transform: translateY(1px); }
+.au-btn:disabled { opacity: .6; cursor: progress; }
+.au-btn-quiet {
+  width: 100%; height: 44px; border: 1px solid var(--au-line); border-radius: 12px; background: transparent;
+  color: var(--au-text); font: 500 14px var(--au-font); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none;
+}
+.au-btn-quiet:hover { border-color: var(--au-gold); }
+.au-linkbtn {
+  border: 0; background: none; padding: 0; cursor: pointer;
+  font: 600 14px var(--au-font); color: var(--au-text);
+  text-decoration: underline; text-decoration-color: var(--au-gold); text-underline-offset: 3px;
+}
+
+.au-google {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  height: 46px; border: 1px solid var(--au-line); border-radius: 12px;
+  background: var(--au-surface); color: var(--au-text);
+  font: 500 15px var(--au-font); text-decoration: none; transition: border-color .15s;
+}
+.au-google:hover { border-color: var(--au-gold); }
+.au-or { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--au-muted); font-size: 13px; }
+.au-or::before, .au-or::after { content: ''; flex: 1; height: 1px; background: var(--au-line); }
+
+/* ── Mensagens ─────────────────────────────────────────── */
+.au-alert {
+  display: flex; gap: 10px; align-items: flex-start;
+  padding: 12px 14px; border-radius: 12px; margin-bottom: 18px; font-size: 14px;
+  border: 1px solid;
+}
+.au-alert i { font-size: 16px; line-height: 1.35; flex-shrink: 0; }
+.au-alert p { margin: 0; }
+.au-alert p + p { margin-top: 4px; }
+.au-alert-err  { color: var(--au-err);  background: var(--au-err-bg);  border-color: var(--au-err-line); }
+.au-alert-ok   { color: var(--au-ok);   background: var(--au-ok-bg);   border-color: var(--au-ok-line); }
+.au-alert-info { color: var(--au-info); background: var(--au-info-bg); border-color: var(--au-info-line); }
+
+.au-foot { margin: 22px 0 0; text-align: center; color: var(--au-muted); font-size: 14px; }
+.au-foot a, .au-foot .au-linkbtn { color: var(--au-text); font-weight: 600; text-decoration: underline; text-decoration-color: var(--au-gold); text-underline-offset: 3px; }
+.au-foot a:hover { text-decoration-thickness: 2px; }
+.au-stack { display: grid; gap: 10px; }
+.au-muted { color: var(--au-muted); }
+.au-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ── Ecrãs pequenos ────────────────────────────────────── */
+@media (max-width: 900px) {
+  .au-panel { display: none; }
+  .au-split .au-brand { display: block; }
+  .au-split .au-card {
+    background: var(--au-surface); border: 1px solid var(--au-line); padding: 26px 22px 22px;
+    box-shadow: 0 1px 2px rgba(20, 33, 61, .04), 0 12px 32px -12px rgba(20, 33, 61, .12);
+  }
+}
+@media (max-width: 520px) {
+  .au-main { padding: 14px 16px 32px; }
+  .au-card, .au-split .au-card { padding: 22px 18px 20px; border-radius: 16px; }
+  .au-head h2 { font-size: 24px; }
+  .au-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .au-brand .au-logo { height: 40px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .au-rise-line { animation: none; stroke-dashoffset: 0; }
+  * { transition: none !important; }
+}
