@@ -173,6 +173,21 @@
       }
     ],
 
+    bolsa: [
+      {
+        selector: '.bk-search',
+        title: 'Pesquisar',
+        text: 'Escreve o nome ou o símbolo de uma ação, ETF ou cripto. A pesquisa usa o Yahoo Finance.',
+        position: 'bottom'
+      },
+      {
+        selector: '#bkWatchT',
+        title: 'A seguir',
+        text: 'Os títulos que segues, com o preço em euros, a variação de hoje e o último mês. Os preços atualizam-se a cada 15 minutos.',
+        position: 'bottom'
+      }
+    ],
+
     savings: [
       {
         selector: '.sv-hero .piggy',

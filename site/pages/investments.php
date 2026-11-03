@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config/db.php';
 $uid = (int) ($_SESSION['user_id'] ?? 0);
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
+require_once __DIR__ . '/../helpers/market.php';
 
 // Tipos: rótulo, slot de cor (--cat-N, paleta validada) e ícone
 const INVESTMENT_TYPES = [
@@ -95,6 +96,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 [$messageType, $message] = $_SESSION['flash_investments'] ?? ['', ''];
 unset($_SESSION['flash_investments']);
 
+// ── Cotações automáticas (Bolsa) ─────────────────────────────────────────────
+// Posições com símbolo e tipo cotado recebem o preço da fonte (cache de 15 min).
+// Se a fonte falhar, fica o último preço guardado e aparece o botão para o pôr à mão.
+const MARKET_TYPES = ['acoes', 'etf', 'cripto', 'fundo'];
+$quotes = [];
+$stmt = $pdo->prepare("SELECT id, ticker, type, current_price FROM investments WHERE user_id = :uid AND ticker IS NOT NULL");
+$stmt->execute([':uid' => $uid]);
+foreach (array_slice($stmt->fetchAll(), 0, 25) as $p) {
+    if (!in_array($p['type'], MARKET_TYPES, true)) continue;
+    $sym = market_symbol_for((string) $p['ticker'], $p['type']);
+    $q   = $sym ? market_quote($pdo, $uid, $sym) : null;
+    if (!$q) continue;
+    $quotes[(int) $p['id']] = $q;
+    if (!$q['stale'] && abs($q['price_eur'] - (float) $p['current_price']) > 0.00005) {
+        $pdo->prepare('UPDATE investments SET current_price = :c, price_updated_at = :t WHERE id = :id AND user_id = :uid')
+            ->execute([':c' => round($q['price_eur'], 4), ':t' => $q['fetched_at'], ':id' => $p['id'], ':uid' => $uid]);
+    }
+}
+
 // ── Dados ────────────────────────────────────────────────────────────────────
 $stmt = $pdo->prepare("SELECT *, quantity * current_price AS value, quantity * buy_price AS cost,
                               DATEDIFF(NOW(), price_updated_at) AS price_age
@@ -171,6 +191,12 @@ $activePage = 'investments'; $sidebarPrefix = '../';
     [data-theme="dark"] .iv-old { color: #fedf89; }
 
     .iv-actions { display: flex; gap: 2px; justify-content: flex-end; }
+    /* Bolsa: variação do dia e gráfico do mês */
+    .mk-chip { display: inline-block; margin-top: 3px; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--fn-paper); color: var(--fn-muted); }
+    .mk-chip.up { background: #ecfdf3; color: #067647; } .mk-chip.down { background: #fef3f2; color: #b42318; }
+    [data-theme="dark"] .mk-chip.up { background: rgba(117,224,167,.12); color: #75e0a7; } [data-theme="dark"] .mk-chip.down { background: rgba(253,162,155,.12); color: #fda29b; }
+    .mk-spark { display: block; width: 110px; height: 26px; margin-top: 6px; }
+    .mk-spark polyline { stroke-width: 2; stroke: #12b76a; } .mk-spark.down polyline { stroke: #f04438; }
     .iv-actions form { margin: 0; }
     .iv-actions .ico { width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 9px; border: 0; background: transparent; color: var(--fn-muted); cursor: pointer; }
     .iv-actions .ico:hover { background: var(--fn-paper); color: var(--fn-text); }
@@ -275,6 +301,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
         $pct  = $i['cost'] > 0 ? $gain / $i['cost'] * 100 : 0;
         $st   = $gain > 0.005 ? 'up' : ($gain < -0.005 ? 'down' : 'flat');
         $age  = $i['price_age'] === null ? null : (int) $i['price_age'];
+        $q    = $quotes[(int) $i['id']] ?? null;
       ?>
         <li class="iv-item">
           <span class="iv-ico" style="background:color-mix(in srgb, var(--cat-<?= $slot ?>) 15%, transparent);color:var(--cat-<?= $slot ?>)"><i class="bi bi-<?= $icon ?>"></i></span>
@@ -287,15 +314,25 @@ $activePage = 'investments'; $sidebarPrefix = '../';
           </div>
           <div class="iv-val">
             <b><?= fmt_eur($i['value']) ?></b>
-            <span class="iv-meta <?= $age !== null && $age > 30 ? 'iv-old' : '' ?>">
-              <?= $age === null ? 'Preço por atualizar' : ($age === 0 ? 'Preço de hoje' : 'Preço de há ' . $age . ' dia' . ($age > 1 ? 's' : '')) ?>
-            </span>
+            <?php if ($q && !$q['stale']): ?>
+              <span class="iv-meta"><i class="bi bi-broadcast" aria-hidden="true"></i> Cotação automática · <?= $q['minutes'] < 1 ? 'agora' : 'há ' . $q['minutes'] . ' min' ?></span>
+              <?php if ($q['change_pct'] !== null): $cp = (float) $q['change_pct']; ?>
+                <span class="mk-chip <?= $cp > 0.005 ? 'up' : ($cp < -0.005 ? 'down' : '') ?>" title="Variação desde o fecho anterior"><?= signed_pct($cp) ?> hoje</span>
+              <?php endif; ?>
+            <?php else: ?>
+              <span class="iv-meta <?= $age !== null && $age > 30 ? 'iv-old' : '' ?>">
+                <?= $q ? 'Sem ligação à bolsa · ' : '' ?><?= $age === null ? 'Preço por atualizar' : ($age === 0 ? 'Preço de hoje' : 'Preço de há ' . $age . ' dia' . ($age > 1 ? 's' : '')) ?>
+              </span>
+            <?php endif; ?>
+            <?= $q ? market_spark_svg($q['spark'], 'Evolução do último mês de ' . $i['name']) : '' ?>
           </div>
           <div class="iv-delta <?= $st ?>">
             <?= signed_eur($gain) ?><small><?= signed_pct($pct) ?> · compra a <?= fmt_price((float) $i['buy_price']) ?></small>
           </div>
           <div class="iv-actions">
+            <?php if (!$q || $q['stale']): ?>
             <button type="button" class="btn-s js-price" aria-label="Atualizar preço de <?= htmlspecialchars($i['name']) ?>" data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-price="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-arrow-repeat"></i> Preço</button>
+            <?php endif; ?>
             <button type="button" class="ico js-edit" aria-label="Editar <?= htmlspecialchars($i['name']) ?>" title="Editar"
                     data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-type="<?= htmlspecialchars($i['type']) ?>"
                     data-ticker="<?= htmlspecialchars($i['ticker'] ?? '') ?>" data-quantity="<?= htmlspecialchars((string) (float) $i['quantity']) ?>"
@@ -310,7 +347,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
         </li>
       <?php endforeach; ?>
     </ul>
-    <p class="iv-note">Os preços são introduzidos por ti; atualiza-os de vez em quando para os valores estarem certos. A Finora regista e calcula, mas não dá aconselhamento financeiro.</p>
+    <p class="iv-note">Ações, ETFs, fundos e cripto com símbolo são cotados automaticamente (Yahoo Finance, com atraso; câmbio do BCE). Os outros preços são introduzidos por ti. A Finora regista e calcula, mas não dá aconselhamento financeiro.</p>
   <?php endif; ?>
 
 </div><!-- /iv -->
@@ -338,7 +375,9 @@ $activePage = 'investments'; $sidebarPrefix = '../';
       </div>
       <div>
         <label class="form-label" for="ivTicker">Símbolo <span style="font-weight:400;color:var(--fn-muted)">(opcional)</span></label>
-        <input id="ivTicker" type="text" name="ticker" class="form-control" maxlength="20" placeholder="Ex: VWCE" autocapitalize="characters">
+        <input id="ivTicker" type="text" name="ticker" class="form-control" maxlength="20" placeholder="Ex: VWCE.DE ou escreve o nome" autocapitalize="characters" autocomplete="off" list="ivTickerList">
+        <datalist id="ivTickerList"></datalist>
+        <div class="hint">Com símbolo, o preço atualiza-se sozinho.</div>
       </div>
     </div>
     <div class="mb">
@@ -410,6 +449,45 @@ $activePage = 'investments'; $sidebarPrefix = '../';
     priceDlg.showModal(); pf.elements.current_price.select();
   }));
   [formDlg, priceDlg].forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+
+  // Vindo da Bolsa ("À carteira"): abre o formulário com o símbolo preenchido
+  const add = new URLSearchParams(location.search).get('add');
+  if (add && /^[A-Z0-9^][A-Z0-9.\-=^]{0,19}$/.test(add)) {
+    document.querySelector('.js-new').click();
+    f.elements.ticker.value = add;
+    f.elements.type.value = add.endsWith('-EUR') ? 'cripto' : (add.includes('.') ? 'etf' : 'acoes');
+    setTimeout(() => f.elements.ticker.dispatchEvent(new Event('input')), 0);   // depois de o ouvinte abaixo existir
+  }
+
+  // Sugestões de símbolos: escreves "edp" e aparece EDP.LS (Lisboa). O pedido sai do nosso servidor.
+  const tk = f.elements.ticker, list = document.getElementById('ivTickerList');
+  let timer = null, found = {};
+  tk.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = tk.value.trim();
+    if (found[q.toUpperCase()]) {                       // escolheu uma sugestão: preenche nome e tipo se estiverem vazios
+      const r = found[q.toUpperCase()];
+      if (!f.elements.name.value) f.elements.name.value = r.name;
+      f.elements.type.value = r.kind;
+      return;
+    }
+    if (q.length < 2) return;
+    timer = setTimeout(async () => {
+      try {
+        const res = await fetch('market_search.php?q=' + encodeURIComponent(q), { credentials: 'same-origin' });
+        const rows = res.ok ? await res.json() : [];
+        list.replaceChildren(...rows.map(r => {
+          found[r.symbol] = r;
+          const o = document.createElement('option');
+          o.value = r.symbol; o.label = r.name + (r.exchange ? ' · ' + r.exchange : '');   // textContent/label: nunca HTML
+          return o;
+        }));
+        // Símbolo exato (ex.: vindo da Bolsa): preenche nome e tipo
+        const exact = found[q.toUpperCase()];
+        if (exact) { if (!f.elements.name.value) f.elements.name.value = exact.name; f.elements.type.value = exact.kind; }
+      } catch (e) {}
+    }, 300);
+  });
 })();
 </script>
 </body>

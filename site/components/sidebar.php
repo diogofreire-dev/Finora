@@ -25,6 +25,7 @@ $_pageTitles = [
     'savings'      => 'Poupanças',
     'futuro'       => 'Metas',
     'investments'  => 'Investimentos',
+    'bolsa'        => 'Bolsa',
     'reminders'    => 'Lembretes',
     'analytics'    => 'Análise',
     'persona'      => 'Personalidade financeira',
@@ -130,6 +131,9 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     </a>
     <a href="<?= $_sp ?>pages/investments.php"  class="<?= _sidebarClass('investments',  $_ap) ?>"<?= _ariaCurrent('investments', $_ap) ?>>
       <i class="bi bi-graph-up-arrow"></i> Investimentos
+    </a>
+    <a href="<?= $_sp ?>pages/bolsa.php"        class="<?= _sidebarClass('bolsa',        $_ap) ?>"<?= _ariaCurrent('bolsa', $_ap) ?>>
+      <i class="bi bi-activity"></i> Bolsa
     </a>
     <a href="<?= $_sp ?>pages/reminders.php"    class="<?= _sidebarClass('reminders',    $_ap) ?>"<?= _ariaCurrent('reminders', $_ap) ?>>
       <i class="bi bi-calendar-check"></i> Lembretes
@@ -264,4 +268,4 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 <?php /* ── Tutorial System ── */ ?>
 <link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=2">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js?v=18"></script>
+<script src="<?= $_sp ?>js/tutorial.js?v=19"></script>
