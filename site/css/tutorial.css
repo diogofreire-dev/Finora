@@ -25,6 +25,9 @@
 #tutorial-fab:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(20, 33, 61, .34); }
 #tutorial-fab:focus-visible { outline: 3px solid var(--tut-ring); outline-offset: 3px; }
 #tutorial-fab.hidden { opacity: 0; pointer-events: none; }
+/* Com o menu lateral aberto, o botão e o convite não ficam por cima dele */
+body.sidebar-is-open #tutorial-fab,
+body.sidebar-is-open #tutorial-prompt { opacity: 0; visibility: hidden; pointer-events: none; }
 @keyframes tut-pulse {
   0%   { box-shadow: 0 6px 20px rgba(20, 33, 61, .28), 0 0 0 0 rgba(217, 154, 30, .55); }
   70%  { box-shadow: 0 6px 20px rgba(20, 33, 61, .28), 0 0 0 12px rgba(217, 154, 30, 0); }

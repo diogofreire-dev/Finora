@@ -181,12 +181,14 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
   function openSidebar() {
     sb.classList.add('open'); ov.classList.add('visible');
+    document.body.classList.add('sidebar-is-open');        // esconde o botão do tutorial
     sb.setAttribute('aria-hidden', 'false'); btn.setAttribute('aria-expanded', 'true');
     (sb.querySelector('.sidebar-link.active') || sb.querySelector('.sidebar-link')).focus();
   }
   function closeSidebar() {
     if (!sb.classList.contains('open')) return;
     sb.classList.remove('open'); ov.classList.remove('visible');
+    document.body.classList.remove('sidebar-is-open');
     sb.setAttribute('aria-hidden', 'true'); btn.setAttribute('aria-expanded', 'false');
     btn.focus();
   }
@@ -266,6 +268,6 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 </script>
 
 <?php /* ── Tutorial System ── */ ?>
-<link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=2">
+<link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=3">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
 <script src="<?= $_sp ?>js/tutorial.js?v=19"></script>
