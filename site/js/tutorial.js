@@ -173,7 +173,34 @@
       }
     ],
 
+    savings: [
+      {
+        selector: '.sv-hero .piggy',
+        title: 'O teu mealheiro',
+        text: 'Enche com o dinheiro que pões de lado. Fica cheio quando chegas ao próximo marco (100 €, 250 €, 500 €…).',
+        position: 'right'
+      },
+      {
+        selector: '.sv-actions',
+        title: 'Pôr de lado ou tirar',
+        text: 'Regista cada vez que guardas dinheiro, e também quando o usas. Podes ligar cada movimento a uma meta.',
+        position: 'bottom'
+      },
+      {
+        selector: '.sv-grid .pg-card',
+        title: 'Movimentos',
+        text: 'O histórico, mês a mês. Se te enganares, apagas o movimento e o mealheiro acerta-se.',
+        position: 'top'
+      }
+    ],
+
     futuro: [
+      {
+        selector: '.gl-saved',
+        title: 'Quanto já tens',
+        text: 'O mealheiro da meta enche com o que puseste de lado nas Poupanças. A linha tracejada é onde devias estar hoje para chegares a tempo.',
+        position: 'bottom'
+      },
       {
         selector: '.gl-form',
         title: 'Nova meta',

@@ -1,0 +1,30 @@
+/* site/css/piggy.css — mealheiro 3D (Poupanças e Metas).
+   Duas imagens do Blender, mesma câmara: a dourada é cortada de baixo para cima até ao nível poupado. */
+
+.piggy { position: relative; aspect-ratio: 560 / 610; flex-shrink: 0; }
+.piggy img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.piggy-lg { width: min(100%, 300px); }
+.piggy-sm { width: 112px; }
+.piggy::before {
+  content: ''; position: absolute; left: 12%; right: 12%; bottom: 4%; height: 10%;
+  border-radius: 50%; background: radial-gradient(closest-side, rgba(20, 33, 61, .22), transparent);
+}
+[data-theme="dark"] .piggy::before { background: radial-gradient(closest-side, rgba(0, 0, 0, .5), transparent); }
+
+/* Ao abrir a página o ouro sobe até ao nível certo */
+.piggy-full { animation: piggy-rise 1.1s cubic-bezier(.3, .7, .2, 1) .15s backwards; }
+@keyframes piggy-rise { from { clip-path: inset(92% 0 0 0); } }
+
+/* Linha de "onde devias estar hoje" */
+.piggy-mark {
+  position: absolute; left: 8%; right: 8%; height: 0; border-top: 2px dashed var(--fn-ink, #14213d);
+  opacity: .75;
+}
+[data-theme="dark"] .piggy-mark { border-top-color: #f3e7c8; }
+.piggy-mark::after {
+  content: ''; position: absolute; right: -5px; top: -6px; width: 10px; height: 10px; border-radius: 50%;
+  background: var(--fn-ink, #14213d);
+}
+[data-theme="dark"] .piggy-mark::after { background: #f3e7c8; }
+
+@media (prefers-reduced-motion: reduce) { .piggy-full { animation: none; } }
