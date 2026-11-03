@@ -57,7 +57,7 @@ $features = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=2">
+  <link rel="stylesheet" href="css/landing.css?v=3">
   <link rel="modulepreload" href="js/lib/three/three.module.min.js">
   <script type="importmap">
   { "imports": { "three": "./js/lib/three/three.module.min.js", "three/addons/": "./js/lib/three/addons/" } }
@@ -82,6 +82,9 @@ $features = [
 </header>
 
 <main>
+<?php if (($_GET['conta'] ?? '') === 'apagada'): ?>
+  <div class="ln-wrap"><p class="ln-notice" role="status"><i class="bi bi-check-circle" aria-hidden="true"></i> A tua conta e todos os dados foram apagados. Obrigado por teres usado a Finora.</p></div>
+<?php endif; ?>
   <section class="ln-hero">
     <div class="ln-wrap ln-hero-grid">
       <div class="ln-hero-copy">
@@ -187,6 +190,7 @@ $features = [
       <a href="auth/register.php">Criar conta</a>
       <a href="auth/login.php">Entrar</a>
       <a href="#seguranca">Segurança</a>
+      <a href="privacidade.php">Privacidade</a>
     </nav>
     <p>&copy; <?= date('Y') ?> Finora. Prova de Aptidão Profissional de Diogo Freire e Jandro Antunes.</p>
   </div>

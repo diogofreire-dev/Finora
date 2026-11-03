@@ -141,6 +141,7 @@ auth_page_start('Criar conta', [
           </div>
 
           <button type="submit" class="au-btn">Criar conta</button>
+          <p class="au-hint au-legal">Ao criar conta, aceitas a forma como tratamos os teus dados, descrita na <a href="../privacidade.php">Política de privacidade</a>.</p>
         </form>
 
         <p class="au-foot">Já tens conta? <a href="login.php">Entrar</a></p>

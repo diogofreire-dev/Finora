@@ -89,6 +89,11 @@ class EmailService {
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
+    public function sendAccountDeletedNotification($email, $username) {
+        try { return $this->sendMail($email, 'Conta apagada — Finora', $this->tplAccountDeleted($username)); }
+        catch (Exception $e) { error_log($e->getMessage()); return false; }
+    }
+
     // ── Base HTML ────────────────────────────────────────────────────────
 
     private function base(string $preheader, string $body): string {
@@ -396,6 +401,25 @@ HTML;
         </td></tr>
 HTML;
         return $this->base("A tua palavra-passe Finora foi alterada", $body);
+    }
+
+    private function tplAccountDeleted(string $username): string {
+        $name = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
+        $h = $this->header('👋', 'Conta apagada', 'A tua conta e todos os dados foram apagados');
+        $body = $h . <<<HTML
+        <tr><td style="padding:40px 32px 32px">
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$name}</span>.</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A tua conta Finora foi apagada, com todos os cartões, transações, orçamentos, lembretes, poupanças e metas. Não guardámos cópia.</p>
+
+          <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:28px"><tr><td style="padding:14px 18px">
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
+            <div style="font-size:13px;color:#b91c1c">Alguém com acesso à tua sessão apagou a conta. Muda a palavra-passe do teu email e de outras contas onde usavas a mesma.</div>
+          </td></tr></table>
+
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Este é o último email que recebes da Finora.</p>
+        </td></tr>
+HTML;
+        return $this->base("A tua conta Finora foi apagada", $body);
     }
 }
 ?>
