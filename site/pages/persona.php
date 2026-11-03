@@ -157,7 +157,7 @@ $activePage='persona'; $sidebarPrefix='../';
     @media(max-width:900px) { .metrics-grid { grid-template-columns:repeat(3,1fr); } .two-col { grid-template-columns:1fr !important; } }
     @media(max-width:560px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=5">
+  <link rel="stylesheet" href="../css/finora.css?v=6">
 </head>
 <body>
 <div class="app-layout">

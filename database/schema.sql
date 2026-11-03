@@ -214,6 +214,23 @@ CREATE TABLE IF NOT EXISTS future_goals (
 
 CREATE INDEX idx_goals_user ON future_goals(user_id);
 
+-- 13. INVESTMENTS  (posições registadas à mão; preços automáticos numa fase seguinte)
+CREATE TABLE IF NOT EXISTS investments (
+  id               INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id          INT UNSIGNED  NOT NULL,
+  name             VARCHAR(100)  NOT NULL,
+  type             ENUM('acoes','etf','cripto','ppr','deposito','obrigacoes','fundo','outro') NOT NULL DEFAULT 'outro',
+  ticker           VARCHAR(20)   NULL,
+  quantity         DECIMAL(18,8) NOT NULL,
+  buy_price        DECIMAL(14,4) NOT NULL,
+  current_price    DECIMAL(14,4) NOT NULL,
+  price_updated_at DATETIME      NULL,
+  created_at       DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_investments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE INDEX idx_investments_user ON investments(user_id);
+
 -- Dados de exemplo para nif_empresas
 -- (principais cadeias portuguesas por categoria)
 

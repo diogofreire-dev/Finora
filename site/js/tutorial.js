@@ -146,6 +146,27 @@
       }
     ],
 
+    investments: [
+      {
+        selector: '.iv-head .btn-s-primary',
+        title: '📈 Adicionar investimento',
+        text: 'Regista uma posição com a quantidade e o preço médio de compra: ações, ETF, cripto, PPR, depósitos…',
+        position: 'bottom'
+      },
+      {
+        selector: '.iv-hero',
+        title: '💼 A tua carteira',
+        text: 'O valor atual de tudo, quanto ganhaste ou perdeste desde a compra e a distribuição por tipo.',
+        position: 'bottom'
+      },
+      {
+        selector: '.js-price',
+        title: '🔄 Atualizar preço',
+        text: 'Os preços são introduzidos por ti. Atualiza-os de vez em quando para os valores estarem certos.',
+        position: 'left'
+      }
+    ],
+
     futuro: [
       {
         selector: '.gl-form',
