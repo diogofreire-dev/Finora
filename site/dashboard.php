@@ -115,7 +115,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/sidebar.css?v=3">
+  <link rel="stylesheet" href="css/sidebar.css?v=5">
   <style>
     body { font-family: var(--fn-font-ui); color: var(--fn-text); }
     .dsh { display: flex; flex-direction: column; gap: 28px; padding-bottom: 48px; font-variant-numeric: tabular-nums; }

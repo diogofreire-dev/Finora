@@ -371,3 +371,13 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .sidebar, .sidebar.open, .sidebar-overlay { transition: none; }
 }
+
+/* ── Modais do Bootstrap ──────────────────────────────────────
+   O theme.css punha .modal e .modal-backdrop no mesmo z-index (1050 !important).
+   Como o backdrop é acrescentado ao fim do <body>, ficava POR CIMA do modal e
+   bloqueava todos os cliques. O modal tem de ficar acima do backdrop, e ambos
+   acima do cabeçalho (1000) e do menu lateral (1100). */
+.modal-backdrop { z-index: 1150 !important; }
+.modal          { z-index: 1160 !important; }
+/* Enquanto um modal está aberto, o convite do tutorial não o tapa */
+body.modal-open #tutorial-prompt { display: none !important; }
