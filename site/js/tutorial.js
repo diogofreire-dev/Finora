@@ -22,15 +22,15 @@
         position: 'bottom'
       },
       {
-        selector: '.stats-row.stats-row-3',
-        title: '📊 Resumo do Mês',
-        text: 'Aqui encontras um resumo rápido: total gasto no mês atual, número de transações nos últimos 30 dias e quantos cartões tens ativos.',
+        selector: '.dsh-hero',
+        title: '📊 O teu mês',
+        text: 'Quanto já gastaste este mês e a comparação com o mesmo ponto do mês passado. A linha dourada é este mês; a tracejada é o anterior.',
         position: 'bottom'
       },
       {
-        selector: '.dash-grid',
-        title: '📋 Painel Principal',
-        text: 'O teu painel central mostra os teus cartões, transações recentes, distribuição de despesas por categoria e orçamentos ativos — tudo num só lugar.',
+        selector: '#dshCategorias',
+        title: '🧭 Para onde foi o dinheiro',
+        text: 'A divisão dos gastos do mês por categoria. Ao lado tens os cartões, o orçamento e os próximos pagamentos.',
         position: 'top'
       }
     ],
