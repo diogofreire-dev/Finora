@@ -295,8 +295,29 @@ let stream = null, timer = null;
 function setStatus(text, warn = false) { $('status').textContent = text; $('status').classList.toggle('warn', warn); }
 
 // ── Câmara (só liga quando a pessoa pede: o pedido de permissão aparece no momento certo) ──
+// O nome do erro diz porque é que a câmara falhou; cada caso tem uma solução diferente
+function cameraProblem(e) {
+  if (!window.isSecureContext || !navigator.mediaDevices) {
+    return 'A câmara só funciona em páginas seguras (https ou localhost). Escolhe "Imagem" e usa uma foto.';
+  }
+  switch (e && e.name) {
+    case 'NotAllowedError':
+      return 'Sem permissão para a câmara. Carrega no ícone à esquerda do endereço e permite a câmara. '
+           + 'No Mac, confirma também em Definições do Sistema › Privacidade e segurança › Câmara que o browser está ligado.';
+    case 'NotFoundError':
+    case 'OverconstrainedError':
+      return 'Não foi encontrada nenhuma câmara neste dispositivo. Escolhe "Imagem" e usa uma foto.';
+    case 'NotReadableError':
+    case 'AbortError':
+      return 'A câmara está a ser usada por outra aplicação (FaceTime, Teams, Zoom…). Fecha-a e tenta outra vez.';
+    default:
+      return 'Não foi possível usar a câmara. Escolhe "Imagem" e usa uma foto.';
+  }
+}
+
 async function startCamera() {
   try {
+    if (!window.isSecureContext || !navigator.mediaDevices) throw new Error('insecure');
     stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     $('video').srcObject = stream;
     await $('video').play();
@@ -306,7 +327,8 @@ async function startCamera() {
     timer = setInterval(scanVideo, 250);
   } catch (e) {
     stopCamera();
-    setStatus('Não foi possível usar a câmara. Escolhe "Imagem" e usa uma foto.', true);
+    console.warn('[câmara]', e && e.name, e && e.message);
+    setStatus(cameraProblem(e), true);
   }
 }
 function stopCamera() {
