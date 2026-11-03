@@ -153,6 +153,8 @@ a { color: inherit; }
 }
 .au-reveal:hover { color: var(--au-text); background: var(--au-paper); }
 .au-hint { margin: 6px 0 0; font-size: 13px; color: var(--au-muted); }
+.au-legal { margin-top: 12px; text-align: center; }
+.au-legal a { color: var(--au-text); text-decoration-color: var(--au-gold); text-underline-offset: 3px; }
 .au-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 
 /* Força da palavra-passe: 5 regras em linha */

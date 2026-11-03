@@ -238,13 +238,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare("UPDATE users SET avatar_path = NULL WHERE id = :uid")->execute([':uid' => $uid]);
             $flash = ['info', 'Foto de perfil removida.'];
         }
+
+        elseif ($action === 'delete_account') {
+            // Apagar é irreversível: pede outra vez a palavra-passe (com o mesmo limite de tentativas),
+            // para que uma sessão esquecida aberta ou roubada não chegue para apagar a conta.
+            // Contas Google podem não ter palavra-passe que conheçam: aí confirmam escrevendo o email.
+            $confirm = (string) ($_POST['confirm_delete'] ?? '');
+            $err = null;
+            if (empty($_POST['understand'])) {
+                $err = 'Marca a caixa a confirmar que percebes que não dá para voltar atrás.';
+            } elseif ($user['google_id']) {
+                if (mb_strtolower(trim($confirm)) !== mb_strtolower($user['email'])) $err = 'O email não corresponde ao da tua conta.';
+            } else {
+                $err = check_current_password($pdo, $uid, $confirm);
+            }
+            if ($err) {
+                $flash = ['danger', $err];
+                $open  = 'apagar-conta';
+            } else {
+                // As outras tabelas têm ON DELETE CASCADE: apagar o utilizador apaga tudo o que é dele.
+                // A foto fica fora da base de dados, por isso é apagada à mão.
+                foreach (glob($avatarDir . (int) $uid . '.*') ?: [] as $f) @unlink($f);
+                $pdo->prepare("DELETE FROM users WHERE id = :uid")->execute([':uid' => $uid]);
+                error_log('[settings] Conta ' . (int) $uid . ' apagada pelo próprio utilizador');
+                try { (new EmailService())->sendAccountDeletedNotification($user['email'], $user['username']); } catch (Exception $e) {}
+
+                // Termina a sessão por completo (dados, cookie e ID)
+                $_SESSION = [];
+                $p = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 3600, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
+                session_destroy();
+                header('Location: ../index.php?conta=apagada');
+                exit;
+            }
+        }
     } catch (Exception $e) {
         error_log('[settings] ' . $e->getMessage());
         $flash = ['danger', 'Não foi possível guardar. Tenta outra vez.'];
     }
 
     $_SESSION['flash_settings'] = [$flash, $open];
-    header('Location: settings.php' . ($open === 'notificacoes' ? '#notificacoes' : ''));
+    header('Location: settings.php' . (in_array($open, ['notificacoes', 'apagar-conta'], true) ? '#' . $open : ''));
     exit;
 }
 
@@ -366,6 +400,11 @@ $since        = strtotime($user['created_at']);
     .st-pref:hover { background: var(--fn-paper); }
     .st-pref small { display: block; font-size: 13px; color: var(--fn-muted); }
     .st-pref .app-notif-ico { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
+    /* Apagar conta */
+    .st-check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--fn-text); cursor: pointer; }
+    .st-check input { width: 18px; height: 18px; margin-top: 2px; accent-color: #d92d20; flex-shrink: 0; }
+    .st-form .st-sub a, .st-foot a { color: inherit; text-underline-offset: 3px; }
+    #apagar-conta { scroll-margin-top: 90px; }
   </style>
   <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
@@ -382,7 +421,7 @@ include __DIR__ . '/../components/sidebar.php';
 
   <div class="pg-head"><h1>Definições</h1></div>
 
-  <?php if ($message): ?>
+  <?php if ($message && $openForm !== 'apagar-conta'): ?>
     <?php $icon = ['success' => 'check-circle', 'danger' => 'exclamation-circle'][$messageType] ?? 'info-circle'; ?>
     <div class="st-flash <?= htmlspecialchars($messageType) ?>" role="<?= $messageType === 'danger' ? 'alert' : 'status' ?>">
       <i class="bi bi-<?= $icon ?>"></i><span><?= nl2br(htmlspecialchars($message)) ?></span>
@@ -626,7 +665,60 @@ include __DIR__ . '/../components/sidebar.php';
       <?php endif; ?>
   </section>
 
-  <p class="st-foot">Membro desde <?= date('j', $since) . ' ' . $months[(int) date('n', $since) - 1] . ' ' . date('Y', $since) ?> · Finora 2.0.0</p>
+  <!-- OS TEUS DADOS (RGPD: exportar, saber o que guardamos, apagar) -->
+  <section class="pg-card st-card" id="os-teus-dados" aria-labelledby="sec-dados" style="--tone:var(--cat-8)">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-dados">Os teus dados</h2><p>Leva os teus dados contigo ou apaga a conta de vez.</p></div></header>
+      <div class="st-row">
+        <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span>
+        <div class="pg-grow">
+          <p class="st-label">Exportar</p>
+          <p class="st-sub">Transações em CSV ou relatório em PDF.</p>
+        </div>
+        <a class="btn-s" href="dados.php"><i class="bi bi-download"></i> Exportar</a>
+      </div>
+      <div class="st-row">
+        <span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-file-earmark-lock"></i></span>
+        <div class="pg-grow">
+          <p class="st-label">Privacidade</p>
+          <p class="st-sub">O que guardamos, com quem partilhamos e durante quanto tempo.</p>
+        </div>
+        <a class="btn-s" href="../privacidade.php">Ler</a>
+      </div>
+      <div class="st-row" id="apagar-conta">
+        <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-trash3"></i></span>
+        <div class="pg-grow">
+          <p class="st-label">Apagar conta</p>
+          <p class="st-sub">Apaga a conta e tudo o que registaste. Não dá para voltar atrás.</p>
+        </div>
+        <button type="button" class="btn-s btn-s-danger" data-bs-toggle="collapse" data-bs-target="#formDelete" aria-expanded="<?= $openForm === 'apagar-conta' ? 'true' : 'false' ?>" aria-controls="formDelete">
+          <i class="bi bi-trash3"></i> Apagar
+        </button>
+      </div>
+      <div class="collapse st-form <?= $openForm === 'apagar-conta' ? 'show' : '' ?>" id="formDelete">
+        <form method="post">
+          <?= csrf_field() ?>
+          <input type="hidden" name="action" value="delete_account">
+          <?php if ($message && $openForm === 'apagar-conta'): ?>
+            <div class="st-flash danger" role="alert"><i class="bi bi-exclamation-circle"></i><span><?= htmlspecialchars($message) ?></span></div>
+          <?php endif; ?>
+          <p class="st-sub mb-3">Vão ser apagados os teus cartões, transações, orçamentos, lembretes, poupanças, metas, investimentos e notificações. Se quiseres uma cópia, <a href="dados.php">exporta primeiro</a>.</p>
+          <?php if ($user['google_id']): ?>
+            <label class="form-label" for="confirm_delete">Escreve o teu email para confirmar</label>
+            <input type="email" id="confirm_delete" name="confirm_delete" class="form-control mb-3" required autocomplete="off" placeholder="<?= htmlspecialchars($user['email']) ?>">
+          <?php else: ?>
+            <label class="form-label" for="confirm_delete">Palavra-passe</label>
+            <input type="password" id="confirm_delete" name="confirm_delete" class="form-control mb-3" required autocomplete="current-password">
+          <?php endif; ?>
+          <label class="st-check mb-3"><input type="checkbox" name="understand" value="1" required> Percebo que a conta e os dados são apagados para sempre.</label>
+          <div class="acts">
+            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formDelete">Cancelar</button>
+            <button type="submit" class="btn-s btn-s-danger"><i class="bi bi-trash3"></i> Apagar a minha conta</button>
+          </div>
+        </form>
+      </div>
+  </section>
+
+  <p class="st-foot"><a href="../privacidade.php">Privacidade</a> · Membro desde <?= date('j', $since) . ' ' . $months[(int) date('n', $since) - 1] . ' ' . date('Y', $since) ?> · Finora 2.0.0</p>
 
 </div>
 </div>
