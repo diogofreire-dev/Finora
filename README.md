@@ -1,5 +1,7 @@
 # Finora
 
+[![CI](https://github.com/diogofreire-dev/Finora/actions/workflows/ci.yml/badge.svg)](https://github.com/diogofreire-dev/Finora/actions/workflows/ci.yml)
+
 Aplicação web de finanças pessoais, feita em PHP e MySQL: cartões, gastos, orçamentos, lembretes de pagamento, poupanças e metas num só sítio.
 
 Começou como Prova de Aptidão Profissional de Diogo Freire e Jandro Antunes. Depois da PAP, continua a ser desenvolvida como projeto de portefólio e de aprendizagem, com especial atenção à segurança.
@@ -114,12 +116,21 @@ Os lembretes por email são enviados por `cron/send_reminders.php`, que só corr
 
 As notificações dentro da app não precisam de cron: são geradas uma vez por dia, quando o utilizador abre a app.
 
+### Testar
+
+```bash
+tests/smoke.sh http://localhost/Finora/site demo@finora.test 'palavra-passe-da-demo'
+```
+
+Entra com a conta demo e abre todas as páginas. Falha se alguma não responder ou mostrar um erro de PHP. O GitHub Actions corre isto em cada pull request, juntamente com o `php -l` e o `gitleaks` (ver `.github/workflows/ci.yml`).
+
 ## Estrutura
 
 ```
 config/        ligação à BD e chaves (os .php reais estão fora do git)
 cron/          envio de lembretes por email
 database/      schema.sql, migrações e seed_demo.php
+tests/         smoke.sh (abre todas as páginas com sessão iniciada)
 site/
   auth/        login, registo, Google, recuperação e verificação
   pages/       uma página por funcionalidade

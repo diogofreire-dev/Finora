@@ -1,0 +1,5 @@
+# Chaves antigas que ficaram no histórico do git e já foram canceladas (Brevo apagada, nif.pt desativada).
+# Só os "fingerprints" (commit:ficheiro:regra:linha) — não contêm as chaves.
+9fd360e15ac549280a83e09570f4bda0ad5ed47d:config/EmailService.php:sendinblue-api-token:5
+4eae8e4e91a8c3d098875eba98975167ccd08e0e:config/EmailService.php:sendinblue-api-token:5
+7f53b71d0ee64daa54d6c3fcf39c0d02d8100426:config/nif_pt_config.php:generic-api-key:11
