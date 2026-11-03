@@ -9,6 +9,7 @@ const stage  = document.getElementById('walletStage');
 const canvas = document.getElementById('walletCanvas');
 const dataEl = document.getElementById('walletData');
 const calm   = matchMedia('(prefers-reduced-motion: reduce)');
+const touch  = matchMedia('(hover: none), (max-width: 700px)');
 
 // Medidas do cartão (as mesmas do Blender)
 const CARD_W = 8.56, CARD_H = 5.398, CARD_T = 0.09;
@@ -60,8 +61,8 @@ async function start() {
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
   // Ambiente mais fraco: a sala branca refletida "lavava" as cores dos bancos
-  scene.environmentIntensity = 0.45;
-  const key = new THREE.DirectionalLight(0xffffff, 1.6);
+  scene.environmentIntensity = 0.35;
+  const key = new THREE.DirectionalLight(0xffffff, 1.3);
   key.position.set(-5, 8, 10); scene.add(key);
 
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
@@ -86,8 +87,11 @@ async function start() {
       if (m.isMesh && m.material && m.material.name === 'CardBody') {
         m.material = m.material.clone();
         m.material.color.set(card.color);        // a cor vem em sRGB; o three converte
-        m.material.metalness = 0.08;             // plástico acetinado, para a cor do banco ler-se bem
-        m.material.roughness = 0.38;
+        // Acabamento acetinado: polido demais, o cartão refletia uma faixa branca por cima da cor
+        m.material.metalness = 0;
+        m.material.roughness = 0.68;
+        if ('clearcoat' in m.material) m.material.clearcoat = 0;
+        if ('sheen' in m.material) m.material.sheen = 0;
       }
     });
     const ink = inkFor(card.color);
@@ -145,6 +149,10 @@ async function start() {
     el.classList.add('is-picked');
     setTimeout(() => el.classList.remove('is-picked'), 1600);
   }
+  // No telemóvel as faixas dos cartões são finas demais para o dedo: a carteira fica decorativa
+  // (não apanha toques, o scroll passa) e a lista por baixo é onde se toca.
+  if (touch.matches) stage.classList.add('is-touch');
+  else {
   canvas.addEventListener('pointerdown', (e) => {
     state.dragging = true; state.moved = 0; state.lastX = e.clientX; state.lastY = e.clientY;
     canvas.setPointerCapture(e.pointerId);
@@ -165,6 +173,7 @@ async function start() {
   });
   canvas.addEventListener('pointercancel', () => { state.dragging = false; });
   canvas.addEventListener('pointerleave', () => { state.hover = -1; canvas.classList.remove('is-pointing'); });
+  }
 
   // ── Animação ───────────────────────────────────────────
   let visible = true, running = false, t = 0;
@@ -178,6 +187,9 @@ async function start() {
     }
     const sway = calm.matches ? 0 : Math.sin(t * 0.7) * 0.04;
     holder.rotation.set(state.x, state.y + sway, 0);
+    // Telemóvel: cada cartão espreita sozinho, um de cada vez (desligado com "reduzir movimento")
+    // Só os de trás (o da frente já está sempre à vista e, a subir, tapava os outros)
+    if (touch.matches && !calm.matches && n > 1) state.hover = (t % 2.8) < 1.5 ? 1 + Math.floor(t / 2.8) % (n - 1) : -1;
     // O cartão por baixo do rato sobe para fora do bolso
     slots.forEach((s, k) => {
       s.lift += ((state.hover === k ? 1.5 : 0) - s.lift) * (calm.matches ? 1 : 0.15);
