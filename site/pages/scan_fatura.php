@@ -1,128 +1,155 @@
 <?php
+// site/pages/scan_fatura.php
 require_once __DIR__ . '/../helpers/auth.php';
 require_once __DIR__ . '/../../config/db.php';
-$uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
+require_once __DIR__ . '/../helpers/categories.php';
+require_once __DIR__ . '/../helpers/import_rows.php'; // import_amount() e import_date()
+$uid = $_SESSION['user_id'] ?? null;
 $currentTheme = getUserTheme($pdo, $uid);
 
-$message     = '';
-$messageType = 'info';
-
-$stmt = $pdo->prepare("SELECT id, name FROM cards WHERE user_id = :uid AND active = 1 ORDER BY name");
+$stmt = $pdo->prepare("SELECT id, name, limit_amount, balance FROM cards WHERE user_id = :uid AND active = 1 ORDER BY name");
 $stmt->execute([':uid' => $uid]);
 $cards = $stmt->fetchAll();
 
-$categories = ['Compras','Alimentação','Transporte','Saúde','Entretenimento','Educação','Casa','Outros'];
+$categories = array_values(array_filter(array_keys(CATEGORY_STYLES), fn($c) => $c !== 'Sem Categoria'));
 
-$catMap = [
-    1=>'Compras', 2=>'Alimentação', 3=>'Transporte',
-    4=>'Saúde',   5=>'Entretenimento', 6=>'Educação',
-    7=>'Casa',    8=>'Outros',
-];
+// ── Guardar (POST → mensagem na sessão → redirect → GET) ────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save') {
+    $amount   = import_amount($_POST['amount'] ?? null);
+    $date     = import_date($_POST['transaction_date'] ?? null);
+    $desc     = trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', (string) ($_POST['description'] ?? '')));
+    $desc     = $desc === '' ? 'Fatura' : mb_substr($desc, 0, 255);
+    $category = in_array($_POST['category'] ?? '', $categories, true) ? $_POST['category'] : 'Outros';
+    $card_id  = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
+    $nif      = preg_match('/^\d{9}$/', $_POST['nif'] ?? '') ? (int) $_POST['nif'] : null;
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'save') {
-    $amount           = floatval(str_replace(',', '.', $_POST['amount'] ?? 0));
-    $description      = trim($_POST['description'] ?? '');
-    $card_id          = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
-    $transaction_date = trim($_POST['transaction_date'] ?? date('Y-m-d'));
-    $nif_emitente     = trim($_POST['nif_emitente'] ?? '');
-    $id_categoria     = !empty($_POST['id_categoria']) ? intval($_POST['id_categoria']) : null;
-    $category         = $id_categoria ? ($catMap[$id_categoria] ?? null) : null;
+    $error = null;
+    if ($amount === null)            $error = 'O valor tem de ser um número maior que zero.';
+    elseif (!$date)                  $error = 'A data não é válida.';
+    elseif ($date > date('Y-m-d'))   $error = 'A data não pode ser no futuro.';
+    elseif ($card_id) {
+        foreach ($cards as $c) {
+            if ((int) $c['id'] === $card_id && $c['limit_amount'] > 0 && $c['balance'] + $amount > $c['limit_amount']) {
+                $error = 'Esta despesa passa o limite disponível do cartão ' . $c['name'] . '.';
+            }
+        }
+    }
 
-    if (empty($description)) $description = 'Fatura';
-
-    if ($amount <= 0) {
-        $message = 'O valor deve ser maior que zero.';
-        $messageType = 'danger';
-    } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $transaction_date)) {
-        $message = 'Data inválida.';
-        $messageType = 'danger';
+    if ($error) {
+        $_SESSION['flash_scan'] = ['danger', $error];
     } else {
         try {
             $pdo->beginTransaction();
-
-            $stmt = $pdo->prepare("INSERT INTO transactions (user_id, card_id, amount, description, category, transaction_date, created_at) VALUES (:uid,:cid,:amt,:desc,:cat,:tdate,NOW())");
-            $stmt->execute([':uid'=>$uid,':cid'=>$card_id,':amt'=>$amount,':desc'=>$description,':cat'=>$category,':tdate'=>$transaction_date]);
-
+            // O NIF fica na transação do próprio utilizador (source = 'qr'). Assim, da próxima vez,
+            // a Finora lembra-se do nome que ELE escreveu, sem mexer em nada dos outros utilizadores.
+            $pdo->prepare("INSERT INTO transactions (user_id, card_id, amount, description, category, transaction_date, source, source_id, created_at)
+                           VALUES (:uid, :cid, :amt, :desc, :cat, :d, :src, :nif, NOW())")
+                ->execute([':uid' => $uid, ':cid' => $card_id, ':amt' => $amount, ':desc' => $desc, ':cat' => $category,
+                           ':d' => $date, ':src' => $nif ? 'qr' : null, ':nif' => $nif]);
             if ($card_id) {
-                $stmt = $pdo->prepare("UPDATE cards SET balance = balance + :amt WHERE id = :cid AND user_id = :uid");
-                $stmt->execute([':amt'=>$amount,':cid'=>$card_id,':uid'=>$uid]);
+                $pdo->prepare("UPDATE cards SET balance = balance + :amt WHERE id = :cid AND user_id = :uid")
+                    ->execute([':amt' => $amount, ':cid' => $card_id, ':uid' => $uid]);
             }
-
-            if (preg_match('/^\d{9}$/', $nif_emitente) && !empty($description)) {
-                try {
-                    $stmt = $pdo->prepare("INSERT INTO nif_empresas (nif, nome_empresa) VALUES (:nif,:nome) ON DUPLICATE KEY UPDATE nome_empresa=VALUES(nome_empresa)");
-                    $stmt->execute([':nif'=>$nif_emitente,':nome'=>$description]);
-                } catch (PDOException $e) {}
-            }
-
             $pdo->commit();
-            $message = 'Fatura guardada com sucesso!';
-            $messageType = 'success';
+            $_SESSION['flash_scan'] = ['success', "Despesa de " . fmt_eur($amount) . " em $desc guardada."];
         } catch (PDOException $e) {
             $pdo->rollBack();
-            error_log('[scan_fatura] Erro ao guardar: ' . $e->getMessage());
-            $message = 'Erro ao guardar a transação. Tenta novamente.';
-            $messageType = 'danger';
+            error_log('[scan_fatura] ' . $e->getMessage());
+            $_SESSION['flash_scan'] = ['danger', 'Não foi possível guardar. Tenta outra vez.'];
         }
     }
+    header('Location: scan_fatura.php');
+    exit;
 }
+
+[$messageType, $message] = $_SESSION['flash_scan'] ?? ['', ''];
+unset($_SESSION['flash_scan']);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Ler Fatura QR · Finora</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ler fatura - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
-    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg-primary); color:var(--text-primary); }
-    .page-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; padding-top:8px; }
-    .page-header-icon { width:42px; height:42px; border-radius:12px; background:var(--bg-secondary); border:1px solid var(--border-color); display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
-    .scan-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; margin-bottom:16px; }
-    .scan-card-body { padding:20px; }
-    .scan-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 14px; display:flex; align-items:center; gap:8px; }
-    .scan-title i { color:var(--fn-accent); }
-    #cameraWrap { position:relative; width:100%; max-width:320px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; aspect-ratio:4/3; }
-    #videoEl { width:100%; height:100%; object-fit:cover; display:block; }
-    #canvasEl { display:none; }
-    .scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .scan-frame { width:60%; aspect-ratio:1; border:2px solid rgba(var(--fn-accent-rgb),.8); border-radius:12px; box-shadow:0 0 0 999px rgba(0,0,0,.35); position:relative; }
-    .scan-frame::before,.scan-frame::after { content:''; position:absolute; width:20px; height:20px; border-color:var(--fn-accent); border-style:solid; }
-    .scan-frame::before { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
-    .scan-frame::after  { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
-    #scanStatus { text-align:center; font-size:13px; color:var(--text-secondary); margin-top:12px; min-height:20px; }
-    .tab-btns { display:flex; gap:8px; margin-bottom:18px; }
-    .tab-btn { flex:1; padding:9px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-secondary); font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .15s; }
-    .tab-btn.active { background:var(--fn-accent); color:#fff; border-color:var(--fn-accent); }
-    .result-section { display:none; }
-    .result-section.visible { display:block; }
-    .parsed-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#16a34a; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; margin-bottom:16px; }
-    .form-group { margin-bottom:14px; }
-    .form-label { font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; display:block; }
-    .form-control, .form-select { width:100%; padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box; }
-    .form-control:focus, .form-select:focus { outline:none; border-color:var(--fn-accent); }
-    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .btn-primary { background:var(--fn-accent); color:#fff; border:none; border-radius:10px; padding:11px 22px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
-    .btn-secondary { background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:11px 22px; font-size:14px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
-    .btn-row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
-    .alert { border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:14px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:12px; }
-    .alert-success { background:rgba(34,197,94,.1); border-color:rgba(34,197,94,.3); color:#16a34a; }
-    .alert-danger  { background:rgba(231,76,60,.1);  border-color:rgba(231,76,60,.3);  color:#e74c3c; }
-    .nif-badge { font-size:11px; color:var(--text-secondary); margin-top:4px; min-height:16px; }
-    .source-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; padding:2px 7px; border-radius:5px; margin-left:6px; }
-    .source-cache { background:rgba(99,102,241,.12); color:#6366f1; }
-    .source-local { background:rgba(34,197,94,.12); color:#16a34a; }
-    .source-nifpt { background:rgba(var(--fn-accent-rgb),.12); color:var(--fn-accent); }
-    .source-vies  { background:rgba(245,158,11,.12); color:#d97706; }
-    .upload-zone { border:2px dashed var(--border-color); border-radius:12px; padding:36px 20px; text-align:center; cursor:pointer; transition:border-color .2s,color .2s; color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .upload-zone:hover { border-color:var(--fn-accent); color:var(--fn-accent); }
-    .upload-zone i { font-size:34px; }
-    .scan-wrapper { max-width:780px; margin:0 auto; }
-    @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
+    .sc-wrap { max-width: 1000px; margin: 0 auto; padding: 0 0 60px; }
+    .sc-head { margin-bottom: 22px; }
+    .sc-head h1 { margin: 0 0 4px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
+    .sc-head p { margin: 0; font-size: 15px; color: var(--fn-muted); }
+
+    .sc-flash { display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-radius: 12px; margin-bottom: 22px; font-size: 14px; border: 1px solid transparent; }
+    .sc-flash.success { background: #ecfdf3; border-color: #abefc6; color: #067647; }
+    .sc-flash.danger  { background: #fef3f2; border-color: #fecdca; color: #b42318; }
+    [data-theme="dark"] .sc-flash.success { background: rgba(117,224,167,.1); border-color: rgba(117,224,167,.25); color: #75e0a7; }
+    [data-theme="dark"] .sc-flash.danger  { background: rgba(253,162,155,.1); border-color: rgba(253,162,155,.25); color: #fda29b; }
+    .sc-flash a { margin-left: auto; color: inherit; font-weight: 700; white-space: nowrap; }
+
+    .sc-grid { display: grid; grid-template-columns: 380px minmax(0, 1fr); gap: 20px; align-items: start; }
+    .sc-card { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; padding: 20px; }
+    .sc-card h2 { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: var(--fn-text); }
+
+    /* Câmara / imagem */
+    .sc-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--fn-paper); border: 1px solid var(--fn-line); margin-bottom: 14px; }
+    .sc-switch button { border: 0; background: transparent; border-radius: 9px; padding: 8px; font-size: 14px; font-weight: 600; color: var(--fn-muted); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+    .sc-switch button[aria-pressed="true"] { background: var(--fn-surface); color: var(--fn-text); box-shadow: 0 1px 2px rgba(20, 33, 61, .12); }
+    .sc-switch button:focus-visible { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
+
+    /* O visor: moldura de "papel de fatura" com o QR em fundo enquanto a câmara está desligada */
+    .sc-viewer { position: relative; aspect-ratio: 1; border-radius: 14px; overflow: hidden; background: #0e1420; }
+    .sc-viewer video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .sc-frame { position: absolute; inset: 18%; border-radius: 14px; box-shadow: 0 0 0 999px rgba(14, 20, 32, .45); pointer-events: none; }
+    .sc-frame::before, .sc-frame::after { content: ""; position: absolute; width: 28px; height: 28px; border: 3px solid var(--fn-gold); }
+    .sc-frame::before { top: -3px; left: -3px; border-right: 0; border-bottom: 0; border-radius: 12px 0 0 0; }
+    .sc-frame::after  { bottom: -3px; right: -3px; border-left: 0; border-top: 0; border-radius: 0 0 12px 0; }
+    .sc-idle { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 14px; text-align: center; padding: 20px; color: #c9d1e3; }
+    .sc-idle i { font-size: 44px; color: var(--fn-gold); }
+    .sc-idle p { margin: 0; font-size: 14px; max-width: 26ch; }
+    .sc-viewer.live .sc-idle { display: none; }
+    .sc-viewer:not(.live) .sc-frame { display: none; }
+
+    .sc-drop { display: grid; place-items: center; align-content: center; gap: 8px; aspect-ratio: 1; border: 2px dashed var(--fn-line); border-radius: 14px; text-align: center; padding: 20px; cursor: pointer; margin: 0; position: relative; transition: border-color .15s, background .15s; }
+    .sc-drop:hover, .sc-drop.over { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb), .05); }
+    .sc-drop:focus-within { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
+    .sc-drop i { font-size: 34px; color: var(--fn-accent); }
+    .sc-drop b { font-size: 15px; color: var(--fn-text); }
+    .sc-drop span { font-size: 13px; color: var(--fn-muted); }
+    .sc-drop input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+    .sc-status { margin: 12px 0 0; min-height: 20px; font-size: 14px; color: var(--fn-muted); text-align: center; }
+    .sc-status.warn { color: #b54708; }
+    [data-theme="dark"] .sc-status.warn { color: #fedf89; }
+    .sc-cam-btn { display: flex; justify-content: center; margin-top: 12px; }
+
+    /* Formulário da despesa */
+    .sc-form .form-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; color: var(--fn-text); }
+    .sc-form .form-control, .sc-form .form-select { min-height: 44px; border-radius: 10px; border: 1px solid var(--fn-line); background-color: var(--fn-surface); color: var(--fn-text); }
+    .sc-form .form-control:focus, .sc-form .form-select:focus { border-color: var(--fn-accent); box-shadow: 0 0 0 3px rgba(var(--fn-accent-rgb), .18); background-color: var(--fn-surface); color: var(--fn-text); }
+    .sc-form .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .sc-form .mb { margin-bottom: 14px; }
+    .sc-amount { font-family: var(--fn-font-brand); font-size: 22px !important; font-weight: 700; }
+    .sc-nif { display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 13px; color: var(--fn-muted); min-height: 18px; }
+    .sc-nif .ok { color: #067647; } [data-theme="dark"] .sc-nif .ok { color: #75e0a7; }
+    .sc-nif .warn { color: #b54708; } [data-theme="dark"] .sc-nif .warn { color: #fedf89; }
+    .sc-read { display: none; align-items: center; gap: 8px; padding: 10px 12px; margin-bottom: 16px; border-radius: 10px; font-size: 14px; background: var(--fn-gold-soft); color: var(--fn-text); }
+    .sc-read.show { display: flex; }
+    .sc-read i { color: var(--fn-gold); }
+    .sc-acts { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; margin-top: 6px; }
+    .sc-raw summary { font-size: 13px; color: var(--fn-muted); cursor: pointer; }
+    .sc-raw pre { margin: 8px 0 0; padding: 10px; border-radius: 8px; background: var(--fn-paper); font-size: 12px; color: var(--fn-muted); white-space: pre-wrap; word-break: break-all; }
+
+    @media (max-width: 860px) {
+      .sc-grid { grid-template-columns: minmax(0, 1fr); }
+      .sc-viewer, .sc-drop { max-width: 380px; margin-left: auto; margin-right: auto; width: 100%; }
+    }
+    @media (max-width: 520px) {
+      .sc-head h1 { font-size: 26px; }
+      .sc-form .row2 { grid-template-columns: 1fr; }
+    }
   </style>
   <link rel="stylesheet" href="../css/finora.css?v=6">
 </head>
@@ -134,403 +161,261 @@ $sidebarPrefix = '../';
 include __DIR__ . '/../components/sidebar.php';
 ?>
 <main class="main-content">
-  <div class="page-content">
-  <div class="scan-wrapper">
+<div class="page-content">
+<div class="sc-wrap">
 
-    <div class="page-header">
-      <div class="page-header-icon"><i class="bi bi-qr-code-scan"></i></div>
-      <div>
-        <h1 style="font-size:20px;font-weight:700;margin:0">Ler Fatura QR</h1>
-        <p style="font-size:13px;color:var(--text-secondary);margin:2px 0 0">Lê o QR code de uma fatura portuguesa e cria a transação automaticamente</p>
-      </div>
-    </div>
-
-    <?php if ($message): ?>
-    <div class="alert alert-<?=$messageType?>" id="alertMsg">
-      <span>
-        <i class="bi bi-<?=$messageType==='success'?'check-circle':'exclamation-circle'?>"></i>
-        <?=htmlspecialchars($message)?>
-        <?php if ($messageType==='success'): ?>
-          &nbsp;<a href="transactions.php" style="color:inherit;font-weight:600;">Ver transações →</a>
-        <?php endif; ?>
-      </span>
-      <button onclick="document.getElementById('alertMsg').style.display='none'" style="background:none;border:none;cursor:pointer;font-size:16px;color:inherit;line-height:1;padding:0;flex-shrink:0;">✕</button>
-    </div>
-    <?php if ($messageType==='success'): ?>
-    <script>setTimeout(()=>{const a=document.getElementById('alertMsg');if(a)a.style.display='none';},5000);</script>
-    <?php endif; ?>
-    <?php endif; ?>
-
-    <!-- Scanner -->
-    <div class="scan-card">
-      <div class="scan-card-body">
-        <p class="scan-title"><i class="bi bi-camera"></i> Ler QR Code</p>
-
-        <div class="tab-btns">
-          <button class="tab-btn active" id="tabCamera" onclick="switchTab('camera')"><i class="bi bi-camera-fill"></i> Câmara</button>
-          <button class="tab-btn" id="tabUpload" onclick="switchTab('upload')"><i class="bi bi-image"></i> Imagem</button>
-        </div>
-
-        <!-- Camera tab -->
-        <div id="panelCamera">
-          <div id="cameraWrap">
-            <video id="videoEl" autoplay playsinline muted></video>
-            <canvas id="canvasEl"></canvas>
-            <div class="scan-overlay"><div class="scan-frame"></div></div>
-          </div>
-          <div id="scanStatus">A iniciar câmara…</div>
-          <div style="text-align:center;margin-top:16px">
-            <button class="btn-secondary" id="btnToggleCam" onclick="toggleCamera()" style="font-size:13px;padding:8px 18px">
-              <i class="bi bi-camera-video-off"></i> Parar câmara
-            </button>
-          </div>
-        </div>
-
-        <!-- Upload tab -->
-        <div id="panelUpload" style="display:none">
-          <label class="upload-zone" id="uploadZone" for="fileInput">
-            <i class="bi bi-cloud-upload"></i>
-            <strong>Clica para escolher uma imagem</strong>
-            <span style="font-size:12px;color:var(--text-secondary)">ou arrasta e larga aqui</span>
-          </label>
-          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFile(this.files[0])">
-        </div>
-      </div>
-    </div>
-
-    <!-- Result form -->
-    <div class="scan-card result-section" id="resultSection">
-      <div class="scan-card-body">
-        <div class="parsed-badge"><i class="bi bi-check-circle-fill"></i> QR Code lido com sucesso</div>
-
-        <form method="post"><?= csrf_field() ?>
-          <input type="hidden" name="action" value="save">
-          <input type="hidden" name="nif_emitente" id="fNif">
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Valor Total (€)</label>
-              <input type="number" name="amount" id="fAmount" class="form-control" step="0.01" min="0.01" required placeholder="0.00">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Data</label>
-              <input type="date" name="transaction_date" id="fDate" class="form-control" required value="<?=date('Y-m-d')?>">
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Descrição (Estabelecimento)</label>
-            <input type="text" name="description" id="fDesc" class="form-control" placeholder="Nome do estabelecimento">
-            <div id="nifInfo" class="nif-badge"></div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label class="form-label">Categoria</label>
-              <select name="id_categoria" id="fCat" class="form-select">
-                <option value="">— Escolher —</option>
-                <option value="1">Compras</option>
-                <option value="2">Alimentação</option>
-                <option value="3">Transporte</option>
-                <option value="4">Saúde</option>
-                <option value="5">Entretenimento</option>
-                <option value="6">Educação</option>
-                <option value="7">Casa</option>
-                <option value="8">Outros</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Cartão</label>
-              <select name="card_id" class="form-select">
-                <option value="">— Sem cartão —</option>
-                <?php foreach ($cards as $c): ?>
-                <option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-          </div>
-
-          <details style="margin-top:4px">
-            <summary style="font-size:12px;color:var(--text-secondary);cursor:pointer;user-select:none">Dados brutos do QR code</summary>
-            <pre id="rawData" style="font-size:11px;background:var(--bg-primary);border-radius:8px;padding:10px;margin-top:8px;overflow-x:auto;color:var(--text-secondary);white-space:pre-wrap;word-break:break-all"></pre>
-          </details>
-
-          <div class="btn-row">
-            <button type="submit" class="btn-primary"><i class="bi bi-plus-circle"></i> Guardar Transação</button>
-            <button type="button" class="btn-secondary" onclick="resetScan()"><i class="bi bi-arrow-counterclockwise"></i> Ler outro QR</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
-    <!-- Instructions -->
-    <div class="scan-card" id="instructionsCard">
-      <div class="scan-card-body">
-        <p class="scan-title"><i class="bi bi-info-circle"></i> Como funciona</p>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px">
-          <?php foreach ([
-            ['bi-qr-code',      'Aponta a câmara',   'Aponta para o QR code na fatura ou faz upload de uma foto'],
-            ['bi-cpu',          'Parse automático',  'Extrai automaticamente o valor, data e NIF do emitente'],
-            ['bi-building',     'Nome da empresa',   'Consulta o nome do estabelecimento pelo NIF automaticamente'],
-            ['bi-check2-circle','Confirma e guarda', 'Revê os dados, escolhe a categoria e o cartão, e guarda'],
-          ] as [$icon,$title,$desc]): ?>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div style="width:34px;height:34px;border-radius:9px;background:rgba(var(--fn-accent-rgb),.1);border:1px solid rgba(var(--fn-accent-rgb),.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--fn-accent);font-size:16px">
-              <i class="bi <?=$icon?>"></i>
-            </div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:2px"><?=$title?></div>
-              <div style="font-size:12px;color:var(--text-secondary);line-height:1.4"><?=$desc?></div>
-            </div>
-          </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-    </div>
-
+  <div class="sc-head">
+    <h1>Ler fatura</h1>
+    <p>Lê o código QR de uma fatura portuguesa e a Finora preenche a despesa por ti.</p>
   </div>
+
+  <?php if ($message): ?>
+    <div class="sc-flash <?= htmlspecialchars($messageType) ?>" role="<?= $messageType === 'danger' ? 'alert' : 'status' ?>">
+      <i class="bi bi-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
+      <span><?= htmlspecialchars($message) ?></span>
+      <?php if ($messageType === 'success'): ?><a href="transactions.php">Ver transações</a><?php endif; ?>
+    </div>
+  <?php endif; ?>
+
+  <div class="sc-grid">
+    <!-- LEITOR -->
+    <section class="sc-card" aria-labelledby="scTitle">
+      <h2 id="scTitle">Código QR</h2>
+      <div class="sc-switch" role="group" aria-label="Como ler o código">
+        <button type="button" id="modeCam" aria-pressed="true"><i class="bi bi-camera"></i> Câmara</button>
+        <button type="button" id="modeImg" aria-pressed="false"><i class="bi bi-image"></i> Imagem</button>
+      </div>
+
+      <div id="panelCam">
+        <div class="sc-viewer" id="viewer">
+          <video id="video" playsinline muted></video>
+          <div class="sc-frame" aria-hidden="true"></div>
+          <div class="sc-idle">
+            <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
+            <p>O código QR está normalmente no fundo da fatura, junto ao total.</p>
+          </div>
+        </div>
+        <div class="sc-cam-btn">
+          <button type="button" class="btn-s btn-s-primary" id="camBtn"><i class="bi bi-camera-video"></i> Ligar câmara</button>
+        </div>
+      </div>
+
+      <div id="panelImg" hidden>
+        <label class="sc-drop" id="drop">
+          <i class="bi bi-image" aria-hidden="true"></i>
+          <b>Escolhe ou arrasta uma foto</b>
+          <span>Uma foto nítida do código QR</span>
+          <input type="file" id="imgFile" accept="image/*">
+        </label>
+      </div>
+
+      <p class="sc-status" id="status" role="status"></p>
+      <canvas id="canvas" hidden></canvas>
+    </section>
+
+    <!-- DESPESA -->
+    <section class="sc-card" aria-labelledby="formTitle">
+      <h2 id="formTitle">Despesa</h2>
+      <div class="sc-read" id="readOk"><i class="bi bi-check-circle-fill"></i> Fatura lida. Confirma os dados e guarda.</div>
+
+      <form method="post" class="sc-form" id="form">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="save">
+        <input type="hidden" name="nif" id="fNif">
+
+        <div class="row2 mb">
+          <div>
+            <label class="form-label" for="fAmount">Valor (€)</label>
+            <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="0,00" autocomplete="off">
+          </div>
+          <div>
+            <label class="form-label" for="fDate">Data</label>
+            <input type="date" class="form-control" name="transaction_date" id="fDate" required value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>">
+          </div>
+        </div>
+
+        <div class="mb">
+          <label class="form-label" for="fDesc">Onde</label>
+          <input type="text" class="form-control" name="description" id="fDesc" maxlength="255" placeholder="Nome da loja ou empresa">
+          <div class="sc-nif" id="nifInfo" aria-live="polite"></div>
+        </div>
+
+        <div class="row2 mb">
+          <div>
+            <label class="form-label" for="fCat">Categoria</label>
+            <select class="form-select" name="category" id="fCat">
+              <?php foreach ($categories as $cat): ?>
+                <option <?= $cat === 'Outros' ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="fCard">Cartão</label>
+            <select class="form-select" name="card_id" id="fCard">
+              <option value="">Sem cartão</option>
+              <?php foreach ($cards as $c): ?>
+                <option value="<?= (int) $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+        </div>
+
+        <details class="sc-raw mb" id="rawWrap" hidden>
+          <summary>Ver o conteúdo do código QR</summary>
+          <pre id="raw"></pre>
+        </details>
+
+        <div class="sc-acts">
+          <button type="button" class="btn-s" id="resetBtn">Limpar</button>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-lg"></i> Guardar despesa</button>
+        </div>
+      </form>
+    </section>
   </div>
+
+</div>
+</div>
 </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<!-- integrity: se o ficheiro no CDN for alterado, o browser recusa-o (proteção contra ataques à cadeia de fornecimento) -->
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"
+        integrity="sha384-hStSInNIZ8ljtOVrmrgf7zdHMapaLBWoSnPTtF0nzsybp4+LuhDz6sHuEVpWIX8o" crossorigin="anonymous"></script>
 <script>
 'use strict';
+const $ = id => document.getElementById(id);
+const CATEGORIES = <?= json_encode($categories, JSON_UNESCAPED_UNICODE) ?>;
+let stream = null, timer = null;
 
-// ── State ──────────────────────────────────────────────────────────
-let stream      = null;
-let scanning    = false;
-let scanInterval = null;
-let currentTab  = 'camera';
+function setStatus(text, warn = false) { $('status').textContent = text; $('status').classList.toggle('warn', warn); }
 
-// ── Tabs ───────────────────────────────────────────────────────────
-function switchTab(tab) {
-  currentTab = tab;
-  document.getElementById('tabCamera').classList.toggle('active', tab === 'camera');
-  document.getElementById('tabUpload').classList.toggle('active', tab === 'upload');
-  document.getElementById('panelCamera').style.display = tab === 'camera' ? '' : 'none';
-  document.getElementById('panelUpload').style.display = tab === 'upload' ? '' : 'none';
-  if (tab === 'camera') startCamera();
-  else stopCamera();
-}
-
-// ── Camera ─────────────────────────────────────────────────────────
+// ── Câmara (só liga quando a pessoa pede: o pedido de permissão aparece no momento certo) ──
 async function startCamera() {
-  if (stream) return;
-  const status = document.getElementById('scanStatus');
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 960 } }
-    });
-    const video = document.getElementById('videoEl');
-    video.srcObject = stream;
-    await video.play();
-    scanning = true;
-    status.textContent = 'Aponta para o QR code…';
-    document.getElementById('btnToggleCam').innerHTML = '<i class="bi bi-camera-video-off"></i> Parar câmara';
-    scanInterval = setInterval(scanFrame, 200);
+    stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    $('video').srcObject = stream;
+    await $('video').play();
+    $('viewer').classList.add('live');
+    $('camBtn').innerHTML = '<i class="bi bi-camera-video-off"></i> Desligar câmara';
+    setStatus('Aponta para o código QR.');
+    timer = setInterval(scanVideo, 250);
   } catch (e) {
-    status.textContent = 'Câmara não disponível. Usa o separador Imagem.';
-  }
-}
-
-function stopCamera() {
-  scanning = false;
-  clearInterval(scanInterval);
-  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  const st  = document.getElementById('scanStatus');
-  const btn = document.getElementById('btnToggleCam');
-  if (st)  st.textContent = 'Câmara parada.';
-  if (btn) btn.innerHTML  = '<i class="bi bi-camera-video"></i> Iniciar câmara';
-}
-
-function toggleCamera() {
-  if (stream) stopCamera(); else startCamera();
-}
-
-function scanFrame() {
-  if (!scanning) return;
-  const video  = document.getElementById('videoEl');
-  const canvas = document.getElementById('canvasEl');
-  if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
-  canvas.width  = video.videoWidth;
-  canvas.height = video.videoHeight;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0);
-  const img  = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  const code = jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
-  if (code) {
     stopCamera();
-    processQR(code.data);
+    setStatus('Não foi possível usar a câmara. Escolhe "Imagem" e usa uma foto.', true);
   }
 }
+function stopCamera() {
+  clearInterval(timer);
+  if (stream) stream.getTracks().forEach(t => t.stop());
+  stream = null;
+  $('viewer').classList.remove('live');
+  $('camBtn').innerHTML = '<i class="bi bi-camera-video"></i> Ligar câmara';
+}
+$('camBtn').addEventListener('click', () => stream ? (stopCamera(), setStatus('')) : startCamera());
 
-// ── Upload ─────────────────────────────────────────────────────────
-const uploadZone = document.getElementById('uploadZone');
-uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--fn-accent)'; });
-uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
-uploadZone.addEventListener('drop', e => {
-  e.preventDefault();
-  uploadZone.style.borderColor = '';
-  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
-});
+function scanVideo() {
+  const v = $('video');
+  if (v.readyState !== v.HAVE_ENOUGH_DATA) return;
+  const code = readCanvas(v, v.videoWidth, v.videoHeight, 'dontInvert');
+  if (code) { stopCamera(); handleQR(code); }
+}
 
-function handleFile(file) {
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const canvas = document.getElementById('canvasEl');
-      canvas.width  = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0);
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const code = jsQR(data.data, data.width, data.height, { inversionAttempts: 'attemptBoth' });
-      if (code) {
-        processQR(code.data);
-      } else {
-        alert('Não foi possível ler um QR code nesta imagem. Tenta com uma foto mais nítida.');
-      }
-    };
-    img.src = e.target.result;
+// ── Imagem ──
+function readImage(file) {
+  if (!file || !file.type.startsWith('image/')) { setStatus('Escolhe um ficheiro de imagem.', true); return; }
+  const img = new Image();
+  img.onload = () => {
+    // Imagens enormes ficam mais pequenas: o QR continua legível e o browser não bloqueia
+    const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
+    const code = readCanvas(img, Math.round(img.width * scale), Math.round(img.height * scale), 'attemptBoth');
+    URL.revokeObjectURL(img.src);
+    code ? handleQR(code) : setStatus('Não encontrei um código QR nesta imagem. Tenta uma foto mais nítida.', true);
   };
-  reader.readAsDataURL(file);
+  img.onerror = () => setStatus('Não foi possível abrir esta imagem.', true);
+  img.src = URL.createObjectURL(file);
+}
+function readCanvas(src, w, h, inversion) {
+  const c = $('canvas'); c.width = w; c.height = h;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(src, 0, 0, w, h);
+  const r = jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: inversion });
+  return r ? r.data : null;
+}
+$('imgFile').addEventListener('change', e => readImage(e.target.files[0]));
+const drop = $('drop');
+drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+drop.addEventListener('drop', e => { e.preventDefault(); drop.classList.remove('over'); readImage(e.dataTransfer.files[0]); });
+
+function setMode(cam) {
+  $('modeCam').setAttribute('aria-pressed', cam); $('modeImg').setAttribute('aria-pressed', !cam);
+  $('panelCam').hidden = !cam; $('panelImg').hidden = cam;
+  if (!cam) stopCamera();
+  setStatus('');
+}
+$('modeCam').addEventListener('click', () => setMode(true));
+$('modeImg').addEventListener('click', () => setMode(false));
+
+// ── Ler o QR da AT: A:NIF*B:...*F:AAAAMMDD*...*O:total ──
+// Tudo o que vem do QR é texto de fora (qualquer pessoa pode imprimir um QR). Por isso cada campo
+// é validado e só é posto na página com textContent / .value — nunca com innerHTML.
+function handleQR(raw) {
+  const f = {};
+  raw.split('*').forEach(part => { const i = part.indexOf(':'); if (i > 0) f[part.slice(0, i)] = part.slice(i + 1); });
+
+  $('raw').textContent = raw;
+  $('rawWrap').hidden = false;
+
+  const isAT = /^\d{9}$/.test(f.A || '') && /^\d{8}$/.test(f.F || '');
+  if (!isAT) {
+    setStatus('Este código QR não é de uma fatura portuguesa. Preenche a despesa à mão.', true);
+    return;
+  }
+
+  const total = /^\d+(\.\d{1,2})?$/.test(f.O || '') ? Number(f.O) : null;
+  if (total) $('fAmount').value = total.toFixed(2).replace('.', ',');
+  const iso = f.F.slice(0, 4) + '-' + f.F.slice(4, 6) + '-' + f.F.slice(6, 8);
+  if (!isNaN(Date.parse(iso)) && iso <= $('fDate').max) $('fDate').value = iso;
+  $('fNif').value = f.A;
+  $('readOk').classList.add('show');
+  setStatus('');
+  lookupNIF(f.A);
+  if (window.matchMedia('(max-width: 860px)').matches) $('form').scrollIntoView({ behavior: 'smooth' });
 }
 
-// ── Parse QR AT Portugal ───────────────────────────────────────────
-// Formato oficial: A:NIF_emitente*B:NIF_adquirente*C:PT*D:tipo*E:estado
-//                  *F:YYYYMMDD*G:num_doc*H:atcud*...*O:total_com_iva
-function parseATQR(raw) {
-  const fields = {};
-  raw.split('*').forEach(part => {
-    const colon = part.indexOf(':');
-    if (colon > 0) fields[part.substring(0, colon)] = part.substring(colon + 1);
-  });
-  return fields;
+function nifLine(icon, cls, text) {
+  const box = $('nifInfo');
+  box.replaceChildren();
+  const i = document.createElement('i'); i.className = 'bi bi-' + icon + ' ' + cls;
+  const s = document.createElement('span'); s.textContent = text;
+  box.append(i, s);
 }
 
-function atDateToISO(dateStr) {
-  if (!dateStr || dateStr.length !== 8) return new Date().toISOString().slice(0, 10);
-  return dateStr.slice(0,4) + '-' + dateStr.slice(4,6) + '-' + dateStr.slice(6,8);
-}
-
-function processQR(raw) {
-  document.getElementById('rawData').textContent = raw;
-
-  const fields = parseATQR(raw);
-  const total  = parseFloat((fields['O'] || fields['N'] || fields['I1'] || '0').replace(',', '.'));
-  const date   = atDateToISO(fields['F'] || '');
-  const nif    = fields['A'] || '';
-
-  if (total > 0) document.getElementById('fAmount').value = total.toFixed(2);
-  document.getElementById('fDate').value = date;
-  document.getElementById('fNif').value  = nif;
-  document.getElementById('fDesc').value = nif ? 'A consultar NIF ' + nif + '…' : '';
-
-  document.getElementById('resultSection').classList.add('visible');
-  document.getElementById('instructionsCard').style.display = 'none';
-  window.scrollTo({ top: document.getElementById('resultSection').offsetTop - 20, behavior: 'smooth' });
-
-  if (nif) {
-    lookupNIF(nif);
-  } else {
-    document.getElementById('fDesc').value = '';
-    document.getElementById('fDesc').placeholder = 'Nome do estabelecimento';
+async function lookupNIF(nif) {
+  nifLine('hourglass-split', '', 'A procurar o NIF ' + nif + '…');
+  try {
+    const r = await fetch('get_company_by_nif.php?nif=' + encodeURIComponent(nif));
+    if (r.status === 429) return nifLine('exclamation-circle', 'warn', 'Muitas pesquisas seguidas. Escreve o nome à mão.');
+    const d = await r.json();
+    if (!d.found) return nifLine('exclamation-circle', 'warn', 'NIF ' + nif + ' sem nome conhecido. Escreve onde foi.');
+    $('fDesc').value = d.nome;
+    nifLine('check-circle', 'ok', 'NIF ' + nif + (d.source === 'teu' ? ' · o nome que usaste da última vez' : ''));
+    if (CATEGORIES.includes(d.categoria)) $('fCat').value = d.categoria;
+  } catch (e) {
+    nifLine('exclamation-circle', 'warn', 'Não foi possível procurar o NIF. Escreve onde foi.');
   }
 }
 
-// ── NIF Lookup ─────────────────────────────────────────────────────
-function lookupNIF(nif) {
-  const descInput = document.getElementById('fDesc');
-  const nifInfo   = document.getElementById('nifInfo');
-  nifInfo.textContent   = '⏳ A consultar NIF ' + nif + '…';
-  descInput.value       = '';
-  descInput.placeholder = 'A consultar…';
-
-  fetch('get_company_by_nif.php?nif=' + encodeURIComponent(nif))
-    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-    .then(data => {
-      if (data.found && data.nome_empresa) {
-        descInput.value = data.nome_empresa;
-        const sourceMap = {
-          cache:    ['source-cache', 'Cache local'],
-          local:    ['source-local', 'Base local'],
-          'nif.pt': ['source-nifpt', 'nif.pt'],
-          vies:     ['source-vies',  'VIES'],
-        };
-        const [cls, label] = sourceMap[data.source] ?? ['source-cache', data.fonte || data.source || 'Cache'];
-        nifInfo.innerHTML =
-          '<i class="bi bi-check-circle" style="color:#16a34a"></i> NIF ' + nif +
-          ' <span class="source-badge ' + cls + '">' + label + '</span>';
-        if (data.id_categoria) suggestCategoryById(data.id_categoria);
-        else suggestCategory(data.nome_empresa);
-      } else {
-        _nifNotFound(nif);
-      }
-    })
-    .catch(() => _nifNotFound(nif));
-}
-
-function _nifNotFound(nif) {
-  document.getElementById('fDesc').value       = '';
-  document.getElementById('fDesc').placeholder = 'Nome do estabelecimento';
-  document.getElementById('nifInfo').innerHTML =
-    '<i class="bi bi-exclamation-circle" style="color:#f59e0b"></i> NIF ' + nif + ' não encontrado — preenche manualmente';
-}
-
-// ── Sugestão de categoria ──────────────────────────────────────────
-const CATS_BY_ID = {
-  1:'Compras', 2:'Alimentação', 3:'Transporte', 4:'Saúde',
-  5:'Entretenimento', 6:'Educação', 7:'Casa', 8:'Outros',
-};
-function suggestCategoryById(id) {
-  const cat = CATS_BY_ID[id];
-  if (!cat) return;
-  _setCat(cat);
-}
-function suggestCategory(name) {
-  const n = (name || '').toLowerCase();
-  const map = [
-    [['pingo doce','continente','lidl','aldi','minipreço','mercadona','intermarché','jumbo','supermercado'], 'Alimentação'],
-    [['mcdonald','kfc','burger','pizza','sushi','restaurante','café','pastelaria','snack','tasca','churrasqueira'], 'Alimentação'],
-    [['galp','bp','repsol','cepsa','combustível','posto'], 'Transporte'],
-    [['uber','bolt','comboio','metro','rede expressos','carris'], 'Transporte'],
-    [['farmácia','farmacia','wells','clínica','clinica','médico','dentista','hospital'], 'Saúde'],
-    [['worten','fnac','apple','samsung','mediamarkt','decathlon','zara','inditex'], 'Compras'],
-    [['cinema','disney','netflix','spotify','playstation','xbox'], 'Entretenimento'],
-    [['escola','universidade','curso','udemy','coursera'], 'Educação'],
-    [['epal','edp','gás','seguro','condomínio','renda','ikea','ctt'], 'Casa'],
-  ];
-  for (const [keywords, cat] of map) {
-    if (keywords.some(k => n.includes(k))) { _setCat(cat); return; }
-  }
-}
-function _setCat(catName) {
-  const sel = document.getElementById('fCat');
-  for (const opt of sel.options) {
-    if (opt.text === catName || opt.value === catName) { sel.value = opt.value; return; }
-  }
-}
-
-// ── Reset ──────────────────────────────────────────────────────────
-function resetScan() {
-  document.getElementById('resultSection').classList.remove('visible');
-  document.getElementById('instructionsCard').style.display = '';
-  document.getElementById('rawData').textContent  = '';
-  document.getElementById('nifInfo').textContent  = '';
-  document.getElementById('fNif').value           = '';
-  document.getElementById('fAmount').value        = '';
-  document.getElementById('fDesc').value          = '';
-  const fi = document.getElementById('fileInput');
-  if (fi) fi.value = '';
-  if (currentTab === 'camera') startCamera();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// ── Init ───────────────────────────────────────────────────────────
-startCamera();
+$('resetBtn').addEventListener('click', () => {
+  $('form').reset();
+  $('fNif').value = '';
+  $('nifInfo').replaceChildren();
+  $('raw').textContent = '';
+  $('rawWrap').hidden = true;
+  $('readOk').classList.remove('show');
+  $('imgFile').value = '';
+  setStatus('');
+});
 </script>
 </body>
 </html>

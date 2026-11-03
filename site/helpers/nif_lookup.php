@@ -2,10 +2,15 @@
 /**
  * nif_lookup.php — helper com função nif_lookup($nif)
  * Ordem de consulta:
- *   1. Tabela nif_empresas (cache local da BD)
- *   2. Base local hardcoded (lojas comuns PT)
- *   3. API nif.pt
- *   4. API nunl.pt (fallback)
+ *   1. O nome que ESTE utilizador já deu a este NIF (transações dele lidas por QR)
+ *   2. Base local hardcoded (lojas comuns PT) — é código nosso, por isso ganha à cache
+ *   3. Tabela nif_empresas (cache partilhada, só com nomes vindos de fontes externas)
+ *   4. API nif.pt
+ *   5. API nunl.pt (fallback)
+ *
+ * A cache é partilhada por todos os utilizadores, por isso só o servidor escreve nela, e só
+ * com o que veio das fontes externas. Um utilizador nunca escreve lá: se pudesse, mudava o
+ * nome de uma empresa para todos (cache poisoning).
  */
 
 if (!function_exists('nif_lookup')) {
@@ -67,6 +72,12 @@ function _nif_base_local(): array {
     ];
 }
 
+// Nomes que vêm de sites externos são dados de fora: sem tags, sem caracteres de controlo, tamanho limitado
+function _nif_limpar_nome(?string $nome): ?string {
+    $nome = trim(preg_replace('/\s+/u', ' ', preg_replace('/[\x00-\x1F\x7F]/u', ' ', strip_tags((string) $nome))));
+    return ($nome === '' || mb_strlen($nome) > 120) ? null : $nome;
+}
+
 function _nif_guardar_cache($pdo, string $nif, string $nome, ?int $cat, string $fonte): void {
     try {
         $stmt = $pdo->prepare("
@@ -111,8 +122,9 @@ function _nif_api_nifpt(string $nif): array {
         $nome = $r['title'] ?? $r['name'] ?? null;
     } elseif (!empty($data['title'])) { $nome = $data['title'];
     } elseif (!empty($data['name']))  { $nome = $data['name']; }
-    if (empty($nome)) return ['success' => false];
-    return ['success' => true, 'nome' => trim($nome), 'source' => 'nif.pt', 'fonte' => 'nifpt', 'id_categoria' => null, 'verified' => true];
+    $nome = _nif_limpar_nome(is_string($nome) ? $nome : null);
+    if (!$nome) return ['success' => false];
+    return ['success' => true, 'nome' => $nome, 'source' => 'nif.pt', 'fonte' => 'nifpt', 'id_categoria' => null, 'verified' => true];
 }
 
 function _nif_api_nunl(string $nif): array {
@@ -120,41 +132,51 @@ function _nif_api_nunl(string $nif): array {
     $resp = _nif_http_get($url);
     if ($resp === false) return ['success' => false];
     if (preg_match('/<h[12][^>]*>\s*([^<]{4,80})\s*<\/h[12]>/i', $resp, $m)) {
-        $nome = trim(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
-        if (strlen($nome) > 3 && !preg_match('/consultar|nif|nunl|pesquis/i', $nome))
+        $nome = _nif_limpar_nome(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
+        if ($nome && mb_strlen($nome) > 3 && !preg_match('/consultar|nif|nunl|pesquis/i', $nome))
             return ['success' => true, 'nome' => $nome, 'source' => 'nunl', 'fonte' => 'nifpt', 'id_categoria' => null, 'verified' => false];
     }
     return ['success' => false];
 }
 
-function nif_lookup(string $nif): array {
+function nif_lookup(string $nif, ?int $uid = null): array {
     global $pdo;
     $nif = preg_replace('/\D/', '', $nif);
     if (strlen($nif) !== 9)
         return ['success' => false, 'error' => 'NIF inválido', 'source' => 'none'];
 
-    // 1. BD cache
-    try {
-        $stmt = $pdo->prepare("SELECT nome_empresa, id_categoria, fonte FROM nif_empresas WHERE nif = :nif LIMIT 1");
-        $stmt->execute([':nif' => $nif]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && !empty($row['nome_empresa']))
-            return ['success' => true, 'nome' => $row['nome_empresa'], 'id_categoria' => $row['id_categoria'], 'source' => 'cache', 'fonte' => $row['fonte'], 'verified' => true];
-    } catch (PDOException $e) { error_log("[nif_lookup] BD: " . $e->getMessage()); }
+    // 1. O nome que o próprio utilizador já usou para este NIF
+    if ($uid) {
+        try {
+            $stmt = $pdo->prepare("SELECT description, category FROM transactions
+                                   WHERE user_id = :uid AND source = 'qr' AND source_id = :nif ORDER BY id DESC LIMIT 1");
+            $stmt->execute([':uid' => $uid, ':nif' => (int) $nif]);
+            if ($row = $stmt->fetch(PDO::FETCH_ASSOC))
+                return ['success' => true, 'nome' => $row['description'], 'categoria' => $row['category'], 'source' => 'teu'];
+        } catch (PDOException $e) { error_log("[nif_lookup] BD: " . $e->getMessage()); }
+    }
 
     // 2. Base local
     $base = _nif_base_local();
     if (isset($base[$nif])) {
         $e = $base[$nif];
-        _nif_guardar_cache($pdo, $nif, $e['nome'], $e['cat'], 'fallback');
-        return ['success' => true, 'nome' => $e['nome'], 'id_categoria' => $e['cat'], 'source' => 'fallback', 'fonte' => 'fallback', 'verified' => true];
+        return ['success' => true, 'nome' => $e['nome'], 'id_categoria' => $e['cat'], 'source' => 'fallback'];
     }
 
-    // 3. API nif.pt
+    // 3. Cache partilhada (ignora entradas 'manual' antigas, escritas por utilizadores)
+    try {
+        $stmt = $pdo->prepare("SELECT nome_empresa, id_categoria FROM nif_empresas WHERE nif = :nif AND fonte <> 'manual' LIMIT 1");
+        $stmt->execute([':nif' => $nif]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if ($row && ($nome = _nif_limpar_nome($row['nome_empresa'])))
+            return ['success' => true, 'nome' => $nome, 'id_categoria' => $row['id_categoria'], 'source' => 'cache'];
+    } catch (PDOException $e) { error_log("[nif_lookup] BD: " . $e->getMessage()); }
+
+    // 4. API nif.pt
     $r = _nif_api_nifpt($nif);
     if ($r['success']) { _nif_guardar_cache($pdo, $nif, $r['nome'], null, 'nifpt'); return $r; }
 
-    // 4. API nunl.pt
+    // 5. API nunl.pt
     $r2 = _nif_api_nunl($nif);
     if ($r2['success']) { _nif_guardar_cache($pdo, $nif, $r2['nome'], null, 'nifpt'); return $r2; }
 
@@ -162,23 +184,3 @@ function nif_lookup(string $nif): array {
 }
 
 } // fim function_exists
-
-if (!function_exists('save_company_manual')) {
-function save_company_manual(string $nif, string $nome, ?int $id_categoria): bool {
-    global $pdo;
-    $nif = preg_replace('/\D/', '', $nif);
-    if (strlen($nif) !== 9 || empty($nome)) return false;
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO nif_empresas (nif, nome_empresa, id_categoria, fonte)
-            VALUES (:nif, :nome, :cat, 'manual')
-            ON DUPLICATE KEY UPDATE nome_empresa = VALUES(nome_empresa), id_categoria = VALUES(id_categoria), fonte = 'manual'
-        ");
-        $stmt->execute([':nif' => $nif, ':nome' => $nome, ':cat' => $id_categoria]);
-        return true;
-    } catch (PDOException $e) {
-        error_log("[save_company_manual] Erro: " . $e->getMessage());
-        return false;
-    }
-}
-}
