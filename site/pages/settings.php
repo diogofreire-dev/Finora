@@ -289,7 +289,7 @@ $currentTheme = $settings['theme'] ?? 'light';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -389,7 +389,7 @@ $currentTheme = $settings['theme'] ?? 'light';
     .avatar-circle {
       width: 64px; height: 64px;
       border-radius: 50%;
-      background: #3498db;
+      background: var(--fn-accent);
       color: #fff;
       display: flex; align-items: center; justify-content: center;
       font-size: 24px; font-weight: 600;
@@ -406,7 +406,7 @@ $currentTheme = $settings['theme'] ?? 'light';
       bottom: 0; right: 0;
       width: 22px; height: 22px;
       border-radius: 50%;
-      background: #3498db;
+      background: var(--fn-accent);
       color: #fff;
       display: flex; align-items: center; justify-content: center;
       font-size: 10px;
@@ -415,9 +415,9 @@ $currentTheme = $settings['theme'] ?? 'light';
       transition: background .15s;
       line-height: 1;
     }
-    .avatar-edit-btn:hover { background: #2980b9; }
+    .avatar-edit-btn:hover { background: var(--fn-accent-hover); }
     .avatar-preview-ring {
-      box-shadow: 0 0 0 3px #3498db44;
+      box-shadow: 0 0 0 3px var(--fn-accent)44;
     }
 
     /* ===== BADGES ===== */
@@ -447,10 +447,10 @@ $currentTheme = $settings['theme'] ?? 'light';
     }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); }
     .btn-s-primary {
-      background: #3498db; color: #fff;
-      border-color: #3498db;
+      background: var(--fn-accent); color: #fff;
+      border-color: var(--fn-accent);
     }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
     .btn-s-danger { border-color: #dc2626; color: #dc2626; }
     .btn-s-danger:hover { background: rgba(239,68,68,.07); }
     .btn-s:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
@@ -471,10 +471,10 @@ $currentTheme = $settings['theme'] ?? 'light';
     .theme-opt input { display: none; }
     .theme-opt.active {
       border-width: 2px;
-      border-color: #3498db;
+      border-color: var(--fn-accent);
       background: var(--bg-primary);
     }
-    [data-theme="dark"] .theme-opt.active { border-color: #3498db; }
+    [data-theme="dark"] .theme-opt.active { border-color: var(--fn-accent); }
 
     /* ===== SWITCH ===== */
     .s-switch {
@@ -506,7 +506,7 @@ $currentTheme = $settings['theme'] ?? 'light';
       transition: border-color .15s;
     }
     .s-form .form-control:focus {
-      border-color: #3498db;
+      border-color: var(--fn-accent);
       box-shadow: none;
       background: var(--bg-primary);
       color: var(--text-primary);
@@ -580,6 +580,7 @@ $currentTheme = $settings['theme'] ?? 'light';
     .linked-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 2px; }
     .linked-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -831,7 +832,7 @@ include __DIR__ . '/../components/sidebar.php';
             <div style="position:relative">
               <input type="checkbox" name="notifications" id="notif-cb" <?=$settings['notifications']?'checked':''?> style="display:none">
               <button type="button" class="s-switch" id="notif-toggle"
-                style="background:<?=$settings['notifications']?'#3498db':'var(--border-color)'?>">
+                style="background:<?=$settings['notifications']?'var(--fn-accent)':'var(--border-color)'?>">
                 <span class="s-switch-thumb" style="left:<?=$settings['notifications']?'23px':'3px'?>"></span>
               </button>
             </div>
@@ -926,7 +927,7 @@ var notifCb = document.getElementById('notif-cb');
 if (notifToggle) {
   notifToggle.addEventListener('click', function() {
     var on = notifCb.checked = !notifCb.checked;
-    this.style.background = on ? '#3498db' : 'var(--border-color)';
+    this.style.background = on ? 'var(--fn-accent)' : 'var(--border-color)';
     this.querySelector('.s-switch-thumb').style.left = on ? '23px' : '3px';
   });
 }

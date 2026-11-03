@@ -15,7 +15,7 @@ $currentTheme = getUserTheme($pdo, $uid);
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg-primary); color: var(--text-primary); }
 
@@ -23,7 +23,7 @@ $currentTheme = getUserTheme($pdo, $uid);
 
     /* Cabeçalho */
     .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg,#3498db,#9b59b6); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; flex-shrink: 0; }
+    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: linear-gradient(135deg,var(--fn-accent),#9b59b6); display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; flex-shrink: 0; }
     .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; }
     .page-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
 
@@ -36,8 +36,8 @@ $currentTheme = getUserTheme($pdo, $uid);
 
     /* Botões de ação */
     .btn-ai { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .15s; }
-    .btn-ai-primary { background: #3498db; color: #fff; }
-    .btn-ai-primary:hover { background: #2980b9; }
+    .btn-ai-primary { background: var(--fn-accent); color: #fff; }
+    .btn-ai-primary:hover { background: var(--fn-accent-hover); }
     .btn-ai-ghost { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); }
     .btn-ai-ghost:hover { border-color: #999; }
 
@@ -48,7 +48,7 @@ $currentTheme = getUserTheme($pdo, $uid);
 
     /* Pulsação enquanto carrega */
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-    .ai-loading-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #3498db; animation: pulse 1.2s ease-in-out infinite; margin: 0 2px; }
+    .ai-loading-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--fn-accent); animation: pulse 1.2s ease-in-out infinite; margin: 0 2px; }
     .ai-loading-dot:nth-child(2) { animation-delay: .2s; }
     .ai-loading-dot:nth-child(3) { animation-delay: .4s; }
 
@@ -57,25 +57,25 @@ $currentTheme = getUserTheme($pdo, $uid);
     .chat-msg { display: flex; gap: 10px; align-items: flex-start; }
     .chat-msg.user { flex-direction: row-reverse; }
     .chat-avatar { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
-    .chat-avatar.ai { background: linear-gradient(135deg,#3498db,#9b59b6); color: #fff; }
+    .chat-avatar.ai { background: linear-gradient(135deg,var(--fn-accent),#9b59b6); color: #fff; }
     .chat-avatar.user { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
     .chat-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; }
     .chat-bubble.ai { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-primary); border-top-left-radius: 4px; }
-    .chat-bubble.user { background: #3498db; color: #fff; border-top-right-radius: 4px; }
+    .chat-bubble.user { background: var(--fn-accent); color: #fff; border-top-right-radius: 4px; }
 
     /* Input do chat */
     .chat-input-row { display: flex; gap: 8px; margin-top: 16px; }
     .chat-input { flex: 1; font-size: 13px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); outline: none; }
-    .chat-input:focus { border-color: #3498db; }
+    .chat-input:focus { border-color: var(--fn-accent); }
     .chat-input::placeholder { color: var(--text-secondary); }
-    .chat-send { width: 40px; height: 40px; border-radius: 10px; border: none; background: #3498db; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: background .15s; }
-    .chat-send:hover { background: #2980b9; }
+    .chat-send { width: 40px; height: 40px; border-radius: 10px; border: none; background: var(--fn-accent); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; transition: background .15s; }
+    .chat-send:hover { background: var(--fn-accent-hover); }
     .chat-send:disabled { background: var(--border-color); cursor: not-allowed; }
 
     /* Sugestões rápidas */
     .quick-suggestions { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
     .quick-btn { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; transition: all .15s; white-space: nowrap; }
-    .quick-btn:hover { border-color: #3498db; color: #3498db; }
+    .quick-btn:hover { border-color: var(--fn-accent); color: var(--fn-accent); }
 
     /* Vazio */
     .chat-empty { text-align: center; padding: 28px; color: var(--text-secondary); font-size: 13px; }
@@ -85,6 +85,7 @@ $currentTheme = getUserTheme($pdo, $uid);
       .chat-bubble { max-width: 90%; }
     }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 

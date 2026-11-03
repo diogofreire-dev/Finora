@@ -29,6 +29,20 @@
   --fn-muted:      #8f99b0;
 }
 
+/* Cor de ação (botões principais, seleção, foco). Texto em cima dela é sempre branco. */
+:root                    { --fn-accent: #1f3a68; --fn-accent-hover: #2a4b84; --fn-accent-rgb: 31, 58, 104; }
+[data-theme="dark"]      { --fn-accent: #4a6fd0; --fn-accent-hover: #5b7fd9; --fn-accent-rgb: 74, 111, 208; }
+
+/* As páginas usam as variáveis antigas do theme.css: passam a apontar para as cores Finora */
+:root[data-theme] {
+  --bg-primary:     var(--fn-paper);
+  --bg-secondary:   var(--fn-surface);
+  --bg-hover:       var(--fn-paper);
+  --text-primary:   var(--fn-text);
+  --text-secondary: var(--fn-muted);
+  --border-color:   var(--fn-line);
+}
+
 /* ── Previne double scrollbar ─────────────────────────────── */
 html {
   height: 100%;

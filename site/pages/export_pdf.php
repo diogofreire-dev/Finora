@@ -23,7 +23,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
 <style>
   /* ========== BACKGROUND ANIMADO ========== */
   body {
@@ -109,8 +109,8 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
   }
 
   :root {
-    --primary-blue: #3498db;
-    --dark-blue: #2980b9;
+    --primary-blue: var(--fn-accent);
+    --dark-blue: var(--fn-accent-hover);
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -190,14 +190,15 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
     color: var(--text-primary);
   }
   [data-theme="dark"] .alert-info {
-    background: rgba(52, 152, 219, 0.2);
-    border-color: rgba(52, 152, 219, 0.3);
+    background: rgba(var(--fn-accent-rgb), 0.2);
+    border-color: rgba(var(--fn-accent-rgb), 0.3);
     color: var(--text-primary);
   }
   [data-theme="dark"] .form-label {
     color: var(--text-primary);
   }
 </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">

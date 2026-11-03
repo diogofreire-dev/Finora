@@ -171,7 +171,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Transações - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
@@ -193,8 +193,8 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
 
     .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
     .btn-s-danger { border-color: #dc2626; color: #dc2626; background: transparent; }
     .btn-s-danger:hover { background: rgba(239,68,68,.07); }
 
@@ -205,7 +205,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     [data-theme="dark"] .s-alert-danger  { color: #fca5a5; }
 
     .s-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .s-badge-invoice { background: rgba(52,152,219,.12); border-color: rgba(52,152,219,.3); color: #2980b9; }
+    .s-badge-invoice { background: rgba(var(--fn-accent-rgb),.12); border-color: rgba(var(--fn-accent-rgb),.3); color: var(--fn-accent-hover); }
 
     .empty-state { padding: 48px 20px; text-align: center; }
     .empty-state i { font-size: 48px; color: var(--border-color); display: block; margin-bottom: 12px; }
@@ -218,7 +218,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     .filter-body { padding: 16px 20px; }
     .m-form label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; display: block; }
     .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db; box-shadow: none; outline: none; }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent); box-shadow: none; outline: none; }
     [data-theme="dark"] .m-form .form-control,
     [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
 
@@ -227,6 +227,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     @media (max-width: 380px)  { .filter-grid { grid-template-columns: 1fr; } }
     @media (max-width: 500px)  { .t-amount-col { flex-direction: column; align-items: flex-end; gap: 6px; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -263,11 +264,11 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
       </div>
       <div class="s-row">
         <p class="s-row-label">Total gasto</p>
-        <span style="font-size:15px;font-weight:700;color:#e74c3c">€<?=number_format($total,2)?></span>
+        <span style="font-size:15px;font-weight:700;color:#e74c3c"><?=fmt_eur($total)?></span>
       </div>
       <div class="s-row">
         <p class="s-row-label">Média por transação</p>
-        <span style="font-size:15px;font-weight:700;color:#3498db">€<?=count($transactions)>0?number_format($total/count($transactions),2):'0.00'?></span>
+        <span style="font-size:15px;font-weight:700;color:var(--fn-accent)">€<?=count($transactions)>0?number_format($total/count($transactions),2):'0.00'?></span>
       </div>
     </div>
   </div>
@@ -332,7 +333,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
     <div class="settings-group">
       <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 4px">
         <p class="group-label" style="margin:0"><?=htmlspecialchars($dayLabel)?></p>
-        <span style="font-size:12px;font-weight:700;color:#e74c3c">-€<?=number_format($dayTotal,2)?></span>
+        <span style="font-size:12px;font-weight:700;color:#e74c3c">−<?=fmt_eur($dayTotal)?></span>
       </div>
       <div class="settings-card">
         <?php foreach($dayTransactions as $t): ?>
@@ -365,7 +366,7 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
               </div>
             </div>
             <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0" class="t-amount-col">
-              <span style="font-size:15px;font-weight:700;color:#e74c3c">-€<?=number_format($t['amount'],2)?></span>
+              <span style="font-size:15px;font-weight:700;color:#e74c3c">−<?=fmt_eur($t['amount'])?></span>
               <div style="display:flex;gap:5px">
                 <a href="edit_transaction.php?id=<?=$t['id']?>" class="btn-s" style="padding:4px 10px;font-size:12px">
                   <i class="bi bi-pencil"></i>

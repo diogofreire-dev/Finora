@@ -101,7 +101,7 @@ foreach ($activeCards as $c) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Gerir Cartões - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <style>
@@ -118,8 +118,8 @@ foreach ($activeCards as $c) {
 
     .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db; color: #fff; border-color: #3498db; }
-    .btn-s-primary:hover { background: #2980b9; color: #fff; border-color: #2980b9; }
+    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
+    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
 
     .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
     .s-alert-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #065f46; }
@@ -193,6 +193,7 @@ foreach ($activeCards as $c) {
 
     @media (max-width: 640px) { .stats-bar { grid-template-columns: 1fr; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -235,9 +236,9 @@ foreach ($activeCards as $c) {
       <div>
         <div class="overdraft-item-name"><?=htmlspecialchars($oc['name'])?></div>
         <div class="overdraft-item-meta">
-          Saldo: <strong style="color:#dc2626">€<?=number_format($oc['balance'],2)?></strong>
-          &nbsp;/&nbsp;Limite: €<?=number_format($oc['limit_amount'],2)?>
-          &nbsp;·&nbsp;<span class="warn">Excedido em €<?=number_format($excess,2)?></span>
+          Saldo: <strong style="color:#dc2626"><?=fmt_eur($oc['balance'])?></strong>
+          &nbsp;/&nbsp;Limite: <?=fmt_eur($oc['limit_amount'])?>
+          &nbsp;·&nbsp;<span class="warn">Excedido em <?=fmt_eur($excess)?></span>
           <?php if($oc['since_label']): ?>
             &nbsp;·&nbsp;<?=htmlspecialchars($oc['since_label'])?>
           <?php endif; ?>
@@ -252,7 +253,7 @@ foreach ($activeCards as $c) {
       <div style="display:flex;align-items:center;gap:10px">
         <span class="overdraft-badge overdraft-badge-pulse">
           <i class="bi bi-arrow-up-circle-fill"></i>
-          +€<?=number_format($excess,2)?>
+          +<?=fmt_eur($excess)?>
         </span>
         <a href="edit_card.php?id=<?=$oc['id']?>" class="btn-s" style="font-size:12px;padding:6px 12px">
           <i class="bi bi-pencil"></i> Corrigir
@@ -314,15 +315,15 @@ foreach ($activeCards as $c) {
       <p class="group-label">Resumo — cartões ativos</p>
       <div class="stats-bar">
         <div class="stat-cell">
-          <h4 style="color:#3498db">€<?=number_format($activeTotalLimit,2)?></h4>
+          <h4 style="color:var(--fn-accent)"><?=fmt_eur($activeTotalLimit)?></h4>
           <p>Limite Total</p>
         </div>
         <div class="stat-cell">
-          <h4 style="color:#ef4444">€<?=number_format($activeTotalBalance,2)?></h4>
+          <h4 style="color:#ef4444"><?=fmt_eur($activeTotalBalance)?></h4>
           <p>Gasto Atual</p>
         </div>
         <div class="stat-cell">
-          <h4 style="color:<?=$activeAvailable<0?'#ef4444':'#22c55e'?>">€<?=number_format($activeAvailable,2)?></h4>
+          <h4 style="color:<?=$activeAvailable<0?'#ef4444':'#22c55e'?>"><?=fmt_eur($activeAvailable)?></h4>
           <p>Disponível</p>
         </div>
       </div>
@@ -355,8 +356,8 @@ foreach ($activeCards as $c) {
                 <?php endif; ?>
               </div>
               <div class="cv-meta">
-                <span>Limite: <strong>€<?=number_format($c['limit_amount'],2)?></strong></span>
-                <span>Gasto: <strong>€<?=number_format($c['balance'],2)?></strong></span>
+                <span>Limite: <strong><?=fmt_eur($c['limit_amount'])?></strong></span>
+                <span>Gasto: <strong><?=fmt_eur($c['balance'])?></strong></span>
               </div>
             </div>
           </div>
@@ -373,15 +374,15 @@ foreach ($activeCards as $c) {
                 <div class="usage-bar" style="width:<?=min($pct,100)?>%;background:<?=$barColor?>"></div>
               </div>
               <div class="usage-labels">
-                <span>€<?=number_format($c['balance'],2)?> usado</span>
-                <span>€<?=number_format($c['limit_amount'],2)?> limite</span>
+                <span><?=fmt_eur($c['balance'])?> usado</span>
+                <span><?=fmt_eur($c['limit_amount'])?> limite</span>
               </div>
             </div>
 
             <!-- Mini stats -->
             <div class="mini-stats">
               <div class="mini-stat">
-                <div class="v" style="color:<?=$available<0?'#ef4444':'#22c55e'?>">€<?=number_format($available,2)?></div>
+                <div class="v" style="color:<?=$available<0?'#ef4444':'#22c55e'?>"><?=fmt_eur($available)?></div>
                 <div class="l"><?=$available<0?'Excedido':'Disponível'?></div>
               </div>
               <div class="mini-stat">
@@ -423,7 +424,7 @@ foreach ($activeCards as $c) {
             </div>
             <div style="min-width:0">
               <div style="font-size:14px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><?=htmlspecialchars($c['name'])?></div>
-              <div style="font-size:12px;color:var(--text-secondary)">€<?=number_format($c['balance'],2)?> / €<?=number_format($c['limit_amount'],2)?> &middot; <?=$c['transaction_count']?> transações</div>
+              <div style="font-size:12px;color:var(--text-secondary)"><?=fmt_eur($c['balance'])?> / <?=fmt_eur($c['limit_amount'])?> &middot; <?=$c['transaction_count']?> transações</div>
             </div>
           </div>
           <div style="display:flex;gap:6px;flex-shrink:0">

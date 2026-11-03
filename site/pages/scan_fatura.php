@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg-primary); color:var(--text-primary); }
     .page-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; padding-top:8px; }
@@ -85,28 +85,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     .scan-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; margin-bottom:16px; }
     .scan-card-body { padding:20px; }
     .scan-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 14px; display:flex; align-items:center; gap:8px; }
-    .scan-title i { color:#3498db; }
+    .scan-title i { color:var(--fn-accent); }
     #cameraWrap { position:relative; width:100%; max-width:320px; margin:0 auto; border-radius:12px; overflow:hidden; background:#000; aspect-ratio:4/3; }
     #videoEl { width:100%; height:100%; object-fit:cover; display:block; }
     #canvasEl { display:none; }
     .scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .scan-frame { width:60%; aspect-ratio:1; border:2px solid rgba(52,152,219,.8); border-radius:12px; box-shadow:0 0 0 999px rgba(0,0,0,.35); position:relative; }
-    .scan-frame::before,.scan-frame::after { content:''; position:absolute; width:20px; height:20px; border-color:#3498db; border-style:solid; }
+    .scan-frame { width:60%; aspect-ratio:1; border:2px solid rgba(var(--fn-accent-rgb),.8); border-radius:12px; box-shadow:0 0 0 999px rgba(0,0,0,.35); position:relative; }
+    .scan-frame::before,.scan-frame::after { content:''; position:absolute; width:20px; height:20px; border-color:var(--fn-accent); border-style:solid; }
     .scan-frame::before { top:-2px; left:-2px; border-width:3px 0 0 3px; border-radius:4px 0 0 0; }
     .scan-frame::after  { bottom:-2px; right:-2px; border-width:0 3px 3px 0; border-radius:0 0 4px 0; }
     #scanStatus { text-align:center; font-size:13px; color:var(--text-secondary); margin-top:12px; min-height:20px; }
     .tab-btns { display:flex; gap:8px; margin-bottom:18px; }
     .tab-btn { flex:1; padding:9px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-secondary); font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all .15s; }
-    .tab-btn.active { background:#3498db; color:#fff; border-color:#3498db; }
+    .tab-btn.active { background:var(--fn-accent); color:#fff; border-color:var(--fn-accent); }
     .result-section { display:none; }
     .result-section.visible { display:block; }
     .parsed-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(34,197,94,.1); border:1px solid rgba(34,197,94,.3); color:#16a34a; border-radius:8px; padding:6px 12px; font-size:12px; font-weight:600; margin-bottom:16px; }
     .form-group { margin-bottom:14px; }
     .form-label { font-size:12px; font-weight:600; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.04em; margin-bottom:5px; display:block; }
     .form-control, .form-select { width:100%; padding:9px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); font-size:14px; box-sizing:border-box; }
-    .form-control:focus, .form-select:focus { outline:none; border-color:#3498db; }
+    .form-control:focus, .form-select:focus { outline:none; border-color:var(--fn-accent); }
     .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-    .btn-primary { background:#3498db; color:#fff; border:none; border-radius:10px; padding:11px 22px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+    .btn-primary { background:var(--fn-accent); color:#fff; border:none; border-radius:10px; padding:11px 22px; font-size:14px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
     .btn-secondary { background:var(--bg-primary); color:var(--text-primary); border:1px solid var(--border-color); border-radius:10px; padding:11px 22px; font-size:14px; font-weight:500; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
     .btn-row { display:flex; gap:10px; margin-top:20px; flex-wrap:wrap; }
     .alert { border-radius:10px; padding:12px 16px; font-size:13px; margin-bottom:14px; border:1px solid transparent; display:flex; align-items:center; justify-content:space-between; gap:12px; }
@@ -116,14 +116,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     .source-badge { display:inline-flex; align-items:center; gap:4px; font-size:10px; font-weight:600; padding:2px 7px; border-radius:5px; margin-left:6px; }
     .source-cache { background:rgba(99,102,241,.12); color:#6366f1; }
     .source-local { background:rgba(34,197,94,.12); color:#16a34a; }
-    .source-nifpt { background:rgba(52,152,219,.12); color:#3498db; }
+    .source-nifpt { background:rgba(var(--fn-accent-rgb),.12); color:var(--fn-accent); }
     .source-vies  { background:rgba(245,158,11,.12); color:#d97706; }
     .upload-zone { border:2px dashed var(--border-color); border-radius:12px; padding:36px 20px; text-align:center; cursor:pointer; transition:border-color .2s,color .2s; color:var(--text-secondary); display:flex; flex-direction:column; align-items:center; gap:6px; }
-    .upload-zone:hover { border-color:#3498db; color:#3498db; }
+    .upload-zone:hover { border-color:var(--fn-accent); color:var(--fn-accent); }
     .upload-zone i { font-size:34px; }
     .scan-wrapper { max-width:780px; margin:0 auto; }
     @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -274,7 +275,7 @@ include __DIR__ . '/../components/sidebar.php';
             ['bi-check2-circle','Confirma e guarda', 'Revê os dados, escolhe a categoria e o cartão, e guarda'],
           ] as [$icon,$title,$desc]): ?>
           <div style="display:flex;gap:10px;align-items:flex-start">
-            <div style="width:34px;height:34px;border-radius:9px;background:rgba(52,152,219,.1);border:1px solid rgba(52,152,219,.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#3498db;font-size:16px">
+            <div style="width:34px;height:34px;border-radius:9px;background:rgba(var(--fn-accent-rgb),.1);border:1px solid rgba(var(--fn-accent-rgb),.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--fn-accent);font-size:16px">
               <i class="bi <?=$icon?>"></i>
             </div>
             <div>
@@ -366,7 +367,7 @@ function scanFrame() {
 
 // ── Upload ─────────────────────────────────────────────────────────
 const uploadZone = document.getElementById('uploadZone');
-uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.style.borderColor = '#3498db'; });
+uploadZone.addEventListener('dragover',  e => { e.preventDefault(); uploadZone.style.borderColor = 'var(--fn-accent)'; });
 uploadZone.addEventListener('dragleave', () => { uploadZone.style.borderColor = ''; });
 uploadZone.addEventListener('drop', e => {
   e.preventDefault();

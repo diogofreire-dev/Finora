@@ -44,7 +44,7 @@ if (!empty($_GET['import_error'])) {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -145,7 +145,7 @@ if (!empty($_GET['import_error'])) {
       padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); transition: border-color .15s;
     }
     .s-form .form-control:focus, .s-form .form-select:focus {
-      border-color: #3498db; box-shadow: none; background: var(--bg-primary); color: var(--text-primary);
+      border-color: var(--fn-accent); box-shadow: none; background: var(--bg-primary); color: var(--text-primary);
     }
     [data-theme="dark"] .s-form .form-control,
     [data-theme="dark"] .s-form .form-select {
@@ -156,8 +156,8 @@ if (!empty($_GET['import_error'])) {
       text-align: center; cursor: pointer; transition: border-color .2s, background .2s;
       background: var(--bg-primary);
     }
-    .upload-zone:hover, .upload-zone.drag-over { border-color: #3498db; background: rgba(52,152,219,.05); }
-    .upload-zone i { font-size: 28px; color: #3498db; margin-bottom: 8px; }
+    .upload-zone:hover, .upload-zone.drag-over { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb),.05); }
+    .upload-zone i { font-size: 28px; color: var(--fn-accent); margin-bottom: 8px; }
     .upload-zone p { margin: 0; font-size: 13px; color: var(--text-secondary); }
     .template-table th { font-size: 11px; font-weight: 700; letter-spacing: .5px; background: var(--bg-primary); color: var(--text-secondary); }
     .template-table td { font-size: 12px; color: var(--text-primary); background: transparent; }
@@ -173,6 +173,7 @@ if (!empty($_GET['import_error'])) {
       .s-row { flex-wrap: wrap; }
     }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -360,7 +361,7 @@ include __DIR__ . '/../components/sidebar.php';
           <div class="upload-zone" id="uploadZone" onclick="document.getElementById('csvFile').click()">
             <i class="bi bi-cloud-upload d-block"></i>
             <p class="fw-semibold" style="color:var(--text-primary)">Clica ou arrasta o ficheiro CSV aqui</p>
-            <p id="fileName" style="display:none;color:#3498db;margin-top:4px"></p>
+            <p id="fileName" style="display:none;color:var(--fn-accent);margin-top:4px"></p>
           </div>
           <input type="file" id="csvFile" name="csv_file" accept=".csv,.txt" style="display:none" onchange="handleFileSelect(this)">
           <div style="display:flex;align-items:center;gap:10px;margin-top:12px">

@@ -94,7 +94,7 @@ $activePage='futuro'; $sidebarPrefix='../';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background-color:var(--bg-primary); color:var(--text-primary); }
     .futuro-wrapper { max-width:820px; margin:0 auto; padding:0 16px 60px; }
@@ -107,12 +107,12 @@ $activePage='futuro'; $sidebarPrefix='../';
     .a-card { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:14px; overflow:hidden; }
     .a-card-body { padding:20px; }
     .a-card-title { font-size:14px; font-weight:600; color:var(--text-primary); margin:0 0 16px; display:flex; align-items:center; gap:8px; }
-    .a-card-title i { color:#3498db; font-size:16px; }
+    .a-card-title i { color:var(--fn-accent); font-size:16px; }
     .metrics-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
     .metric { background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:12px; padding:16px; }
     .metric-label { font-size:11px; color:var(--text-secondary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:6px; }
     .metric-value { font-size:22px; font-weight:700; color:var(--text-primary); line-height:1; }
-    .metric-value.blue  { color:#3498db; }
+    .metric-value.blue  { color:var(--fn-accent); }
     .metric-value.green { color:#1abc9c; }
     .metric-value.amber { color:#f39c12; }
     .metric-value.red   { color:#e74c3c; }
@@ -137,9 +137,9 @@ $activePage='futuro'; $sidebarPrefix='../';
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
     input[type=number] { -moz-appearance:textfield; appearance:textfield; }
     .filter-input { font-size:13px; padding:8px 12px; border-radius:9px; border:1px solid var(--border-color); background:var(--bg-primary); color:var(--text-primary); width:100%; }
-    .filter-input:focus { outline:none; border-color:#3498db; }
-    .btn-primary-s { font-size:13px; font-weight:500; padding:9px 20px; border-radius:9px; border:none; background:#3498db; color:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
-    .btn-primary-s:hover { background:#2980b9; }
+    .filter-input:focus { outline:none; border-color:var(--fn-accent); }
+    .btn-primary-s { font-size:13px; font-weight:500; padding:9px 20px; border-radius:9px; border:none; background:var(--fn-accent); color:#fff; cursor:pointer; display:inline-flex; align-items:center; gap:6px; }
+    .btn-primary-s:hover { background:var(--fn-accent-hover); }
     .empty-state { text-align:center; padding:48px 20px; }
     .empty-state i { font-size:48px; color:var(--border-color); display:block; margin-bottom:12px; }
     .empty-state h5 { font-size:15px; color:var(--text-secondary); margin-bottom:6px; }
@@ -147,6 +147,7 @@ $activePage='futuro'; $sidebarPrefix='../';
     [data-theme="dark"] .filter-input { background:#1a1d29; color:#ecf0f1; border-color:#34495e; }
     @media(max-width:640px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
@@ -175,12 +176,12 @@ $activePage='futuro'; $sidebarPrefix='../';
     <div class="metrics-grid">
       <div class="metric">
         <p class="metric-label">Média mensal (6m)</p>
-        <p class="metric-value blue">€<?=number_format($avgMonthlySpend,2,',','.')?></p>
+        <p class="metric-value blue"><?=fmt_eur($avgMonthlySpend, 2)?></p>
         <p class="metric-sub">gasto por mês</p>
       </div>
       <div class="metric">
         <p class="metric-label">Este mês</p>
-        <p class="metric-value <?=$thisMonthSpend > $avgMonthlySpend ? 'red' : 'green'?>">€<?=number_format($thisMonthSpend,2,',','.')?></p>
+        <p class="metric-value <?=$thisMonthSpend > $avgMonthlySpend ? 'red' : 'green'?>"><?=fmt_eur($thisMonthSpend, 2)?></p>
         <p class="metric-sub"><?=$thisMonthSpend > $avgMonthlySpend ? 'acima da média' : 'abaixo da média'?></p>
       </div>
       <div class="metric">
@@ -235,10 +236,10 @@ $activePage='futuro'; $sidebarPrefix='../';
           <div class="goal-progress-fill" style="width:<?=$projPct?>%;background:<?=$barColor?>"></div>
         </div>
         <div class="goal-stats">
-          <div class="goal-stat"><strong>€<?=number_format($g['target_amount'],2,',','.')?></strong>Objetivo</div>
-          <div class="goal-stat"><strong>€<?=number_format($fm['projected'],2,',','.')?></strong>Projeção</div>
-          <div class="goal-stat"><strong>€<?=number_format($g['monthly_income'],2,',','.')?>/mês</strong>Rendimento</div>
-          <div class="goal-stat"><strong>€<?=number_format($g['monthly_income']-$avgMonthlySpend,2,',','.')?>/mês</strong>Poupança actual</div>
+          <div class="goal-stat"><strong><?=fmt_eur($g['target_amount'], 2)?></strong>Objetivo</div>
+          <div class="goal-stat"><strong><?=fmt_eur($fm['projected'], 2)?></strong>Projeção</div>
+          <div class="goal-stat"><strong><?=fmt_eur($g['monthly_income'], 2)?>/mês</strong>Rendimento</div>
+          <div class="goal-stat"><strong><?=fmt_eur($g['monthly_income']-$avgMonthlySpend, 2)?>/mês</strong>Poupança actual</div>
         </div>
       </div>
     </div>

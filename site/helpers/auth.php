@@ -19,3 +19,6 @@ csrf_verify();
 
 // Verificação de dono dos recursos (IDOR) — ver owned_card_id()
 require_once __DIR__ . '/ownership.php';
+
+// Formatação em português (fmt_eur, month_name_pt) disponível em todas as páginas
+require_once __DIR__ . '/format.php';

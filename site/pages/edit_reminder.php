@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=2">
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
@@ -90,8 +90,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
     .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
     .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: #3498db !important; color: #fff !important; border-color: #3498db !important; }
-    .btn-s-primary:hover { background: #2980b9 !important; color: #fff !important; border-color: #2980b9 !important; }
+    .btn-s-primary { background: var(--fn-accent) !important; color: #fff !important; border-color: var(--fn-accent) !important; }
+    .btn-s-primary:hover { background: var(--fn-accent-hover) !important; color: #fff !important; border-color: var(--fn-accent-hover) !important; }
     .s-alert-danger { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid rgba(239,68,68,.3); background: rgba(239,68,68,.1); color: #7f1d1d; }
     [data-theme="dark"] .s-alert-danger { color: #fca5a5; }
     .form-section { padding: 18px 20px; }
@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; display: block; }
     .m-form .form-label-sub { font-size: 11px; font-weight: 400; text-transform: none; letter-spacing: 0; color: var(--text-secondary); }
     .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color) !important; border-radius: 9px; padding: 9px 12px; background: var(--bg-primary) !important; color: var(--text-primary) !important; width: 100%; }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: #3498db !important; box-shadow: 0 0 0 2px rgba(52,152,219,.25) !important; outline: none; }
+    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent) !important; box-shadow: 0 0 0 2px rgba(var(--fn-accent-rgb),.25) !important; outline: none; }
     input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
     input[type="number"] { -moz-appearance: textfield; }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
@@ -111,11 +111,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .recur-option { position: relative; }
     .recur-option input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; }
     .recur-label { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 12px 6px; border: 1px solid var(--border-color); border-radius: 10px; cursor: pointer; transition: all .15s; background: var(--bg-primary); text-align: center; }
-    .recur-label:hover { border-color: #3498db; background: rgba(52,152,219,.05); }
-    .recur-option input:checked + .recur-label { border-color: #3498db; background: rgba(52,152,219,.08); color: #3498db; }
+    .recur-label:hover { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb),.05); }
+    .recur-option input:checked + .recur-label { border-color: var(--fn-accent); background: rgba(var(--fn-accent-rgb),.08); color: var(--fn-accent); }
     .recur-label i { font-size: 18px; }
     .recur-label span { font-size: 11px; font-weight: 600; }
   </style>
+  <link rel="stylesheet" href="../css/finora.css?v=1">
 </head>
 <body>
 <div class="app-layout">
