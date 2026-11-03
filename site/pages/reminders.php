@@ -166,332 +166,259 @@ $paidReminders      = array_filter($reminders, fn($r) => $r['status'] === 'paid'
 $inactiveReminders  = array_filter($reminders, fn($r) => $r['status'] === 'inactive');
 
 $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal','yearly'=>'Anual'];
+// Linha de um lembrete por pagar (atrasado, próximo ou futuro)
+function reminder_due_text(array $r): string {
+    $days = (int) floor((strtotime($r['due_date']) - strtotime(date('Y-m-d'))) / 86400);
+    if ($days < 0)  return 'Em atraso há ' . abs($days) . ' dia' . (abs($days) > 1 ? 's' : '');
+    if ($days === 0) return 'Vence hoje';
+    if ($days === 1) return 'Vence amanhã';
+    return 'Vence em ' . $days . ' dias';
+}
+$groups = [
+    ['key' => 'overdue',  'title' => 'Em atraso',         'items' => $overdueReminders],
+    ['key' => 'upcoming', 'title' => 'Próximos 7 dias',   'items' => $upcomingReminders],
+    ['key' => 'future',   'title' => 'Mais tarde',        'items' => $futureReminders],
+];
+$hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 ?>
 <!doctype html>
 <html lang="pt-PT" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lembretes de Pagamento - Finora</title>
+  <title>Lembretes - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
-    .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
-    .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
-    .page-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
-    .settings-group { margin-bottom: 24px; }
-    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
-    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
-    .s-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px 20px; transition: background .15s; }
-    .s-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .s-row-label { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 2px; }
-    .s-row-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
-    .btn-s { font-size: 13px; font-weight: 500; padding: 6px 14px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
-    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
-
-    /* Green paid button — softer tone */
-    .btn-s-success {
-      background: rgba(34,197,94,.09);
-      color: #16a34a;
-      border-color: rgba(34,197,94,.28);
-    }
-    .btn-s-success:hover {
-      background: rgba(34,197,94,.16);
-      border-color: rgba(34,197,94,.45);
-      color: #15803d;
-    }
-    [data-theme="dark"] .btn-s-success {
-      background: rgba(34,197,94,.10);
-      color: #4ade80;
-      border-color: rgba(34,197,94,.22);
-    }
-    [data-theme="dark"] .btn-s-success:hover {
-      background: rgba(34,197,94,.18);
-    }
-
-    .btn-s-danger { background: rgba(220,38,38,.07); border-color: rgba(220,38,38,.2); color: #dc2626; }
-    .btn-s-danger:hover { background: rgba(220,38,38,.14); border-color: rgba(220,38,38,.4); }
-    [data-theme="dark"] .btn-s-danger { background: rgba(220,38,38,.10); border-color: rgba(220,38,38,.25); color: #f87171; }
-    [data-theme="dark"] .btn-s-danger:hover { background: rgba(220,38,38,.18); }
-
-    .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
-    .s-alert-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #065f46; }
-    .s-alert-danger  { background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3);  color: #7f1d1d; }
-    .s-alert-info    { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.3); color: #1e3a8a; }
-    [data-theme="dark"] .s-alert-success { color: #6ee7b7; }
-    [data-theme="dark"] .s-alert-danger  { color: #fca5a5; }
-    [data-theme="dark"] .s-alert-info    { color: #93c5fd; }
-
-    /* ── Stats row — now 4 cells ── */
-    .stats-row { display: flex; }
-    .stat-cell { flex: 1; padding: 14px 16px; text-align: center; }
-    .stat-cell:not(:last-child) { border-right: 1px solid var(--border-color); }
-    .stat-num { font-size: 20px; font-weight: 700; line-height: 1; margin-bottom: 3px; }
-    .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; }
-
-    .s-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; }
-    .s-badge-overdue  { background: rgba(239,68,68,.12);  color: #dc2626; }
-    .s-badge-upcoming { background: rgba(245,158,11,.12); color: #d97706; }
-    .s-badge-future   { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .s-badge-inactive { background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .s-badge-recur    { background: rgba(59,130,246,.1); color: #2563eb; }
-
-    /* ── PAID badge — soft green ── */
-    .s-badge-paid {
-      background: rgba(34,197,94,.10);
-      color: #16a34a;
-      border: 1px solid rgba(34,197,94,.25);
-    }
-    [data-theme="dark"] .s-badge-paid { color: #4ade80; border-color: rgba(34,197,94,.2); }
-    [data-theme="dark"] .s-badge-overdue  { color: #fca5a5; }
-    [data-theme="dark"] .s-badge-upcoming { color: #fcd34d; }
-    [data-theme="dark"] .s-badge-recur    { color: #93c5fd; }
-
-    /* ── Paid section row styling ── */
-    .paid-row { background: rgba(34,197,94,.035); }
-    [data-theme="dark"] .paid-row { background: rgba(34,197,94,.045); }
-
-    .empty-state { padding: 40px 20px; text-align: center; }
-    .empty-state i { font-size: 48px; color: var(--border-color); display: block; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
-    /* Modal */
-    .modal-content { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 16px; }
-    .modal-header { border-bottom: 1px solid var(--border-color); padding: 18px 20px; }
-    .modal-footer { border-top: 1px solid var(--border-color); padding: 14px 20px; }
-    .modal-title { font-size: 15px; font-weight: 600; color: var(--text-primary); }
-    .m-form .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 9px 12px; background: var(--bg-primary); color: var(--text-primary); }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent); box-shadow: none; background: var(--bg-primary); color: var(--text-primary); }
-    [data-theme="dark"] .m-form .form-control, [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
-    input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; }
-    input[type="number"] { -moz-appearance: textfield; }
-    [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
-    @media (max-width:600px) { .stats-row { flex-wrap: wrap; } .stat-cell { min-width: 50%; } .stat-cell:nth-child(2) { border-right: none; } .stat-cell:nth-child(n+3) { border-top: 1px solid var(--border-color); } .s-row { flex-wrap: wrap; } }
-  </style>
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="../css/finora.css?v=4">
+  <style>
+    .lm { max-width: 1000px; margin: 0 auto; padding-bottom: 56px; }
+    .lm-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+    .lm-head h1 { margin: 0; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
+    .lm-summary { margin: 0 0 28px; font-size: 15px; color: var(--fn-muted); }
+    .lm-summary strong { color: var(--fn-text); }
+    .lm-summary .late { color: #b42318; font-weight: 600; }
+    [data-theme="dark"] .lm-summary .late { color: #fda29b; }
+
+    .lm-group + .lm-group { margin-top: 26px; }
+    .lm-group-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 8px; }
+    .lm-group-head h2 { margin: 0; font-size: 16px; font-weight: 700; color: var(--fn-text); }
+    .lm-group-head span { font-size: 14px; color: var(--fn-muted); }
+    .lm-group.overdue .lm-group-head h2 { color: #b42318; }
+    [data-theme="dark"] .lm-group.overdue .lm-group-head h2 { color: #fda29b; }
+
+    .lm-list { list-style: none; margin: 0; padding: 0; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
+    .lm-group.overdue .lm-list { border-color: #fecdca; border-left: 4px solid #d92d20; }
+    [data-theme="dark"] .lm-group.overdue .lm-list { border-color: rgba(253,162,155,.3); border-left-color: #f97066; }
+    .lm-item { display: flex; align-items: center; gap: 16px; padding: 14px 16px 14px 18px; }
+    .lm-item + .lm-item { border-top: 1px solid var(--fn-line); }
+
+    .lm-date { width: 52px; text-align: center; flex-shrink: 0; border-radius: 12px; padding: 6px 0; background: var(--fn-paper); }
+    .lm-date b { display: block; font-size: 19px; line-height: 1.1; color: var(--fn-text); }
+    .lm-date small { font-size: 12px; color: var(--fn-muted); }
+    .lm-group.overdue .lm-date { background: #fef3f2; }
+    .lm-group.overdue .lm-date b, .lm-group.overdue .lm-date small { color: #b42318; }
+    [data-theme="dark"] .lm-group.overdue .lm-date { background: rgba(253,162,155,.12); }
+    [data-theme="dark"] .lm-group.overdue .lm-date b, [data-theme="dark"] .lm-group.overdue .lm-date small { color: #fda29b; }
+
+    .lm-main { flex: 1; min-width: 0; }
+    .lm-name { font-size: 15px; font-weight: 600; color: var(--fn-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lm-meta { margin-top: 2px; font-size: 13px; color: var(--fn-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .lm-meta .due { font-weight: 600; color: var(--fn-text); }
+    .lm-group.overdue .lm-meta .due { color: #b42318; }
+    [data-theme="dark"] .lm-group.overdue .lm-meta .due { color: #fda29b; }
+    .lm-meta .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    .lm-amt { font-size: 16px; font-weight: 700; color: var(--fn-text); white-space: nowrap; }
+
+    .lm-actions { display: flex; align-items: center; gap: 2px; }
+    .lm-actions form { margin: 0; }
+    .lm-actions .ico {
+      width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 9px;
+      border: 0; background: transparent; color: var(--fn-muted); font-size: 15px; cursor: pointer;
+    }
+    .lm-actions .ico:hover { background: var(--fn-paper); color: var(--fn-text); }
+    .lm-actions .ico.del:hover { background: #fef3f2; color: #b42318; }
+    [data-theme="dark"] .lm-actions .ico.del:hover { background: rgba(253,162,155,.1); color: #fda29b; }
+    .main-content .lm-pay { min-height: 36px; padding: 6px 12px; font-size: 13px; margin-right: 6px; }
+
+    /* Pagos e em pausa: recolhidos */
+    .lm-more { margin-top: 26px; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
+    .lm-more summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; font-size: 15px; font-weight: 700; color: var(--fn-text); }
+    .lm-more summary::-webkit-details-marker { display: none; }
+    .lm-more summary span { font-weight: 400; color: var(--fn-muted); font-size: 14px; }
+    .lm-more summary i { transition: transform .2s; color: var(--fn-muted); }
+    .lm-more[open] summary i { transform: rotate(180deg); }
+    .lm-more .lm-list { border: 0; border-top: 1px solid var(--fn-line); border-radius: 0 0 16px 16px; }
+    .lm-more .lm-name { color: var(--fn-muted); }
+
+    .lm-empty { padding: 56px 24px; text-align: center; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 20px; }
+    .lm-empty-art { display: inline-grid; place-items: center; width: 72px; height: 72px; margin-bottom: 18px; border-radius: 20px; background: var(--fn-gold-soft); color: var(--fn-gold); font-size: 32px; }
+    .lm-empty h2 { margin: 0 0 6px; font-size: 20px; font-weight: 700; color: var(--fn-text); }
+    .lm-empty p { margin: 0 auto 20px; max-width: 46ch; color: var(--fn-muted); font-size: 15px; }
+    .lm-caught-up { padding: 22px; text-align: center; color: var(--fn-muted); background: var(--fn-surface); border: 1px dashed var(--fn-line); border-radius: 16px; }
+
+    @media (max-width: 640px) {
+      .lm-head h1 { font-size: 26px; }
+      .lm-item { flex-wrap: wrap; gap: 12px; padding: 14px; }
+      .lm-main { flex: 1 1 calc(100% - 70px); }
+      .lm-amt { margin-left: 64px; }
+      .lm-actions { margin-left: auto; }
+    }
+  </style>
 </head>
 <body>
 <div class="app-layout">
 <?php $activePage='reminders'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
 <main class="main-content">
 <div class="page-content">
-<div class="settings-wrapper">
+<div class="lm">
 
-  <div class="page-header">
-    <div class="page-header-icon"><i class="bi bi-calendar-check"></i></div>
-    <div style="flex:1">
-      <h2>Lembretes de Pagamento</h2>
-      <p>Gere os teus pagamentos futuros e despesas recorrentes</p>
-    </div>
-    <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
-      <i class="bi bi-plus-circle"></i> Novo
-    </button>
+  <div class="lm-head">
+    <h1>Lembretes</h1>
+    <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> Novo lembrete</button>
   </div>
 
+  <?php if (!empty($reminders)): ?>
+    <p class="lm-summary">
+      A pagar até ao fim do mês: <strong><?= fmt_eur($total_month) ?></strong> ·
+      já pago este mês: <strong><?= fmt_eur($paid_month_total) ?></strong>
+      <?php if ($overdue_count): ?> · <span class="late"><?= $overdue_count ?> em atraso</span><?php endif; ?>
+    </p>
+  <?php else: ?>
+    <p class="lm-summary">&nbsp;</p>
+  <?php endif; ?>
+
   <?php if ($message): ?>
-    <?php $icon = $messageType === 'success' ? 'check-circle' : ($messageType === 'danger' ? 'exclamation-circle' : 'info-circle'); ?>
-    <div class="s-alert s-alert-<?=$messageType?>">
-      <i class="bi bi-<?=$icon?>" style="flex-shrink:0;margin-top:1px"></i>
-      <span><?=htmlspecialchars($message)?></span>
+    <div class="s-alert s-alert-<?= $messageType ?>" role="status">
+      <i class="bi bi-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
+      <span><?= htmlspecialchars($message) ?></span>
     </div>
   <?php endif; ?>
 
-  <!-- RESUMO — agora com 4 células -->
-  <div class="settings-group">
-    <p class="group-label">Resumo do mês</p>
-    <div class="settings-card">
-      <div class="stats-row">
-        <div class="stat-cell">
-          <div class="stat-num" style="color:var(--fn-accent)"><?=fmt_eur($paid_month_total)?></div>
-          <div class="stat-label">Pagos este mês</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-num" style="color:#e74c3c"><?=fmt_eur($total_month)?></div>
-          <div class="stat-label">A pagar este mês</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-num" style="color:#d97706"><?=$upcoming_count?></div>
-          <div class="stat-label">Próximos 7 dias</div>
-        </div>
-        <div class="stat-cell">
-          <div class="stat-num" style="color:#e74c3c"><?=$overdue_count?></div>
-          <div class="stat-label">Atrasados</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <?php if (empty($reminders)): ?>
-    <div class="settings-card">
-      <div class="empty-state">
-        <i class="bi bi-calendar-check"></i>
-        <p>Ainda não tens lembretes de pagamento.<br>Cria o primeiro para nunca mais esquecer um pagamento.</p>
-        <button class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal">
-          <i class="bi bi-plus-circle"></i> Criar Primeiro Lembrete
-        </button>
-      </div>
+    <div class="lm-empty">
+      <span class="lm-empty-art" aria-hidden="true"><i class="bi bi-calendar-check"></i></span>
+      <h2>Ainda não tens lembretes</h2>
+      <p>Regista a renda, a luz, as subscrições e outros pagamentos. A Finora avisa-te antes de cada um vencer.</p>
+      <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> Criar o primeiro lembrete</button>
     </div>
   <?php else: ?>
 
-    <?php if (!empty($overdueReminders)): ?>
-    <div class="settings-group">
-      <p class="group-label" style="color:#dc2626"><i class="bi bi-exclamation-triangle me-1"></i>Atrasados</p>
-      <div class="settings-card">
-        <?php foreach($overdueReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
-            <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
-            <p class="s-row-sub">
-              Venceu a <?=date('d/m/Y', strtotime($r['due_date']))?>
-              &nbsp;<span class="s-badge s-badge-overdue"><i class="bi bi-exclamation-circle" style="font-size:10px"></i> Atrasado</span>
-              <?php if($r['recurrence']!=='once'): ?>&nbsp;<span class="s-badge s-badge-recur"><?=$recurrenceLabels[$r['recurrence']]?></span><?php endif; ?>
-              <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
-            </p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
-            <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
-            </form>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
+    <?php if (!$hasPending): ?>
+      <div class="lm-caught-up">Não tens pagamentos pendentes. Está tudo em dia.</div>
     <?php endif; ?>
 
-    <?php if (!empty($upcomingReminders)): ?>
-    <div class="settings-group">
-      <p class="group-label" style="color:#d97706"><i class="bi bi-clock-history me-1"></i>Próximos 7 dias</p>
-      <div class="settings-card">
-        <?php foreach($upcomingReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
-            <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
-            <p class="s-row-sub">
-              Vence a <?=date('d/m/Y', strtotime($r['due_date']))?>
-              &nbsp;<span class="s-badge s-badge-upcoming"><i class="bi bi-clock" style="font-size:10px"></i> Em breve</span>
-              <?php if($r['recurrence']!=='once'): ?>&nbsp;<span class="s-badge s-badge-recur"><?=$recurrenceLabels[$r['recurrence']]?></span><?php endif; ?>
-              <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
-            </p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
-            <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
-            </form>
-          </div>
+    <?php foreach ($groups as $g): if (!$g['items']) continue; ?>
+      <section class="lm-group <?= $g['key'] ?>" aria-labelledby="g-<?= $g['key'] ?>">
+        <div class="lm-group-head">
+          <h2 id="g-<?= $g['key'] ?>"><?= $g['title'] ?></h2>
+          <span><?= fmt_eur(array_sum(array_column($g['items'], 'amount'))) ?></span>
         </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
+        <ul class="lm-list">
+          <?php foreach ($g['items'] as $r): $ts = strtotime($r['due_date']); ?>
+            <li class="lm-item">
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <div class="lm-main">
+                <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
+                <div class="lm-meta">
+                  <span class="due"><?= reminder_due_text($r) ?></span>·
+                  <span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?></span>
+                  <?php if ($r['category']): ?>·<span><span class="dot" style="background:<?= category_color($r['category']) ?>"></span> <?= htmlspecialchars($r['category']) ?></span><?php endif; ?>
+                  <?php if ($r['card_name']): ?>·<span><?= htmlspecialchars($r['card_name']) ?></span><?php endif; ?>
+                </div>
+              </div>
+              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <div class="lm-actions">
+                <button type="button" class="btn-s btn-s-success lm-pay" onclick="openMarkPaidModal(<?= (int) $r['id'] ?>)"><i class="bi bi-check2"></i> Marcar como pago</button>
+                <button type="button" class="ico" onclick="openEditModal(<?= htmlspecialchars(json_encode($r)) ?>)" aria-label="Editar <?= htmlspecialchars($r['name']) ?>" title="Editar"><i class="bi bi-pencil"></i></button>
+                <form method="post">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="toggle">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="ico" aria-label="Pausar <?= htmlspecialchars($r['name']) ?>" title="Pausar"><i class="bi bi-pause-circle"></i></button>
+                </form>
+                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                </form>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </section>
+    <?php endforeach; ?>
+
+    <?php if ($paidReminders): ?>
+      <details class="lm-more">
+        <summary>Pagos <span><?= count($paidReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
+        <ul class="lm-list">
+          <?php foreach ($paidReminders as $r): $ts = strtotime($r['last_paid_date'] ?? $r['due_date']); ?>
+            <li class="lm-item">
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <div class="lm-main">
+                <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
+                <div class="lm-meta"><span>Pago a <?= date('j', $ts) ?> de <?= month_name_pt((int) date('n', $ts)) ?></span></div>
+              </div>
+              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <div class="lm-actions">
+                <form method="post" onsubmit="return confirm('Voltar a marcar este pagamento como pendente?')">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="unmark_paid">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="ico" aria-label="Voltar a pendente" title="Voltar a pendente"><i class="bi bi-arrow-counterclockwise"></i></button>
+                </form>
+                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                </form>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </details>
     <?php endif; ?>
 
-    <?php if (!empty($futureReminders)): ?>
-    <div class="settings-group">
-      <p class="group-label"><i class="bi bi-calendar3 me-1"></i>Futuros</p>
-      <div class="settings-card">
-        <?php foreach($futureReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
-            <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
-            <p class="s-row-sub">
-              Vence a <?=date('d/m/Y', strtotime($r['due_date']))?>
-              <?php if($r['recurrence']!=='once'): ?>&nbsp;<span class="s-badge s-badge-recur"><?=$recurrenceLabels[$r['recurrence']]?></span><?php endif; ?>
-              <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
-            </p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:16px;font-weight:700;color:var(--text-primary)"><?=fmt_eur($r['amount'])?></span>
-            <button class="btn-s btn-s-success" onclick="openMarkPaidModal(<?=$r['id']?>)"><i class="bi bi-check-circle"></i> Pago</button>
-            <button class="btn-s" onclick="openEditModal(<?=htmlspecialchars(json_encode($r))?>)"><i class="bi bi-pencil"></i></button>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar lembrete?')"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" type="submit"><i class="bi bi-trash3"></i></button>
-            </form>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- ── PAGOS (antes "inativos" para lembretes únicos confirmados) ── -->
-    <?php if (!empty($paidReminders)): ?>
-    <div class="settings-group">
-      <p class="group-label" style="color:#16a34a"><i class="bi bi-check-circle-fill me-1"></i>Pagos</p>
-      <div class="settings-card">
-        <?php foreach($paidReminders as $r): ?>
-        <div class="s-row paid-row" style="align-items:flex-start">
-          <div style="flex:1;min-width:0">
-            <p class="s-row-label" style="color:var(--text-secondary)"><?=htmlspecialchars($r['name'])?></p>
-            <p class="s-row-sub">
-              Pago a <?=date('d/m/Y', strtotime($r['last_paid_date'] ?? $r['due_date']))?>
-              &nbsp;<span class="s-badge s-badge-paid"><i class="bi bi-check-circle" style="font-size:10px"></i> Pago</span>
-              <?php if($r['recurrence']!=='once'): ?>&nbsp;<span class="s-badge s-badge-recur"><?=$recurrenceLabels[$r['recurrence']]?></span><?php endif; ?>
-              <?php if($r['category']): ?>&nbsp;<span class="s-badge s-badge-future"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($r['category'])?></span><?php endif; ?>
-            </p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)"><?=fmt_eur($r['amount'])?></span>
-            <!-- Reverter pagamento -->
-            <form method="post" style="margin:0" onsubmit="return confirm('Reverter pagamento?')"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="unmark_paid">
-              <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s" style="padding:5px 10px;font-size:12px" type="submit" title="Reverter para ativo"><i class="bi bi-arrow-counterclockwise"></i></button>
-            </form>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?>
-              <input type="hidden" name="action" value="delete">
-              <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
-              <button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button>
-            </form>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
-    <?php endif; ?>
-
-    <!-- Inativos manuais (toggle) -->
-    <?php if (!empty($inactiveReminders)): ?>
-    <div class="settings-group">
-      <p class="group-label"><i class="bi bi-archive me-1"></i>Inativos</p>
-      <div class="settings-card">
-        <?php foreach($inactiveReminders as $r): ?>
-        <div class="s-row" style="align-items:flex-start;opacity:.55">
-          <div style="flex:1;min-width:0">
-            <p class="s-row-label"><?=htmlspecialchars($r['name'])?></p>
-            <p class="s-row-sub"><?=date('d/m/Y', strtotime($r['due_date']))?> &nbsp;<span class="s-badge s-badge-inactive">Inativo</span></p>
-          </div>
-          <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-            <span style="font-size:15px;font-weight:600;color:var(--text-secondary)"><?=fmt_eur($r['amount'])?></span>
-            <form method="post" style="margin:0"><?= csrf_field() ?><input type="hidden" name="action" value="toggle"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s" style="padding:5px 12px" type="submit"><i class="bi bi-play-circle"></i> Ativar</button></form>
-            <form method="post" style="margin:0" onsubmit="return confirm('Eliminar?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete"><input type="hidden" name="reminder_id" value="<?=$r['id']?>"><button class="btn-s btn-s-danger" style="padding:5px 10px" type="submit"><i class="bi bi-trash3"></i></button></form>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
+    <?php if ($inactiveReminders): ?>
+      <details class="lm-more">
+        <summary>Em pausa <span><?= count($inactiveReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
+        <ul class="lm-list">
+          <?php foreach ($inactiveReminders as $r): $ts = strtotime($r['due_date']); ?>
+            <li class="lm-item">
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <div class="lm-main">
+                <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
+                <div class="lm-meta"><span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?> · sem avisos enquanto estiver em pausa</span></div>
+              </div>
+              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <div class="lm-actions">
+                <form method="post">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="toggle">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="btn-s lm-pay"><i class="bi bi-play-circle"></i> Retomar</button>
+                </form>
+                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                  <?= csrf_field() ?>
+                  <input type="hidden" name="action" value="delete">
+                  <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
+                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                </form>
+              </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </details>
     <?php endif; ?>
 
   <?php endif; ?>
 
-</div>
-</div>
-
+</div><!-- /lm -->
+</div><!-- /page-content -->
 <!-- Modal Novo Lembrete -->
 <div class="modal fade" id="newReminderModal" tabindex="-1">
   <div class="modal-dialog">

@@ -106,22 +106,22 @@
 
     reminders: [
       {
-        selector: '.page-header',
-        title: '🔔 Lembretes',
-        text: 'Os lembretes avisam-te de pagamentos, datas de vencimento ou qualquer evento financeiro importante.',
+        selector: '.lm-head .btn-s-primary',
+        title: '🔔 Novo lembrete',
+        text: 'Regista um pagamento (renda, luz, subscrições…) e a Finora avisa-te por email antes de vencer.',
         position: 'bottom'
       },
       {
-        selector: '.page-header .btn-s-primary',
-        title: '➕ Novo Lembrete',
-        text: 'Cria um lembrete para uma data específica. Receberás uma notificação por email na data que escolheres.',
-        position: 'bottom'
-      },
-      {
-        selector: '.settings-group',
-        title: '📋 Lista de Lembretes',
-        text: 'Aqui vês todos os teus lembretes ativos e passados. Podes editar, marcar como concluído ou eliminar cada um.',
+        selector: '.lm-group',
+        title: '📅 Próximos pagamentos',
+        text: 'Os pagamentos aparecem por ordem de data: em atraso, nos próximos 7 dias e mais tarde.',
         position: 'top'
+      },
+      {
+        selector: '.lm-pay',
+        title: '✅ Marcar como pago',
+        text: 'Quando pagares, marca aqui. Se for recorrente, passa automaticamente para a próxima data e podes criar logo a transação.',
+        position: 'left'
       }
     ],
 
