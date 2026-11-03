@@ -65,7 +65,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=6">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary) !important; }
     .settings-wrapper { max-width: 860px; margin: 0 auto; padding: 0 16px 60px; }

@@ -4,6 +4,8 @@
 //   $activePage    — 'dashboard','cards','transactions','budgets','reminders','analytics','settings', ...
 //   $sidebarPrefix — '' para dashboard.php, '../' para pages/*.php
 
+require_once __DIR__ . '/../helpers/brand.php';
+
 $_sp  = $sidebarPrefix ?? '../';
 $_ap  = $activePage    ?? '';
 
@@ -56,9 +58,8 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     <i class="bi bi-list"></i>
   </button>
 
-  <a href="<?= $_sp ?>dashboard.php" class="app-brand">
-    <img src="<?= $_sp ?>assets/logo2.png" alt="">
-    <span>Finora</span>
+  <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="Finora — início">
+    <?= finora_logo('app-logo') ?>
   </a>
 
   <?php if ($_pageTitle !== '' && $_ap !== 'dashboard'): ?>
@@ -97,9 +98,8 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
 <aside class="sidebar" id="appSidebar" aria-label="Menu principal" aria-hidden="true">
   <div class="sidebar-top">
-    <a href="<?= $_sp ?>dashboard.php" class="app-brand">
-      <img src="<?= $_sp ?>assets/logo2.png" alt="">
-      <span>Finora</span>
+    <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="Finora — início">
+      <?= finora_logo('app-logo') ?>
     </a>
     <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fechar menu">
       <i class="bi bi-x-lg"></i>

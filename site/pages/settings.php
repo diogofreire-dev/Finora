@@ -263,7 +263,9 @@ $since        = strtotime($user['created_at']);
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=6">
+  <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <style>
 
     .st-flash { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-radius: 12px; margin-bottom: 22px; font-size: 14px; border: 1px solid transparent; }
@@ -290,8 +292,7 @@ $since        = strtotime($user['created_at']);
     [data-theme="dark"] .st-tag.wait { background: rgba(254,200,75,.12); color: #fedf89; }
 
     /* Perfil */
-    .st-profile { display: flex; align-items: center; gap: 18px; padding: 22px 20px;
-      background: linear-gradient(120deg, color-mix(in srgb, var(--fn-gold) 16%, var(--fn-surface)), color-mix(in srgb, var(--cat-1) 10%, var(--fn-surface)) 70%); }
+    .st-profile { display: flex; align-items: center; gap: 18px; padding: 22px 20px; }
     .st-avatar img, .st-avatar .letter { box-shadow: 0 0 0 3px var(--fn-surface); }
     .st-avatar { position: relative; width: 72px; height: 72px; flex-shrink: 0; }
     .st-avatar img, .st-avatar .letter { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; }

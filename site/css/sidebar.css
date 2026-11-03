@@ -96,20 +96,14 @@ body {
   text-decoration: none;
   flex-shrink: 0;
 }
-.app-brand img { height: 30px; width: auto; }
-.app-brand span {
-  font-family: var(--fn-font-brand);
-  font-weight: 800;
-  font-size: 22px;
-  letter-spacing: -0.6px;
-  color: var(--fn-ink);
-}
+/* Logo: letras com a cor do texto, linha dourada (mais escura no claro para ter contraste) */
+:root { --fn-logo-gold: #C48A12; }
+[data-theme="dark"] { --fn-logo-gold: #E2B04A; }
+.app-brand { color: var(--fn-ink); }
+.app-brand .app-logo { height: 38px; width: auto; display: block; }
+[data-theme="dark"] .app-brand { color: #F3E7C8; }
 .app-brand:hover { text-decoration: none; }
-[data-theme="dark"] .app-brand img {
-  filter:
-    drop-shadow(-1px 0 0 rgba(255,255,255,.9)) drop-shadow(1px 0 0 rgba(255,255,255,.9))
-    drop-shadow(0 -1px 0 rgba(255,255,255,.9)) drop-shadow(0 1px 0 rgba(255,255,255,.9));
-}
+.app-brand:focus-visible { outline: 2px solid var(--fn-gold); outline-offset: 4px; border-radius: 6px; }
 
 /* Nome da página atual, separado da marca por uma barra fina */
 .app-header-title {
@@ -363,7 +357,7 @@ body {
 }
 @media (max-width: 420px) {
   .app-header { gap: 6px; padding: 0 10px 0 6px; }
-  .app-brand span { font-size: 19px; }
+  .app-brand .app-logo { height: 32px; }
   .app-header-btn-ghost { display: none; }
   :root { --fn-drawer-w: 86vw; }
 }
