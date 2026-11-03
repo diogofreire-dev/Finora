@@ -11,25 +11,25 @@
     dashboard: [
       {
         selector: '#appMenuBtn',
-        title: '🗺️ Menu',
+        title: 'Menu',
         text: 'Abre o menu aqui para navegar entre todas as secções: Transações, Cartões, Orçamentos, Metas, Análise e muito mais.',
         position: 'bottom'
       },
       {
         selector: '.app-header-actions',
-        title: '⚡ Ações rápidas',
+        title: 'Ações rápidas',
         text: 'Regista uma nova transação ou lê o QR de uma fatura a partir de qualquer página. O teu nome dá acesso às definições e a terminar sessão.',
         position: 'bottom'
       },
       {
         selector: '.dsh-hero',
-        title: '📊 O teu mês',
+        title: 'O teu mês',
         text: 'Quanto já gastaste este mês e a comparação com o mesmo ponto do mês passado. A linha dourada é este mês; a tracejada é o anterior.',
         position: 'bottom'
       },
       {
         selector: '#dshCategorias',
-        title: '🧭 Para onde foi o dinheiro',
+        title: 'Para onde foi o dinheiro',
         text: 'A divisão dos gastos do mês por categoria. Ao lado tens os cartões, o orçamento e os próximos pagamentos.',
         position: 'top'
       }
@@ -38,19 +38,19 @@
     cards: [
       {
         selector: '.cd-summary',
-        title: '💳 Os teus cartões',
+        title: 'Os teus cartões',
         text: 'Quanto ainda tens disponível no total, somando os limites de todos os cartões ativos.',
         position: 'bottom'
       },
       {
         selector: '.cd-head .btn-s-primary',
-        title: '➕ Adicionar cartão',
+        title: 'Adicionar cartão',
         text: 'Adiciona um cartão novo: escolhe o banco, a cor e o limite.',
         position: 'bottom'
       },
       {
         selector: '.cd-tile',
-        title: '🗂️ Cada cartão',
+        title: 'Cada cartão',
         text: 'Vês o disponível, a utilização do limite e o número de transações. "Ver transações" abre a lista já filtrada por este cartão.',
         position: 'right'
       }
@@ -59,25 +59,25 @@
     transactions: [
       {
         selector: '.tx-month',
-        title: '📅 Mês',
+        title: 'Mês',
         text: 'Usa as setas para mudar de mês. Por baixo vês quantas transações fizeste, o total e a média.',
         position: 'bottom'
       },
       {
         selector: '.tx-filters',
-        title: '🔍 Pesquisa e filtros',
+        title: 'Pesquisa e filtros',
         text: 'Pesquisa pela descrição, escolhe um cartão ou toca numa categoria para veres só esses gastos.',
         position: 'bottom'
       },
       {
         selector: '.tx-day',
-        title: '📄 Transações por dia',
+        title: 'Transações por dia',
         text: 'As transações aparecem agrupadas por dia, com o total de cada dia. Usa o lápis para editar ou o caixote para apagar.',
         position: 'top'
       },
       {
         selector: '.app-header-btn-primary',
-        title: '➕ Nova transação',
+        title: 'Nova transação',
         text: 'Este botão está sempre no cabeçalho, em qualquer página.',
         position: 'bottom'
       }
@@ -86,19 +86,19 @@
     budgets: [
       {
         selector: '.bg-head .btn-s-primary',
-        title: '🐷 Criar orçamento',
+        title: 'Criar orçamento',
         text: 'Define quanto queres gastar por mês, semana ou ano — no total, numa categoria ou num cartão.',
         position: 'bottom'
       },
       {
         selector: '.bg-tile',
-        title: '📊 Quanto ainda podes gastar',
+        title: 'Quanto ainda podes gastar',
         text: 'Em destaque vês quanto te resta. O traço na barra mostra onde devias estar hoje: se a barra já passou o traço, estás a gastar mais depressa do que o previsto.',
         position: 'right'
       },
       {
         selector: '.bg-hint',
-        title: '📅 Por dia',
+        title: 'Por dia',
         text: 'Quanto podes gastar por dia até ao fim do período, para não passares o orçamento.',
         position: 'top'
       }
@@ -107,19 +107,19 @@
     reminders: [
       {
         selector: '.lm-head .btn-s-primary',
-        title: '🔔 Novo lembrete',
+        title: 'Novo lembrete',
         text: 'Regista um pagamento (renda, luz, subscrições…) e a Finora avisa-te por email antes de vencer.',
         position: 'bottom'
       },
       {
         selector: '.lm-group',
-        title: '📅 Próximos pagamentos',
+        title: 'Próximos pagamentos',
         text: 'Os pagamentos aparecem por ordem de data: em atraso, nos próximos 7 dias e mais tarde.',
         position: 'top'
       },
       {
         selector: '.lm-pay',
-        title: '✅ Marcar como pago',
+        title: 'Marcar como pago',
         text: 'Quando pagares, marca aqui. Se for recorrente, passa automaticamente para a próxima data e podes criar logo a transação.',
         position: 'left'
       }
@@ -128,19 +128,19 @@
     analytics: [
       {
         selector: '.an-controls',
-        title: '📅 Ano e cartão',
+        title: 'Ano e cartão',
         text: 'Usa as setas para mudar de ano e escolhe um cartão para veres só os gastos dele.',
         position: 'bottom'
       },
       {
         selector: '.an-hero',
-        title: '📈 O teu ano',
+        title: 'O teu ano',
         text: 'Quanto gastaste e a comparação com o mesmo período do ano anterior — no ano atual só se comparam os meses que já passaram.',
         position: 'bottom'
       },
       {
         selector: '#monthChart',
-        title: '📊 Mês a mês',
+        title: 'Mês a mês',
         text: 'Cada mês deste ano ao lado do mesmo mês do ano de comparação. Passa o rato por cima para ver os valores.',
         position: 'top'
       }
@@ -149,19 +149,19 @@
     investments: [
       {
         selector: '.iv-head .btn-s-primary',
-        title: '📈 Adicionar investimento',
+        title: 'Adicionar investimento',
         text: 'Regista uma posição com a quantidade e o preço médio de compra: ações, ETF, cripto, PPR, depósitos…',
         position: 'bottom'
       },
       {
         selector: '.iv-hero',
-        title: '💼 A tua carteira',
+        title: 'A tua carteira',
         text: 'O valor atual de tudo, quanto ganhaste ou perdeste desde a compra e a distribuição por tipo.',
         position: 'bottom'
       },
       {
         selector: '.js-price',
-        title: '🔄 Atualizar preço',
+        title: 'Atualizar preço',
         text: 'Os preços são introduzidos por ti. Atualiza-os de vez em quando para os valores estarem certos.',
         position: 'left'
       }
@@ -170,13 +170,13 @@
     futuro: [
       {
         selector: '.gl-form',
-        title: '🎯 Nova meta',
+        title: 'Nova meta',
         text: 'Diz quanto queres juntar, até quando e quanto ganhas por mês. A Finora usa a tua média de gastos para prever o resultado.',
         position: 'left'
       },
       {
         selector: '.gl-future',
-        title: '⏳ O teu eu do futuro',
+        title: 'O teu eu do futuro',
         text: 'Diz-te se, ao ritmo atual, chegas à meta — e quanto precisas de poupar por mês para lá chegar.',
         position: 'top'
       }
@@ -185,19 +185,19 @@
     dados: [
       {
         selector: '#sec-exp',
-        title: '📤 Exportar',
+        title: 'Exportar',
         text: 'Escolhe o mês, a categoria ou o cartão e exporta em PDF ou numa folha de cálculo (CSV).',
         position: 'bottom'
       },
       {
         selector: '#sec-bak',
-        title: '🛡️ Cópia de segurança',
+        title: 'Cópia de segurança',
         text: 'Descarrega um ficheiro com tudo e guarda-o fora da Finora. Se precisares, restauras a partir dele.',
         position: 'bottom'
       },
       {
         selector: '#dropZone',
-        title: '📥 Importar',
+        title: 'Importar',
         text: 'Traz transações do extrato do banco num ficheiro CSV. Vê o formato em "Como deve ser o ficheiro".',
         position: 'top'
       }
@@ -206,19 +206,19 @@
     ai: [
       {
         selector: '#insTitle',
-        title: '💡 O teu mês',
+        title: 'O teu mês',
         text: 'Carrega em "Gerar" e o assistente aponta três coisas que se destacam nos teus gastos deste mês.',
         position: 'bottom'
       },
       {
         selector: '#savTitle',
-        title: '🐷 Onde poupar',
+        title: 'Onde poupar',
         text: 'Sugestões concretas de poupança, com valores tirados das tuas transações.',
         position: 'bottom'
       },
       {
         selector: '#chatTitle',
-        title: '💬 Pergunta',
+        title: 'Pergunta',
         text: 'Escreve uma pergunta ou toca numa das sugestões. As respostas usam só os teus dados.',
         position: 'top'
       }
@@ -227,19 +227,19 @@
     persona: [
       {
         selector: '#psName',
-        title: '🧠 A tua personalidade',
+        title: 'A tua personalidade',
         text: 'O teu estilo de gastar, calculado a partir das transações dos últimos 90 dias. Precisa de pelo menos 10 transações.',
         position: 'bottom'
       },
       {
         selector: '.ps-why',
-        title: '🔎 Porquê',
+        title: 'Porquê',
         text: 'Cada traço tem uma pontuação de 0 a 100 e os números que a justificam, para veres de onde vem a conclusão.',
         position: 'bottom'
       },
       {
         selector: '#tipsTitle',
-        title: '💡 Para ti',
+        title: 'Para ti',
         text: 'Três ideias pensadas para o teu estilo. Volta no próximo mês: a personalidade muda com os hábitos.',
         position: 'top'
       }
@@ -248,25 +248,25 @@
     settings: [
       {
         selector: '.pg-head',
-        title: '⚙️ Definições',
+        title: 'Definições',
         text: 'Aqui tratas da tua conta: perfil, acesso e aparência.',
         position: 'bottom'
       },
       {
         selector: '#sec-perfil',
-        title: '👤 Perfil',
+        title: 'Perfil',
         text: 'Muda o teu nome e a foto que aparecem no topo da Finora.',
         position: 'bottom'
       },
       {
         selector: '#sec-seg',
-        title: '🔒 Acesso à conta',
+        title: 'Acesso à conta',
         text: 'Muda a palavra-passe ou o email, e liga a tua conta Google. Por segurança, só podes mudar cada um uma vez a cada 30 dias.',
         position: 'bottom'
       },
       {
         selector: '.st-themes',
-        title: '🎨 Aparência',
+        title: 'Aparência',
         text: 'Escolhe o tema claro ou escuro. Fica guardado assim que clicas.',
         position: 'top'
       }
@@ -275,13 +275,13 @@
     scan_fatura: [
       {
         selector: '#scTitle',
-        title: '📷 Ler fatura',
+        title: 'Ler fatura',
         text: 'Liga a câmara e aponta para o código QR da fatura, ou escolhe "Imagem" para usar uma foto.',
         position: 'bottom'
       },
       {
         selector: '#formTitle',
-        title: '🧾 Despesa',
+        title: 'Despesa',
         text: 'A Finora preenche o valor, a data e o nome da loja. Confirma, escolhe a categoria e guarda.',
         position: 'bottom'
       }
@@ -309,20 +309,23 @@
   /* ─── Build HTML structures ───────────────────────────────────── */
   function buildUI() {
     // FAB
-    var fab = el('button', 'hidden', '<i class="bi bi-question-lg"></i>');
+    var fab = el('button', 'hidden', '<i class="bi bi-question-lg" aria-hidden="true"></i>');
     fab.id = 'tutorial-fab';
-    fab.title = 'Tutorial da página';
+    fab.title = 'Visita guiada a esta página';
+    fab.setAttribute('aria-label', 'Visita guiada a esta página');
     document.body.appendChild(fab);
 
     // Prompt card
     var prompt = el('div', '', '');
     prompt.id = 'tutorial-prompt';
     prompt.innerHTML =
-      '<div class="tut-prompt-icon">🎓</div>' +
-      '<h4>Quer um guia desta página?</h4>' +
-      '<p>Mostramos-te como funciona cada secção em menos de 1 minuto.</p>' +
+      '<div class="tut-prompt-head">' +
+        '<div class="tut-prompt-icon"><i class="bi bi-signpost-split" aria-hidden="true"></i></div>' +
+        '<h4>Queres uma visita guiada?</h4>' +
+      '</div>' +
+      '<p>Mostramos-te cada parte desta página em menos de um minuto.</p>' +
       '<div class="tut-prompt-btns">' +
-        '<button class="tut-btn-yes" id="tut-yes">Sim, mostrar!</button>' +
+        '<button class="tut-btn-yes" id="tut-yes">Mostrar</button>' +
         '<button class="tut-btn-no"  id="tut-no">Agora não</button>' +
       '</div>';
     document.body.appendChild(prompt);
@@ -345,24 +348,29 @@
     // Tooltip
     var tip = el('div', '');
     tip.id = 'tutorial-tooltip';
+    tip.setAttribute('role', 'dialog');
+    tip.setAttribute('aria-labelledby', 'tut-step-title');
+    tip.setAttribute('aria-describedby', 'tut-step-body');
     tip.innerHTML =
-      '<div class="tut-tooltip-header">' +
-        '<div class="tut-tooltip-step-badge" id="tut-step-badge"></div>' +
-        '<div class="tut-tooltip-title"    id="tut-step-title"></div>' +
+      '<div class="tut-top">' +
+        '<span class="tut-tooltip-step-badge" id="tut-step-badge"></span>' +
+        '<div class="tut-progress" id="tut-dots" aria-hidden="true"></div>' +
       '</div>' +
+      '<h3 class="tut-tooltip-title" id="tut-step-title"></h3>' +
       '<div class="tut-tooltip-body" id="tut-step-body"></div>' +
       '<div class="tut-tooltip-footer">' +
-        '<div class="tut-progress" id="tut-dots"></div>' +
         '<button class="tut-nav-btn skip" id="tut-skip">Saltar</button>' +
-        '<button class="tut-nav-btn"      id="tut-prev">‹</button>' +
-        '<button class="tut-nav-btn primary" id="tut-next">Próximo</button>' +
+        '<span class="tut-grow"></span>' +
+        '<button class="tut-nav-btn icon" id="tut-prev" aria-label="Passo anterior"><i class="bi bi-chevron-left" aria-hidden="true"></i></button>' +
+        '<button class="tut-nav-btn primary" id="tut-next">Seguinte</button>' +
       '</div>';
     document.body.appendChild(tip);
 
     // Completion toast
     var done = el('div', '');
     done.id = 'tutorial-complete';
-    done.innerHTML = '<div class="tut-check">✓</div> Tutorial concluído! Boa sorte 🚀';
+    done.setAttribute('role', 'status');
+    done.innerHTML = '<div class="tut-check"><i class="bi bi-check-lg" aria-hidden="true"></i></div> Visita concluída. Já sabes onde está tudo.';
     document.body.appendChild(done);
   }
 
@@ -394,29 +402,29 @@
 
     // Top panel
     var dt = $('#tut-dim-top');
-    dt.style.cssText = 'position:fixed;top:0;left:0;right:0;height:' + Math.max(0, rect.top) + 'px;background:rgba(0,0,0,.6);';
+    dt.style.cssText = 'position:fixed;top:0;left:0;right:0;height:' + Math.max(0, rect.top) + 'px;';
 
     // Bottom panel
     var db = $('#tut-dim-bottom');
-    db.style.cssText = 'position:fixed;bottom:0;left:0;right:0;top:' + Math.min(vh, rect.bottom) + 'px;background:rgba(0,0,0,.6);';
+    db.style.cssText = 'position:fixed;bottom:0;left:0;right:0;top:' + Math.min(vh, rect.bottom) + 'px;';
 
     // Left panel
     var dl = $('#tut-dim-left');
-    dl.style.cssText = 'position:fixed;top:' + Math.max(0,rect.top) + 'px;left:0;width:' + Math.max(0,rect.left) + 'px;height:' + Math.max(0,rect.bottom - rect.top) + 'px;background:rgba(0,0,0,.6);';
+    dl.style.cssText = 'position:fixed;top:' + Math.max(0,rect.top) + 'px;left:0;width:' + Math.max(0,rect.left) + 'px;height:' + Math.max(0,rect.bottom - rect.top) + 'px;';
 
     // Right panel
     var dr = $('#tut-dim-right');
-    dr.style.cssText = 'position:fixed;top:' + Math.max(0,rect.top) + 'px;right:0;left:' + Math.min(vw,rect.right) + 'px;height:' + Math.max(0,rect.bottom - rect.top) + 'px;background:rgba(0,0,0,.6);';
+    dr.style.cssText = 'position:fixed;top:' + Math.max(0,rect.top) + 'px;right:0;left:' + Math.min(vw,rect.right) + 'px;height:' + Math.max(0,rect.bottom - rect.top) + 'px;';
 
     // Spotlight
-    sp.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;border-radius:10px;pointer-events:none;box-shadow:0 0 0 3px rgba(14,165,233,.9),0 0 0 6px rgba(14,165,233,.2);transition:all .3s cubic-bezier(.4,0,.2,1);';
+    sp.style.cssText = 'position:fixed;top:' + rect.top + 'px;left:' + rect.left + 'px;width:' + rect.width + 'px;height:' + rect.height + 'px;';
   }
 
   function positionTooltip(rect) {
     var tip   = $('#tutorial-tooltip');
     var vw    = window.innerWidth;
     var vh    = window.innerHeight;
-    var tipW  = 308;
+    var tipW  = Math.min(330, window.innerWidth - 24);
     var tipH  = tip.offsetHeight || 220;
     var gap   = 18;
     var left, top, arrowClass;
@@ -477,7 +485,7 @@
 
       // Prev/Next buttons
       $('#tut-prev').style.display = idx === 0 ? 'none' : '';
-      $('#tut-next').textContent   = idx === tutSteps.length - 1 ? 'Concluir ✓' : 'Próximo';
+      $('#tut-next').textContent   = idx === tutSteps.length - 1 ? 'Concluir' : 'Seguinte';
 
       positionTooltip(rect);
     }, 300);
