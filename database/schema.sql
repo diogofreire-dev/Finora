@@ -5,7 +5,7 @@ USE pap;
 -- 1. USERS
 CREATE TABLE IF NOT EXISTS users (
   id                    INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-  username              VARCHAR(50)  NOT NULL UNIQUE,
+  username              VARCHAR(50)  NOT NULL,          -- nome de apresentação, pode repetir
   email                 VARCHAR(255) NOT NULL UNIQUE,
   password_hash         VARCHAR(255) NOT NULL,
   created_at            DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,

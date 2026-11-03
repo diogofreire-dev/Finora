@@ -229,27 +229,27 @@
 
     settings: [
       {
-        selector: '.page-header',
+        selector: '.st-head',
         title: '⚙️ Definições',
-        text: 'Aqui personalizas a tua conta: foto de perfil, tema claro/escuro, notificações, segurança e muito mais.',
+        text: 'Aqui tratas da tua conta: perfil, acesso e aparência.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:first-of-type',
+        selector: '#sec-perfil',
         title: '👤 Perfil',
-        text: 'Actualiza o teu nome, email e foto de perfil. Podes também ligar a tua conta Google para login mais rápido.',
+        text: 'Muda o teu nome e a foto que aparecem no topo da Finora.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:nth-of-type(2)',
+        selector: '#sec-seg',
+        title: '🔒 Acesso à conta',
+        text: 'Muda a palavra-passe ou o email, e liga a tua conta Google. Por segurança, só podes mudar cada um uma vez a cada 30 dias.',
+        position: 'bottom'
+      },
+      {
+        selector: '.st-themes',
         title: '🎨 Aparência',
-        text: 'Muda entre tema claro e escuro conforme a tua preferência. A escolha é guardada automaticamente.',
-        position: 'bottom'
-      },
-      {
-        selector: '.settings-group:last-of-type',
-        title: '🔒 Segurança',
-        text: 'Muda a tua palavra-passe e configura preferências de segurança para manter a tua conta protegida.',
+        text: 'Escolhe o tema claro ou escuro. Fica guardado assim que clicas.',
         position: 'top'
       }
     ],
