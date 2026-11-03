@@ -139,12 +139,12 @@ include __DIR__ . '/../components/sidebar.php';
 const CSRF = <?= json_encode(csrf_token()) ?>;
 const $ = id => document.getElementById(id);
 
-async function callAI(type, message = '') {
+async function callAI(type, message = '', history = []) {
   // O PHP chama a Groq no servidor e devolve só o texto da resposta
   let res, data;
   try {
     res = await fetch('fdata.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
-                                     body: JSON.stringify({ t: type, m: message }) });
+                                     body: JSON.stringify({ t: type, m: message, h: history }) });
     data = await res.json();
   } catch (e) { throw new Error('Sem ligação ao servidor. Tenta outra vez.'); }
   if (data.error) throw new Error(data.error);
@@ -153,11 +153,12 @@ async function callAI(type, message = '') {
 }
 
 // A resposta é texto de fora (um modelo de IA pode ser manipulado), por isso é construída com nós
-// de texto: só **negrito** vira <strong>, e nunca se usa innerHTML com o texto da resposta.
+// de texto: só **negrito** bem fechado (curto, sem * lá dentro) vira <strong>; asteriscos soltos
+// são apagados. Nunca se usa innerHTML com o texto da resposta.
 function richText(parent, text) {
-  text.split(/(\*\*[^*]+\*\*)/g).forEach(part => {
-    if (/^\*\*[^*]+\*\*$/.test(part)) { const b = document.createElement('strong'); b.textContent = part.slice(2, -2); parent.append(b); }
-    else if (part) parent.append(document.createTextNode(part));
+  text.split(/(\*\*[^*\s](?:[^*\n]{0,58}[^*\s])?\*\*)/g).forEach(part => {
+    if (/^\*\*[^*\s](?:[^*\n]{0,58}[^*\s])?\*\*$/.test(part)) { const b = document.createElement('strong'); b.textContent = part.slice(2, -2); parent.append(b); }
+    else if (part) parent.append(document.createTextNode(part.replace(/\*+/g, '')));
   });
   return parent;
 }
@@ -190,6 +191,9 @@ function addMsg(cls, text) {
   return div;
 }
 
+// Conversa até agora (só texto): volta a ser enviada para o assistente perceber o contexto
+const convo = [];
+
 async function ask(q) {
   q = q.trim();
   if (!q) return;
@@ -197,7 +201,11 @@ async function ask(q) {
   $('askInput').disabled = $('askBtn').disabled = true;
   addMsg('user', q);
   const typing = addMsg('ai typing', 'A pensar…');
-  try { const r = await callAI('chat', q); typing.remove(); addMsg('ai', r); }
+  try {
+    const r = await callAI('chat', q, convo.slice(-8));
+    typing.remove(); addMsg('ai', r);
+    convo.push({ r: 'user', c: q }, { r: 'assistant', c: r });
+  }
   catch (e) { typing.remove(); addMsg('err', e.message); }
   finally { $('askInput').disabled = $('askBtn').disabled = false; $('askInput').focus(); }
 }
