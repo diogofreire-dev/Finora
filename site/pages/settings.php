@@ -219,67 +219,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors = [];
         if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
             $errors[] = 'Erro ao receber o ficheiro.';
+        } elseif (!extension_loaded('gd')) {
+            error_log('[settings] Upload de avatar sem a extensão GD');
+            $errors[] = 'O servidor não consegue processar imagens neste momento.';
         } else {
-            $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+            // Só aceitamos os formatos que a GD deste servidor consegue ler (o XAMPP não lê WebP)
+            $readers = ['image/jpeg' => 'imagecreatefromjpeg', 'image/png' => 'imagecreatefrompng',
+                        'image/gif'  => 'imagecreatefromgif',  'image/webp' => 'imagecreatefromwebp'];
+            $readers = array_filter($readers, 'function_exists');
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime = finfo_file($finfo, $file['tmp_name']);
             finfo_close($finfo);
-            if (!in_array($mime, $allowed)) $errors[] = 'Formato inválido. Usa JPEG, PNG, GIF ou WebP.';
-            if ($file['size'] > 3 * 1024 * 1024) $errors[] = 'A imagem não pode ter mais de 3MB.';
+            $names = implode(', ', array_map(fn($m) => strtoupper(substr($m, 6)), array_keys($readers)));
+            if (!isset($readers[$mime])) $errors[] = "Formato não suportado. Usa $names.";
+            if ($file['size'] > 3 * 1024 * 1024) $errors[] = 'A imagem não pode ter mais de 3 MB.';
+            if (!is_dir($avatarDir) || !is_writable($avatarDir)) {
+                error_log("[settings] Pasta de avatares sem permissão de escrita: $avatarDir");
+                $errors[] = 'Não foi possível guardar a imagem. Tenta mais tarde.';
+            }
         }
         if (empty($errors)) {
-            try {
-                // Determinar extensão a partir do MIME
-                $ext = match($mime) {
-                    'image/jpeg' => 'jpg',
-                    'image/png'  => 'png',
-                    'image/gif'  => 'gif',
-                    'image/webp' => 'webp',
-                    default      => 'jpg',
-                };
-                $savePath = $avatarDir . $uid . '.' . $ext;
-
-                // Se GD estiver disponível, faz crop e resize
-                if (extension_loaded('gd')) {
-                    $src = match($mime) {
-                        'image/jpeg' => imagecreatefromjpeg($file['tmp_name']),
-                        'image/png'  => imagecreatefrompng($file['tmp_name']),
-                        'image/gif'  => imagecreatefromgif($file['tmp_name']),
-                        'image/webp' => imagecreatefromwebp($file['tmp_name']),
-                    };
-                    $srcW = imagesx($src); $srcH = imagesy($src);
-                    $size = 300;
-                    $minDim = min($srcW, $srcH);
-                    $cropX = intval(($srcW - $minDim) / 2);
-                    $cropY = intval(($srcH - $minDim) / 2);
-                    $dst = imagecreatetruecolor($size, $size);
-                    imagecopyresampled($dst, $src, 0, 0, $cropX, $cropY, $size, $size, $minDim, $minDim);
-                    $savePath = $avatarDir . $uid . '.jpg';
-                    imagejpeg($dst, $savePath, 88);
-                    imagedestroy($src); imagedestroy($dst);
-                    $ext = 'jpg';
-                } else {
-                    // Sem GD: guardar ficheiro diretamente
-                    move_uploaded_file($file['tmp_name'], $savePath);
-                }
-
-                // Guardar na BD
-                $avatarRel = 'assets/avatars/' . $uid . '.' . $ext;
+            // Recortar ao centro e redimensionar para 300×300. Voltar a codificar a imagem
+            // também descarta qualquer conteúdo escondido no ficheiro original.
+            $src = @$readers[$mime]($file['tmp_name']);
+            $saved = false;
+            if ($src) {
+                $srcW = imagesx($src); $srcH = imagesy($src);
+                $size = 300;
+                $minDim = min($srcW, $srcH);
+                $dst = imagecreatetruecolor($size, $size);
+                imagefill($dst, 0, 0, imagecolorallocate($dst, 255, 255, 255)); // fundo branco para PNG/GIF transparentes
+                imagecopyresampled($dst, $src, 0, 0, intval(($srcW - $minDim) / 2), intval(($srcH - $minDim) / 2), $size, $size, $minDim, $minDim);
+                $saved = imagejpeg($dst, $avatarDir . $uid . '.jpg', 88);
+                imagedestroy($src); imagedestroy($dst);
+            }
+            if ($saved) {
+                $avatarRel = 'assets/avatars/' . $uid . '.jpg';
                 $stmt = $pdo->prepare("UPDATE users SET avatar_path = :av WHERE id = :uid");
                 $stmt->execute([':av' => $avatarRel, ':uid' => $uid]);
                 $user['avatar_path'] = $avatarRel;
-                $message = 'Foto de perfil atualizada!';
+                $message = 'Foto de perfil atualizada.';
                 $messageType = 'success';
-            } catch (Exception $e) {
-                $message = 'Erro ao processar imagem.';
+            } else {
+                error_log('[settings] Falha ao ler ou gravar o avatar do utilizador ' . $uid);
+                $message = 'Não foi possível processar a imagem. Experimenta outra.';
                 $messageType = 'danger';
             }
-        } else { $message = implode('<br>', $errors); $messageType = 'danger'; }
+        } else { $message = implode('<br>', array_map('htmlspecialchars', $errors)); $messageType = 'danger'; }
     }
 
     elseif ($action === 'remove_avatar') {
-        $oldPath = $avatarDir . $uid . '.jpg';
-        if (file_exists($oldPath)) @unlink($oldPath);
+        foreach (glob($avatarDir . $uid . '.*') ?: [] as $oldPath) @unlink($oldPath);
         $stmt = $pdo->prepare("UPDATE users SET avatar_path = NULL WHERE id = :uid");
         $stmt->execute([':uid' => $uid]);
         $user['avatar_path'] = null;
@@ -647,7 +637,7 @@ include __DIR__ . '/../components/sidebar.php';
         <div style="display:flex;gap:8px;flex-shrink:0;align-items:center">
           <form method="post" enctype="multipart/form-data" id="avatarForm"><?= csrf_field() ?>
             <input type="hidden" name="action" value="upload_avatar">
-            <input type="file" id="avatarInput" name="avatar" accept="image/*" style="display:none">
+            <input type="file" id="avatarInput" name="avatar" accept="image/jpeg,image/png,image/gif" style="display:none">
           </form>
           <?php if (!empty($user['avatar_path'])): ?>
           <form method="post" id="removeAvatarForm"><?= csrf_field() ?>

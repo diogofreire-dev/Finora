@@ -1,0 +1,9 @@
+# Pasta de fotos de perfil enviadas pelos utilizadores.
+# Só serve imagens e nunca executa código, mesmo que alguém consiga enviar um ficheiro malicioso.
+<IfModule php_module>
+    php_flag engine off
+</IfModule>
+<FilesMatch "\.(php\d?|phtml|phar|pl|py|cgi|sh)$">
+    Require all denied
+</FilesMatch>
+Options -Indexes -ExecCGI

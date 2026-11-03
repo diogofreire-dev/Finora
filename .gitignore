@@ -6,6 +6,7 @@ node_modules/
 .env
 /config/nif_pt_config.php
 site/test.php
-/site/assets/avatars/
+/site/assets/avatars/*
+!/site/assets/avatars/.htaccess
 /config/google_oauth.php
 /config/brevo.php
