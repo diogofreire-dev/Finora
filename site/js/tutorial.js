@@ -37,28 +37,22 @@
 
     cards: [
       {
-        selector: '.page-header',
-        title: '💳 Os Teus Cartões',
-        text: 'Esta é a página de gestão de cartões. Aqui podes ver todos os teus cartões de débito, crédito e contas digitais.',
+        selector: '.cd-summary',
+        title: '💳 Os teus cartões',
+        text: 'Quanto ainda tens disponível no total, somando os limites de todos os cartões ativos.',
         position: 'bottom'
       },
       {
-        selector: '.page-header .btn-s-primary',
-        title: '➕ Adicionar Cartão',
-        text: 'Clica aqui para adicionar um novo cartão. Podes escolher o banco, cor, limite e saldo inicial.',
+        selector: '.cd-head .btn-s-primary',
+        title: '➕ Adicionar cartão',
+        text: 'Adiciona um cartão novo: escolhe o banco, a cor e o limite.',
         position: 'bottom'
       },
       {
-        selector: '.stats-bar',
-        title: '📊 Resumo dos Cartões',
-        text: 'Aqui vês um resumo rápido: total de saldo disponível, limite total e gastos do mês em todos os cartões.',
-        position: 'bottom'
-      },
-      {
-        selector: '.card-grid',
-        title: '🗂️ Lista de Cartões',
-        text: 'Cada cartão mostra o saldo disponível, percentagem de utilização e transações recentes. Clica num cartão para editar ou ver detalhes.',
-        position: 'top'
+        selector: '.cd-tile',
+        title: '🗂️ Cada cartão',
+        text: 'Vês o disponível, a utilização do limite e o número de transações. "Ver transações" abre a lista já filtrada por este cartão.',
+        position: 'right'
       }
     ],
 
