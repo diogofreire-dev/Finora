@@ -112,6 +112,12 @@
         position: 'bottom'
       },
       {
+        selector: '#calendario',
+        title: 'Calendário',
+        text: 'O mês inteiro, com os pagamentos que se repetem já nos dias certos. Os dias mais carregados ficam mais dourados. Toca num dia para o veres em detalhe ou criar um lembrete nessa data.',
+        position: 'bottom'
+      },
+      {
         selector: '.lm-group',
         title: 'Próximos pagamentos',
         text: 'Os pagamentos aparecem por ordem de data: em atraso, nos próximos 7 dias e mais tarde.',
