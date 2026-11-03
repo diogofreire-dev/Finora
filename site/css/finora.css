@@ -279,3 +279,8 @@ body { font-family: var(--fn-font-ui); color: var(--fn-text); }
 [data-theme="dark"] .modal .recur-option input:checked + .recur-label,
 [data-theme="dark"] .modal .period-option input:checked + .period-label,
 [data-theme="dark"] .modal .cat-option input:checked + .cat-label { color: #c9d4ef; background: rgba(var(--fn-accent-rgb), .22) !important; }
+
+/* Seletores: o padding acima tirava o espaço da seta do Bootstrap e o texto ficava por baixo dela */
+.main-content .form-select,
+.main-content .m-form .form-select,
+.modal .form-select { padding-right: 38px; background-position: right 12px center; }

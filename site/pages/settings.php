@@ -289,7 +289,7 @@ $currentTheme = $settings['theme'] ?? 'light';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=5">
+  <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -580,7 +580,7 @@ $currentTheme = $settings['theme'] ?? 'light';
     .linked-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 2px; }
     .linked-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=4">
+  <link rel="stylesheet" href="../css/finora.css?v=5">
 </head>
 <body>
 <div class="app-layout">
