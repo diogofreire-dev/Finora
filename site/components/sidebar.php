@@ -258,6 +258,6 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 </script>
 
 <?php /* ── Tutorial System ── */ ?>
-<link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css">
+<link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=2">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js?v=15"></script>
+<script src="<?= $_sp ?>js/tutorial.js?v=16"></script>
