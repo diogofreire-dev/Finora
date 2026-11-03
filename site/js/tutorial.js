@@ -127,21 +127,21 @@
 
     analytics: [
       {
-        selector: '.page-header',
-        title: '📈 Análise Financeira',
-        text: 'A página de Análise oferece gráficos detalhados para perceberes os teus padrões de gasto ao longo do tempo.',
+        selector: '.an-controls',
+        title: '📅 Ano e cartão',
+        text: 'Usa as setas para mudar de ano e escolhe um cartão para veres só os gastos dele.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:first-of-type',
-        title: '📅 Período de Análise',
-        text: 'Seleciona o período que queres analisar — semana, mês, trimestre ou ano — para ver a evolução dos teus gastos.',
+        selector: '.an-hero',
+        title: '📈 O teu ano',
+        text: 'Quanto gastaste e a comparação com o mesmo período do ano anterior — no ano atual só se comparam os meses que já passaram.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:nth-of-type(2)',
-        title: '📊 Gráficos',
-        text: 'Os gráficos mostram a distribuição de gastos por categoria, evolução mensal e comparação com períodos anteriores.',
+        selector: '#monthChart',
+        title: '📊 Mês a mês',
+        text: 'Cada mês deste ano ao lado do mesmo mês do ano de comparação. Passa o rato por cima para ver os valores.',
         position: 'top'
       }
     ],

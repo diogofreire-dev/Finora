@@ -77,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=5">
+  <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
     body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg-primary); color:var(--text-primary); }
     .page-header { display:flex; align-items:center; gap:14px; margin-bottom:28px; padding-top:8px; }
@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     .scan-wrapper { max-width:780px; margin:0 auto; }
     @media(max-width:600px) { .form-row { grid-template-columns:1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=4">
+  <link rel="stylesheet" href="../css/finora.css?v=5">
 </head>
 <body>
 <div class="app-layout">

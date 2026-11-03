@@ -99,7 +99,7 @@ $activePage='persona'; $sidebarPrefix='../';
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=5">
+  <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background-color:var(--bg-primary); color:var(--text-primary); }
@@ -157,7 +157,7 @@ $activePage='persona'; $sidebarPrefix='../';
     @media(max-width:900px) { .metrics-grid { grid-template-columns:repeat(3,1fr); } .two-col { grid-template-columns:1fr !important; } }
     @media(max-width:560px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=4">
+  <link rel="stylesheet" href="../css/finora.css?v=5">
 </head>
 <body>
 <div class="app-layout">

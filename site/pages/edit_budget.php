@@ -60,7 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <link rel="stylesheet" href="../css/sidebar.css?v=5">
+  <link rel="stylesheet" href="../css/sidebar.css?v=6">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
     .settings-wrapper { max-width: 700px; margin: 0 auto; padding: 0 16px 60px; }
@@ -96,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .period-label i { font-size: 22px; }
     .period-label span { font-size: 12px; font-weight: 600; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=4">
+  <link rel="stylesheet" href="../css/finora.css?v=5">
 </head>
 <body>
 <div class="app-layout">
