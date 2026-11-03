@@ -1,5 +1,6 @@
-DROP DATABASE IF EXISTS pap;
-CREATE DATABASE pap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+-- Esquema completo da Finora. Seguro de correr numa base que já existe: nunca apaga nada
+-- (CREATE ... IF NOT EXISTS). Para recomeçar do zero, apaga a base à mão, de propósito.
+CREATE DATABASE IF NOT EXISTS pap CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE pap;
 
 -- 1. USERS
@@ -31,10 +32,10 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_path           VARCHAR(255) NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_email_verified       ON users(email_verified);
-CREATE INDEX idx_verification_token   ON users(verification_token);
-CREATE INDEX idx_password_reset_token ON users(password_reset_token);
-CREATE INDEX idx_google_id            ON users(google_id);
+CREATE INDEX IF NOT EXISTS idx_email_verified       ON users(email_verified);
+CREATE INDEX IF NOT EXISTS idx_verification_token   ON users(verification_token);
+CREATE INDEX IF NOT EXISTS idx_password_reset_token ON users(password_reset_token);
+CREATE INDEX IF NOT EXISTS idx_google_id            ON users(google_id);
 
 -- 2. CARDS
 CREATE TABLE IF NOT EXISTS cards (
@@ -44,12 +45,13 @@ CREATE TABLE IF NOT EXISTS cards (
   limit_amount DECIMAL(10,2)   DEFAULT 0,
   balance      DECIMAL(10,2)   DEFAULT 0,
   color        VARCHAR(20)     DEFAULT 'purple',
+  bank         VARCHAR(50)     DEFAULT '',             -- chave do banco (revolut, cgd, …) para o aspeto do cartão
   active       TINYINT(1)      DEFAULT 1,
   created_at   DATETIME        DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_cards_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_cards_user_active ON cards(user_id, active);
+CREATE INDEX IF NOT EXISTS idx_cards_user_active ON cards(user_id, active);
 
 -- 3. TRANSACTIONS
 CREATE TABLE IF NOT EXISTS transactions (
@@ -60,14 +62,17 @@ CREATE TABLE IF NOT EXISTS transactions (
   description      VARCHAR(255),
   category         VARCHAR(100)   DEFAULT NULL,
   transaction_date DATE           NOT NULL,
+  source           VARCHAR(20)    DEFAULT NULL,        -- origem: qr, invoice, csv…
+  source_id        INT            DEFAULT NULL,        -- NIF (qr) ou id da linha de origem
   created_at       DATETIME       DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
   CONSTRAINT fk_transactions_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_transaction_date       ON transactions(transaction_date);
-CREATE INDEX idx_transactions_user_date ON transactions(user_id, transaction_date);
-CREATE INDEX idx_transactions_category  ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transaction_date       ON transactions(transaction_date);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, transaction_date);
+CREATE INDEX IF NOT EXISTS idx_transactions_category  ON transactions(category);
+CREATE INDEX IF NOT EXISTS idx_transactions_card_date ON transactions(card_id, transaction_date);
 
 -- 4. USER_SETTINGS
 CREATE TABLE IF NOT EXISTS user_settings (
@@ -102,7 +107,7 @@ CREATE TABLE IF NOT EXISTS budgets (
   CONSTRAINT fk_budgets_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_budgets_user_active ON budgets(user_id, active);
+CREATE INDEX IF NOT EXISTS idx_budgets_user_active ON budgets(user_id, active);
 
 -- 6. BUDGET_ALERTS
 CREATE TABLE IF NOT EXISTS budget_alerts (
@@ -118,7 +123,7 @@ CREATE TABLE IF NOT EXISTS budget_alerts (
   CONSTRAINT fk_alerts_user   FOREIGN KEY (user_id)   REFERENCES users(id)   ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_alerts_user_unack ON budget_alerts(user_id, acknowledged);
+CREATE INDEX IF NOT EXISTS idx_alerts_user_unack ON budget_alerts(user_id, acknowledged);
 
 -- 7. PAYMENT_REMINDERS
 CREATE TABLE IF NOT EXISTS payment_reminders (
@@ -132,6 +137,7 @@ CREATE TABLE IF NOT EXISTS payment_reminders (
   anchor_day             TINYINT UNSIGNED NULL,          -- dia original (mensais/anuais não escorregam)
   recurrence             ENUM('once','weekly','monthly','yearly') NOT NULL DEFAULT 'once',
   active                 TINYINT(1)    DEFAULT 1,
+  paid                   TINYINT(1)    DEFAULT 0,      -- pagamento confirmado (lembretes únicos)
   notify_days_before     INT           DEFAULT 3,
   notify_method          ENUM('email','site','both') DEFAULT 'email',
   last_notification_sent DATETIME      NULL,
@@ -143,8 +149,8 @@ CREATE TABLE IF NOT EXISTS payment_reminders (
   CONSTRAINT fk_reminders_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_reminders_user_due ON payment_reminders(user_id, due_date);
-CREATE INDEX idx_reminders_active   ON payment_reminders(active);
+CREATE INDEX IF NOT EXISTS idx_reminders_user_due ON payment_reminders(user_id, due_date);
+CREATE INDEX IF NOT EXISTS idx_reminders_active   ON payment_reminders(active);
 
 -- 8. REMINDER_HISTORY
 CREATE TABLE IF NOT EXISTS reminder_history (
@@ -159,8 +165,32 @@ CREATE TABLE IF NOT EXISTS reminder_history (
   CONSTRAINT fk_history_transaction FOREIGN KEY (transaction_id) REFERENCES transactions(id)       ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_history_reminder  ON reminder_history(reminder_id);
-CREATE INDEX idx_history_paid_date ON reminder_history(paid_date);
+CREATE INDEX IF NOT EXISTS idx_history_reminder  ON reminder_history(reminder_id);
+CREATE INDEX IF NOT EXISTS idx_history_paid_date ON reminder_history(paid_date);
+
+-- Faturas importadas linha a linha (usado em transactions.php)
+CREATE TABLE IF NOT EXISTS invoices (
+  id          INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id     INT UNSIGNED NOT NULL,
+  name        VARCHAR(255) NOT NULL,
+  file_path   VARCHAR(500) DEFAULT NULL,
+  imported    TINYINT(1)   DEFAULT 0,
+  imported_at DATETIME     DEFAULT NULL,
+  created_at  DATETIME     DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_invoices_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS invoice_lines (
+  id               INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  invoice_id       INT UNSIGNED  NOT NULL,
+  description      VARCHAR(500)  NOT NULL,
+  amount           DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  category         VARCHAR(100)  DEFAULT NULL,
+  transaction_date DATE          DEFAULT NULL,
+  imported         TINYINT(1)    DEFAULT 0,
+  transaction_id   INT UNSIGNED  DEFAULT NULL,
+  CONSTRAINT fk_invoice_lines_invoice FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- 9. NOTIFICATIONS
 CREATE TABLE IF NOT EXISTS notifications (
@@ -178,9 +208,9 @@ CREATE TABLE IF NOT EXISTS notifications (
   CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_notifications_user_unread ON notifications(user_id, is_read);
-CREATE INDEX idx_notifications_type        ON notifications(type);
-CREATE INDEX idx_notifications_created     ON notifications(created_at);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_unread ON notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_notifications_type        ON notifications(type);
+CREATE INDEX IF NOT EXISTS idx_notifications_created     ON notifications(created_at);
 
 -- 10. NIF_EMPRESAS
 CREATE TABLE IF NOT EXISTS nif_empresas (
@@ -194,8 +224,8 @@ CREATE TABLE IF NOT EXISTS nif_empresas (
   PRIMARY KEY (nif)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_nif_fonte    ON nif_empresas(fonte);
-CREATE INDEX idx_nif_verified ON nif_empresas(verified);
+CREATE INDEX IF NOT EXISTS idx_nif_fonte    ON nif_empresas(fonte);
+CREATE INDEX IF NOT EXISTS idx_nif_verified ON nif_empresas(verified);
 
 -- 11. NIF_CACHE  (cache de pesquisas ao nif.pt)
 CREATE TABLE IF NOT EXISTS nif_cache (
@@ -217,7 +247,7 @@ CREATE TABLE IF NOT EXISTS future_goals (
   CONSTRAINT fk_goals_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_goals_user ON future_goals(user_id);
+CREATE INDEX IF NOT EXISTS idx_goals_user ON future_goals(user_id);
 
 -- 13. INVESTMENTS  (posições registadas à mão; preços automáticos numa fase seguinte)
 CREATE TABLE IF NOT EXISTS investments (
@@ -234,7 +264,7 @@ CREATE TABLE IF NOT EXISTS investments (
   CONSTRAINT fk_investments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
-CREATE INDEX idx_investments_user ON investments(user_id);
+CREATE INDEX IF NOT EXISTS idx_investments_user ON investments(user_id);
 
 -- 14. AI_REQUESTS  (limite de pedidos ao assistente IA por utilizador)
 CREATE TABLE IF NOT EXISTS ai_requests (
