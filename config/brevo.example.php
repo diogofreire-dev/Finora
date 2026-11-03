@@ -12,6 +12,6 @@
 define('BREVO_API_KEY', 'SUA_CHAVE_BREVO');
 
 // URL base usado nos links dos emails (sem barra no fim)
-// Local:     http://localhost/FreeCard/site
+// Local:     http://localhost/Finora/site
 // Produção:  https://freecard.infinityfreeapp.com/site
-define('APP_URL', 'http://localhost/FreeCard/site');
+define('APP_URL', 'http://localhost/Finora/site');

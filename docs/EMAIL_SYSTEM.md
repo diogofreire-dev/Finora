@@ -116,13 +116,13 @@ crontab -e
 ### **Windows (Agendador de Tarefas):**
 ```
 Programa: C:\xampp\php\php.exe
-Argumentos: C:\xampp\htdocs\PAP\FreeCard\cron\send_reminders.php
+Argumentos: C:\xampp\htdocs\Finora\cron\send_reminders.php
 Repetir diariamente às 09:00
 ```
 
 ### **Testar Localmente:**
 ```bash
-cd C:\xampp\htdocs\PAP\FreeCard
+cd C:\xampp\htdocs\Finora
 php cron/send_reminders.php
 ```
 

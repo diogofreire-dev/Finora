@@ -21,7 +21,7 @@ AGORA:
 
 PASSO 1: Criar um novo lembrete
 ─────────────────────────────────
-1. Vai a http://localhost/PAP/FreeCard/site/reminders.php
+1. Vai a http://localhost/Finora/site/reminders.php
 2. Clica em "+ Novo Lembrete"
 3. Preenche:
    - Nome: "Netflix"

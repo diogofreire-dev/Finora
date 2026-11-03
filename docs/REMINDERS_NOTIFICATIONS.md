@@ -111,12 +111,12 @@ O cron job agora registra detalhadamente:
 
 1. **Testar com o cron job:**
    ```bash
-   php C:\xampp\htdocs\PAP\FreeCard\cron\send_reminders.php
+   php C:\xampp\htdocs\Finora\cron\send_reminders.php
    ```
 
 2. **Verificar logs:**
    ```
-   C:\xampp\htdocs\PAP\FreeCard\cron\send_reminders.log
+   C:\xampp\htdocs\Finora\cron\send_reminders.log
    ```
 
 3. **Configurar cron automático no servidor:**
