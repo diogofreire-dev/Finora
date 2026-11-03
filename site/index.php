@@ -11,15 +11,15 @@ header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
 $features = [
-    ['cat' => 1, 'icon' => 'credit-card-2-front', 'title' => 'Cartões',        'text' => 'Todos os teus cartões num só sítio, com o limite e o que ainda tens disponível.'],
-    ['cat' => 4, 'icon' => 'receipt',             'title' => 'Transações',     'text' => 'Regista cada gasto com categoria e cartão. Pesquisa por texto, mês ou categoria.'],
-    ['cat' => 3, 'icon' => 'qr-code-scan',        'title' => 'Ler fatura',     'text' => 'Aponta a câmara ao QR de uma fatura portuguesa e o gasto fica registado pelo NIF.'],
-    ['cat' => 2, 'icon' => 'piggy-bank',          'title' => 'Orçamentos',     'text' => 'Define um limite por categoria e vê, dia a dia, quanto ainda podes gastar.'],
-    ['cat' => 7, 'icon' => 'bar-chart-line',      'title' => 'Análise',        'text' => 'Para onde foi o dinheiro este mês, comparado com o anterior.'],
-    ['cat' => 5, 'icon' => 'bell',                'title' => 'Lembretes',      'text' => 'Rendas, subscrições e prestações numa linha do tempo, com aviso antes da data.'],
-    ['cat' => 6, 'icon' => 'flag',                'title' => 'Metas',          'text' => 'Escolhe um objetivo de poupança e vê se o ritmo atual te leva lá a tempo.'],
-    ['cat' => 8, 'icon' => 'graph-up-arrow',      'title' => 'Investimentos',  'text' => 'Regista as tuas posições e acompanha quanto valem.'],
-    ['cat' => 7, 'icon' => 'stars',               'title' => 'Assistente',     'text' => 'Faz perguntas sobre os teus gastos e recebe sugestões concretas para poupar.'],
+    ['icon' => 'credit-card-2-front', 'title' => 'Cartões',             'text' => 'Todos os teus cartões num só sítio, com o limite e o que ainda tens disponível.'],
+    ['icon' => 'receipt',             'title' => 'Transações',          'text' => 'Regista cada gasto com categoria e cartão. Pesquisa por texto, mês ou categoria.'],
+    ['icon' => 'qr-code-scan',        'title' => 'Ler fatura',          'text' => 'Aponta a câmara ao QR de uma fatura portuguesa e o gasto fica registado pelo NIF.'],
+    ['icon' => 'pie-chart',           'title' => 'Orçamentos',          'text' => 'Define um limite por categoria e vê, dia a dia, quanto ainda podes gastar.'],
+    ['icon' => 'piggy-bank',          'title' => 'Poupanças e metas',   'text' => 'Põe dinheiro de lado num mealheiro e vê se chegas a cada meta a tempo.'],
+    ['icon' => 'calendar-check',      'title' => 'Lembretes',           'text' => 'Rendas e subscrições num calendário, com aviso antes de cada pagamento.'],
+    ['icon' => 'bar-chart-line',      'title' => 'Análise',             'text' => 'Para onde foi o dinheiro este mês, comparado com o anterior.'],
+    ['icon' => 'graph-up-arrow',      'title' => 'Investimentos',       'text' => 'Regista as tuas posições e acompanha quanto valem.'],
+    ['icon' => 'stars',               'title' => 'Assistente',          'text' => 'Faz perguntas sobre os teus gastos e recebe sugestões concretas para poupar.'],
 ];
 ?>
 <!doctype html>
@@ -57,7 +57,7 @@ $features = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=1">
+  <link rel="stylesheet" href="css/landing.css?v=2">
   <link rel="modulepreload" href="js/lib/three/three.module.min.js">
   <script type="importmap">
   { "imports": { "three": "./js/lib/three/three.module.min.js", "three/addons/": "./js/lib/three/addons/" } }
@@ -112,7 +112,7 @@ $features = [
       </div>
       <ul class="ln-features">
 <?php foreach ($features as $f): ?>
-        <li style="--tone: var(--cat-<?= $f['cat'] ?>)">
+        <li>
           <span class="ln-ico"><i class="bi bi-<?= $f['icon'] ?>" aria-hidden="true"></i></span>
           <h3><?= htmlspecialchars($f['title']) ?></h3>
           <p><?= htmlspecialchars($f['text']) ?></p>
