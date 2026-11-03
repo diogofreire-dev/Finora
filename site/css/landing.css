@@ -132,8 +132,11 @@ section[id] { scroll-margin-top: 72px; }
 .ln-ico {
   grid-row: span 2; width: 48px; height: 48px; border-radius: 14px;
   display: grid; place-items: center; font-size: 21px;
-  background: var(--tone); color: #fff;
+  /* Só as cores da marca: azul-marinho no claro, dourado no escuro */
+  background: color-mix(in srgb, var(--ln-ink) 8%, var(--ln-surface)); color: var(--ln-ink);
+  border: 1px solid color-mix(in srgb, var(--ln-ink) 12%, transparent);
 }
+[data-theme="dark"] .ln-ico { background: rgba(226, 176, 74, .12); color: var(--ln-gold-hi); border-color: rgba(226, 176, 74, .25); }
 .ln-features h3 { font: 700 19px/1.3 var(--ln-display); margin-top: 2px; }
 .ln-features p { margin-top: 4px; color: var(--ln-muted); font-size: 15.5px; }
 
