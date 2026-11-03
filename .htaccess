@@ -8,7 +8,7 @@ Options -Indexes
 RedirectMatch 404 /\.
 
 # Pastas internas: configuração, scripts de linha de comandos, BD, dependências e documentação
-RedirectMatch 404 ^/(.*/)?(config|cron|database|vendor|docs|aprendizagem)(/|$)
+RedirectMatch 404 ^/(.*/)?(config|cron|database|vendor|docs|aprendizagem|design)(/|$)
 
 # Ficheiros do Composer e imagens/ficheiros de desenvolvimento da raiz
 <FilesMatch "^(composer\.(json|lock)|ModeloER\.png|README\.md|LICENSE)$">
