@@ -226,10 +226,22 @@
 
     persona: [
       {
-        selector: '.page-header',
-        title: '🧠 Personalidade Financeira',
-        text: 'Descobre o teu perfil financeiro com base nos teus hábitos de gasto. A IA analisa as tuas transações e dá-te insights personalizados.',
+        selector: '#psName',
+        title: '🧠 A tua personalidade',
+        text: 'O teu estilo de gastar, calculado a partir das transações dos últimos 90 dias. Precisa de pelo menos 10 transações.',
         position: 'bottom'
+      },
+      {
+        selector: '.ps-why',
+        title: '🔎 Porquê',
+        text: 'Cada traço tem uma pontuação de 0 a 100 e os números que a justificam, para veres de onde vem a conclusão.',
+        position: 'bottom'
+      },
+      {
+        selector: '#tipsTitle',
+        title: '💡 Para ti',
+        text: 'Três ideias pensadas para o teu estilo. Volta no próximo mês: a personalidade muda com os hábitos.',
+        position: 'top'
       }
     ],
 
