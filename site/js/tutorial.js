@@ -64,34 +64,28 @@
 
     transactions: [
       {
-        selector: '.page-header',
-        title: '↔️ Transações',
-        text: 'Aqui encontras todas as transações registadas. Podes ordenar, filtrar e exportar os teus movimentos financeiros.',
+        selector: '.tx-month',
+        title: '📅 Mês',
+        text: 'Usa as setas para mudar de mês. Por baixo vês quantas transações fizeste, o total e a média.',
         position: 'bottom'
       },
       {
-        selector: '.page-header .btn-s-primary',
-        title: '➕ Nova Transação',
-        text: 'Clica aqui para registar uma nova despesa ou receita. Podes associar a um cartão, definir categoria e adicionar notas.',
+        selector: '.tx-filters',
+        title: '🔍 Pesquisa e filtros',
+        text: 'Pesquisa pela descrição, escolhe um cartão ou toca numa categoria para veres só esses gastos.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:first-of-type',
-        title: '📋 Resumo do Período',
-        text: 'Este painel mostra o total de transações, valor gasto e média por transação no período selecionado.',
-        position: 'bottom'
-      },
-      {
-        selector: '.filter-body',
-        title: '🔍 Filtros',
-        text: 'Usa os filtros para encontrar transações por mês, categoria ou cartão específico. Muito útil para analisar gastos pontuais.',
-        position: 'bottom'
-      },
-      {
-        selector: '.settings-group:last-of-type',
-        title: '📄 Lista de Transações',
-        text: 'Aqui vês todas as transações filtradas. Podes editar ou eliminar qualquer movimento diretamente desta lista.',
+        selector: '.tx-day',
+        title: '📄 Transações por dia',
+        text: 'As transações aparecem agrupadas por dia, com o total de cada dia. Usa o lápis para editar ou o caixote para apagar.',
         position: 'top'
+      },
+      {
+        selector: '.app-header-btn-primary',
+        title: '➕ Nova transação',
+        text: 'Este botão está sempre no cabeçalho, em qualquer página.',
+        position: 'bottom'
       }
     ],
 
