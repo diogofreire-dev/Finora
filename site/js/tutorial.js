@@ -205,15 +205,21 @@
 
     ai: [
       {
-        selector: '.page-header',
-        title: '🤖 Assistente IA',
-        text: 'O teu assistente financeiro inteligente! Faz perguntas sobre os teus gastos, pede sugestões de poupança ou análise de categorias.',
+        selector: '#insTitle',
+        title: '💡 O teu mês',
+        text: 'Carrega em "Gerar" e o assistente aponta três coisas que se destacam nos teus gastos deste mês.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group',
-        title: '💬 Conversa com a IA',
-        text: 'Escreve na caixa de texto e o assistente analisa os teus dados reais para dar respostas personalizadas. Experimenta perguntar: "Quanto gastei este mês em alimentação?"',
+        selector: '#savTitle',
+        title: '🐷 Onde poupar',
+        text: 'Sugestões concretas de poupança, com valores tirados das tuas transações.',
+        position: 'bottom'
+      },
+      {
+        selector: '#chatTitle',
+        title: '💬 Pergunta',
+        text: 'Escreve uma pergunta ou toca numa das sugestões. As respostas usam só os teus dados.',
         position: 'top'
       }
     ],
