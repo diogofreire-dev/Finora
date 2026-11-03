@@ -43,6 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ->execute([':u' => $uid, ':g' => $goalId, ':a' => $kind === 'out' ? -$amount : $amount, ':n' => $note !== '' ? $note : null, ':d' => $date]);
             $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_eur($amount) . '.' : 'Boa! Puseste ' . fmt_eur($amount) . ' de lado.'];
             if ($kind === 'in') $_SESSION['savings_drop'] = true;   // moeda a cair no mealheiro
+            if ($kind === 'in') {                                   // novo marco? avisa logo, não só no dia seguinte
+                require_once __DIR__ . '/../helpers/notifications.php';
+                if (notif_prefs($pdo, $uid)['savings_milestone']) notif_savings_milestone($pdo, $uid);
+            }
         }
     } elseif ($action === 'delete') {
         $del = $pdo->prepare('DELETE FROM savings WHERE id = :id AND user_id = :u');

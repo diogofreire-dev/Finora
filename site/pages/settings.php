@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/EmailService.php';
 require_once __DIR__ . '/../helpers/theme_helper.php';
 require_once __DIR__ . '/../helpers/password_rules.php';
+require_once __DIR__ . '/../helpers/notifications.php';
 $uid = $_SESSION['user_id'] ?? null;
 
 // Iguais ao login: errar a palavra-passe aqui conta para o mesmo bloqueio,
@@ -83,7 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'update_notifications') {
             $on = isset($_POST['notifications']) ? 1 : 0;
             $pdo->prepare("UPDATE user_settings SET notifications = :n WHERE user_id = :uid")->execute([':n' => $on, ':uid' => $uid]);
-            $flash = ['success', $on ? 'Alertas dos cartões ligados.' : 'Alertas dos cartões desligados.'];
+            $flash = ['success', $on ? 'Notificações ligadas.' : 'Notificações desligadas.'];
+            $open  = 'notificacoes';
+        }
+
+        elseif ($action === 'update_notif_prefs') {
+            // Só os tipos conhecidos (lista fixa) — qualquer outra chave no pedido é ignorada
+            $prefs = ['budget_email' => isset($_POST['budget_email'])];
+            foreach (array_keys(NOTIF_TYPES) as $t) $prefs[$t] = isset($_POST['t'][$t]);
+            $pdo->prepare("UPDATE user_settings SET notif_prefs = :p WHERE user_id = :uid")->execute([':p' => json_encode($prefs), ':uid' => $uid]);
+            $flash = ['success', 'Preferências das notificações guardadas.'];
+            $open  = 'notificacoes';
         }
 
         elseif ($action === 'change_username') {
@@ -233,7 +244,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $_SESSION['flash_settings'] = [$flash, $open];
-    header('Location: settings.php');
+    header('Location: settings.php' . ($open === 'notificacoes' ? '#notificacoes' : ''));
     exit;
 }
 
@@ -349,6 +360,12 @@ $since        = strtotime($user['created_at']);
       .st-form .grid2 { grid-template-columns: 1fr; }
       .st-themes { gap: 10px; padding: 16px; }
     }
+    /* Preferências das notificações */
+    .st-prefs { padding: 4px 8px 10px; border-top: 1px solid var(--fn-line); }
+    .st-pref { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 12px; cursor: pointer; margin: 0; font-size: 15px; color: var(--fn-text); }
+    .st-pref:hover { background: var(--fn-paper); }
+    .st-pref small { display: block; font-size: 13px; color: var(--fn-muted); }
+    .st-pref .app-notif-ico { width: 32px; height: 32px; border-radius: 10px; font-size: 14px; }
   </style>
   <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
@@ -572,17 +589,41 @@ include __DIR__ . '/../components/sidebar.php';
         <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary">Guardar tema</button></div></noscript>
       </form>
 
+  </section>
+
+  <?php $np = notif_prefs($pdo, (int) $uid); ?>
+  <section class="pg-card" id="notificacoes" style="--tone: var(--cat-4)" aria-labelledby="sec-notif">
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bell"></i></span><div><h2 id="sec-notif">Notificações</h2><p>O que aparece no sino do cabeçalho. A Finora verifica uma vez por dia.</p></div></header>
       <form method="post" id="notifForm" class="st-row">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_notifications">
-        <span class="pg-ico sm" style="--tone:var(--cat-2)" aria-hidden="true"><i class="bi bi-bell"></i></span>
+        <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-bell"></i></span>
         <div class="pg-grow">
-          <label class="st-label" for="notifications">Alertas dos cartões</label>
-          <p class="st-sub" id="notifHelp">Avisa-te quando um cartão se aproxima do limite.</p>
+          <label class="st-label" for="notifications">Notificações</label>
+          <p class="st-sub" id="notifHelp">Desliga para deixares de receber todos os avisos (no sino e por email).</p>
         </div>
         <input type="checkbox" role="switch" class="st-switch" id="notifications" name="notifications" aria-describedby="notifHelp" <?= !empty($settings['notifications']) ? 'checked' : '' ?>>
         <noscript><button type="submit" class="btn-s">Guardar</button></noscript>
       </form>
+      <?php if (!empty($settings['notifications'])): ?>
+      <form method="post" id="notifPrefsForm" class="st-prefs">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="update_notif_prefs">
+        <?php foreach (NOTIF_TYPES as $t => [$tLabel, $tIcon, $tTone]): ?>
+          <label class="st-pref">
+            <span class="app-notif-ico tone-<?= $tTone ?>" aria-hidden="true"><i class="bi bi-<?= $tIcon ?>"></i></span>
+            <span class="pg-grow"><?= htmlspecialchars($tLabel) ?></span>
+            <input type="checkbox" role="switch" class="st-switch" name="t[<?= $t ?>]" <?= $np[$t] ? 'checked' : '' ?>>
+          </label>
+        <?php endforeach; ?>
+        <label class="st-pref">
+          <span class="app-notif-ico tone-cat-1" aria-hidden="true"><i class="bi bi-envelope"></i></span>
+          <span class="pg-grow">Também por email: alertas de orçamento<small>Os lembretes de pagamento têm o seu próprio "Método" em cada lembrete.</small></span>
+          <input type="checkbox" role="switch" class="st-switch" name="budget_email" <?= $np['budget_email'] ? 'checked' : '' ?>>
+        </label>
+        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary">Guardar preferências</button></div></noscript>
+      </form>
+      <?php endif; ?>
   </section>
 
   <p class="st-foot">Membro desde <?= date('j', $since) . ' ' . $months[(int) date('n', $since) - 1] . ' ' . date('Y', $since) ?> · Finora 2.0.0</p>
@@ -600,8 +641,9 @@ document.querySelectorAll('#themeForm input[name="theme"]').forEach(r => r.addEv
   document.getElementById('themeForm').submit();
 }));
 
-// Alertas: grava ao mudar o interruptor
+// Notificações: grava ao mudar qualquer interruptor
 document.getElementById('notifications').addEventListener('change', () => document.getElementById('notifForm').submit());
+document.getElementById('notifPrefsForm')?.addEventListener('change', (e) => e.currentTarget.submit());
 
 // Foto: envia assim que escolhes o ficheiro
 document.getElementById('avatarInput').addEventListener('change', function () {

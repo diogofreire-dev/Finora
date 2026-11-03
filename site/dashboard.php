@@ -9,14 +9,12 @@ $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
-$stmt = $pdo->prepare("SELECT notifications FROM user_settings WHERE user_id = :uid");
-$stmt->execute([':uid' => $uid]);
-$userSettings = $stmt->fetch();
-$notificationsEnabled = $userSettings['notifications'] ?? 1;
-
 if (!$uid) { header('Location: auth/login.php'); exit; }
 
-if ($notificationsEnabled) {
+// Emails de alerta de orçamento: só com as notificações ligadas e a opção "Também por email" ativa
+require_once __DIR__ . '/helpers/notifications.php';
+$notifPrefs = notif_prefs($pdo, (int) $uid);
+if ($notifPrefs['_on'] && $notifPrefs['budget_email']) {
     $userStmt = $pdo->prepare("SELECT email, username FROM users WHERE id = :uid");
     $userStmt->execute([':uid' => $uid]);
     $user = $userStmt->fetch();
@@ -244,7 +242,6 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
 <div class="app-layout">
 <?php $activePage='dashboard'; $sidebarPrefix=''; include __DIR__.'/components/sidebar.php'; ?>
-<?php require __DIR__ . '/components/notifications_panel.php'; ?>
 <main class="main-content">
 <div class="page-content">
 <div class="dsh">
@@ -357,7 +354,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
     <!-- ════ Coluna lateral ════ -->
     <div class="dsh-col">
 
-      <?php if (!empty($upcomingReminders) && $notificationsEnabled): ?>
+      <?php if (!empty($upcomingReminders) && $notifPrefs['_on']): ?>
       <section class="dsh-panel" aria-labelledby="hPay">
         <div class="dsh-panel-head">
           <h2 id="hPay"><?= $hasOverdue ? 'Pagamentos em atraso e próximos' : 'Próximos pagamentos' ?></h2>

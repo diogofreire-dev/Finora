@@ -1,0 +1,52 @@
+/* site/css/notifications.css — sino de notificações no cabeçalho (carregado pelo sidebar.php) */
+
+.app-notif { position: relative; }
+.app-notif-btn {
+  position: relative; width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center;
+  border: 1px solid var(--fn-line); background: var(--fn-surface); color: var(--fn-text); font-size: 18px; cursor: pointer;
+}
+.app-notif-btn:hover { border-color: var(--fn-gold); }
+.app-notif-btn:focus-visible { outline: 3px solid var(--fn-gold); outline-offset: 2px; }
+.app-notif-badge {
+  position: absolute; top: -5px; right: -5px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px;
+  display: grid; place-items: center; font: 700 11px var(--fn-font-ui); line-height: 1;
+  background: var(--fn-gold); color: #14213d; border: 2px solid var(--fn-surface);
+}
+
+.app-notif-panel {
+  position: absolute; right: 0; top: calc(100% + 10px); z-index: 1200;
+  width: min(380px, calc(100vw - 24px)); max-height: min(520px, calc(100vh - 90px)); display: flex; flex-direction: column;
+  background: var(--fn-surface); color: var(--fn-text); border: 1px solid var(--fn-line); border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(20, 33, 61, .06), 0 22px 48px -14px rgba(20, 33, 61, .35);
+  overflow: hidden;
+}
+.app-notif-panel[hidden] { display: none; }
+.app-notif-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px 10px; border-bottom: 1px solid var(--fn-line); }
+.app-notif-head b { font-family: var(--fn-font-brand); font-size: 16px; }
+.app-notif-head button { border: 0; background: none; padding: 4px 6px; border-radius: 8px; font: 600 13px var(--fn-font-ui); color: var(--fn-muted); cursor: pointer; }
+.app-notif-head button:hover { color: var(--fn-text); background: var(--fn-paper); }
+.app-notif-list { list-style: none; margin: 0; padding: 6px; overflow-y: auto; }
+.app-notif-list a { display: flex; gap: 12px; padding: 10px; border-radius: 12px; text-decoration: none; color: inherit; position: relative; }
+.app-notif-list a:hover, .app-notif-list a:focus-visible { background: var(--fn-paper); outline: none; }
+.app-notif-list li.unread a { background: color-mix(in srgb, var(--fn-gold) 7%, transparent); }
+.app-notif-list li.unread a::after { content: ''; position: absolute; top: 16px; right: 12px; width: 8px; height: 8px; border-radius: 50%; background: var(--fn-gold); }
+.app-notif-ico { width: 36px; height: 36px; border-radius: 11px; flex-shrink: 0; display: grid; place-items: center; font-size: 16px; color: #fff; background: var(--tone, var(--fn-ink)); }
+.app-notif-txt { min-width: 0; display: grid; gap: 1px; padding-right: 14px; }
+.app-notif-txt b { font-size: 14px; line-height: 1.3; }
+.app-notif-txt span { font-size: 13px; color: var(--fn-muted); line-height: 1.4; }
+.app-notif-txt small { font-size: 12px; color: var(--fn-muted); margin-top: 2px; }
+.app-notif-list li:not(.unread) .app-notif-txt b { font-weight: 600; color: var(--fn-muted); }
+.app-notif-empty { margin: 0; padding: 28px 16px; text-align: center; color: var(--fn-muted); font-size: 14px; }
+.app-notif-empty i { display: block; font-size: 26px; color: #12b76a; margin-bottom: 6px; }
+.app-notif-all { display: block; padding: 12px; text-align: center; border-top: 1px solid var(--fn-line); font: 600 14px var(--fn-font-ui); color: var(--fn-text); text-decoration: none; }
+.app-notif-all:hover { background: var(--fn-paper); }
+
+/* Cor de cada tipo (a mesma paleta das categorias) */
+.tone-cat-1 { --tone: var(--cat-1); } .tone-cat-2 { --tone: var(--cat-2); } .tone-cat-3 { --tone: var(--cat-3); }
+.tone-cat-4 { --tone: var(--cat-4); } .tone-cat-7 { --tone: var(--cat-7); } .tone-danger { --tone: #d92d20; }
+
+@media (max-width: 600px) {
+  .app-notif { position: static; }
+  .app-notif-btn { width: 38px; height: 38px; }
+  .app-notif-panel { position: fixed; left: 12px; right: 12px; top: 70px; width: auto; }
+}
