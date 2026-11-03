@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('INSERT INTO savings (user_id, goal_id, amount, note, saved_on) VALUES (:u, :g, :a, :n, :d)')
                 ->execute([':u' => $uid, ':g' => $goalId, ':a' => $kind === 'out' ? -$amount : $amount, ':n' => $note !== '' ? $note : null, ':d' => $date]);
             $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_eur($amount) . '.' : 'Boa! Puseste ' . fmt_eur($amount) . ' de lado.'];
+            if ($kind === 'in') $_SESSION['savings_drop'] = true;   // moeda a cair no mealheiro
         }
     } elseif ($action === 'delete') {
         $del = $pdo->prepare('DELETE FROM savings WHERE id = :id AND user_id = :u');
@@ -54,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 [$flashType, $flashText] = $_SESSION['flash_savings'] ?? ['', ''];
 unset($_SESSION['flash_savings']);
+$coinDrop = !empty($_SESSION['savings_drop']);
+unset($_SESSION['savings_drop']);
 
 // ── Números ─────────────────────────────────────────────────────────────────
 $byGoal = savings_by_goal($pdo, $uid);
@@ -107,7 +110,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=7">
-  <link rel="stylesheet" href="../css/piggy.css?v=1">
+  <link rel="stylesheet" href="../css/piggy.css?v=3">
   <style>
     .sv { max-width: 1120px; margin: 0 auto; padding-bottom: 56px; }
     .sv h1 { margin: 0 0 18px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
@@ -209,7 +212,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <?php endif; ?>
 
   <section class="sv-hero" aria-labelledby="svTotalLabel">
-    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_eur($milestone, 0)) ?>
+    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_eur($milestone, 0), 'lg', null, $coinDrop ? 'drop' : '') ?>
     <div>
       <p class="sv-label" id="svTotalLabel">Tens poupado</p>
       <p class="sv-total"><?= fmt_eur(max($total, 0)) ?></p>

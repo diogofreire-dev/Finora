@@ -1,12 +1,13 @@
 <?php
 // site/helpers/savings.php
 // Poupanças (tabela savings): valor positivo = pôr de lado, negativo = tirar.
-// Também desenha o mealheiro 3D (design/finora-piggy.blend → assets/3d/piggy-*.webp).
+// Também desenha o mealheiro 3D de vidro (design/finora-piggy-glass.blend → assets/3d/piggy-glass-NNN.webp):
+// 11 renders no Cycles com as moedas e notas até 0%, 10%, … 100% da barriga.
 
-// Onde o corpo do porquinho começa e acaba na imagem (calculado no Blender), em % da altura
-const PIGGY_TOP    = 11.9;
-const PIGGY_BOTTOM = 91.9;
-const SAVINGS_MAX  = 1000000;
+// Altura (em % da imagem) do monte de moedas a 0% e a 100% — calculada no Blender (world_to_camera_view)
+const PIGGY_Y0    = 64.6;
+const PIGGY_Y100  = 20.6;
+const SAVINGS_MAX = 1000000;
 
 // Metas de referência para o mealheiro grande: enche até ao próximo marco
 const SAVINGS_MILESTONES = [100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000];
@@ -35,16 +36,16 @@ function goal_expected_today(array $goal, string $today): float {
     return round((float) $goal['target_amount'] * $ratio, 2);
 }
 
-// Mealheiro: a imagem dourada aparece de baixo para cima até $pct (0–100).
+// Mealheiro: escolhe o render do nível mais próximo (0, 10, …, 100).
+// Qualquer valor acima de zero mostra pelo menos o nível 10, para se ver que já lá há dinheiro.
 // $markPct (opcional) desenha a linha de "onde devias estar".
-function piggy_html(float $pct, string $label, string $size = 'lg', ?float $markPct = null): string {
-    $pct  = max(0, min(100, $pct));
-    $cut  = $pct >= 100 ? 0 : PIGGY_BOTTOM - $pct / 100 * (PIGGY_BOTTOM - PIGGY_TOP);
-    $html = '<div class="piggy piggy-' . $size . ($pct >= 100 ? ' is-full' : '') . '" role="img" aria-label="' . htmlspecialchars($label, ENT_QUOTES) . '">'
-          . '<img class="piggy-empty" src="../assets/3d/piggy-empty.webp" alt="" width="560" height="610">'
-          . '<img class="piggy-full" src="../assets/3d/piggy-full.webp" alt="" width="560" height="610" style="clip-path: inset(' . round($cut, 2) . '% 0 0 0); --cut: ' . round($cut, 2) . '%">';
+function piggy_html(float $pct, string $label, string $size = 'lg', ?float $markPct = null, string $extraClass = ''): string {
+    $pct   = max(0, min(100, $pct));
+    $level = $pct <= 0 ? 0 : max(10, (int) (round($pct / 10) * 10));
+    $html  = '<div class="piggy piggy-' . $size . ($level >= 100 ? ' is-full' : '') . ($extraClass !== '' ? ' ' . $extraClass : '') . '" role="img" aria-label="' . htmlspecialchars($label, ENT_QUOTES) . '">'
+           . '<img src="../assets/3d/piggy-glass-' . sprintf('%03d', $level) . '.webp" alt="" width="620" height="580" decoding="async">';
     if ($markPct !== null && $markPct > 0 && $markPct < 100) {
-        $y = PIGGY_BOTTOM - $markPct / 100 * (PIGGY_BOTTOM - PIGGY_TOP);
+        $y = PIGGY_Y0 - $markPct / 100 * (PIGGY_Y0 - PIGGY_Y100);
         $html .= '<span class="piggy-mark" style="top: ' . round($y, 2) . '%"></span>';
     }
     return $html . '</div>';
