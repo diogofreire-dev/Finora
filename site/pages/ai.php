@@ -85,7 +85,7 @@ $currentTheme = getUserTheme($pdo, $uid);
       .chat-bubble { max-width: 90%; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 

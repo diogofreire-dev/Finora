@@ -146,14 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0); }
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">
 <?php $activePage='transactions'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
 <main class="main-content">
 <div class="page-content">
-<div class="settings-wrapper">
+<div class="settings-wrapper is-form">
 
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-plus-circle"></i></div>

@@ -580,7 +580,7 @@ $currentTheme = $settings['theme'] ?? 'light';
     .linked-name { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0 0 2px; }
     .linked-sub { font-size: 12px; color: var(--text-secondary); margin: 0; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

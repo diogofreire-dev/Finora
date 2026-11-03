@@ -285,7 +285,7 @@ $monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','ou
     }
     @media(max-width:480px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">
