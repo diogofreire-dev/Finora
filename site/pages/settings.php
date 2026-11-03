@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/EmailService.php';
 require_once __DIR__ . '/../helpers/theme_helper.php';
+require_once __DIR__ . '/../helpers/password_rules.php';
 $uid = $_SESSION['user_id'] ?? null;
 
 // Iguais ao login: errar a palavra-passe aqui conta para o mesmo bloqueio,
@@ -13,14 +14,6 @@ const SETTINGS_MAX_ATTEMPTS = 5;
 const SETTINGS_LOCK_MINUTES = 15;
 const CHANGE_COOLDOWN_DAYS  = 30;
 
-function validatePassword($password) {
-    if (strlen($password) < 8) return false;
-    if (!preg_match('/[A-Z]/', $password)) return false;
-    if (!preg_match('/[a-z]/', $password)) return false;
-    if (!preg_match('/[0-9]/', $password)) return false;
-    if (!preg_match('/[^A-Za-z0-9]/', $password)) return false;
-    return true;
-}
 
 // Confirma a palavra-passe atual com limite de tentativas. Devolve null se estiver certa,
 // ou a mensagem de erro a mostrar.
@@ -114,7 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } elseif ($err = check_current_password($pdo, $uid, $_POST['current_password'] ?? '')) {
                 $errors[] = $err;
             } else {
-                if (!validatePassword($newPassword)) $errors[] = 'A nova palavra-passe precisa de 8 caracteres ou mais, com maiúsculas, minúsculas, números e símbolos.';
+                if ($msg = password_problem_message($newPassword)) $errors[] = $msg;
                 if ($newPassword !== ($_POST['confirm_password'] ?? '')) $errors[] = 'As duas palavras-passe novas não são iguais.';
                 if ($newPassword === ($_POST['current_password'] ?? '')) $errors[] = 'A nova palavra-passe tem de ser diferente da atual.';
             }
@@ -147,9 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             if (!$errors) {
+                // O link leva o token; a base de dados guarda só o hash (como na recuperação de palavra-passe)
                 $token = bin2hex(random_bytes(32));
                 $pdo->prepare("UPDATE users SET pending_email = :e, pending_email_token = :t, pending_email_expires = NOW() + INTERVAL 1 HOUR WHERE id = :uid")
-                    ->execute([':e' => $newEmail, ':t' => $token, ':uid' => $uid]);
+                    ->execute([':e' => $newEmail, ':t' => hash('sha256', $token), ':uid' => $uid]);
                 if ((new EmailService())->sendEmailChangeVerification($newEmail, $user['username'], $token)) {
                     $flash = ['success', "Enviámos um link de confirmação para $newEmail. Abre-o na próxima hora."];
                 } else {

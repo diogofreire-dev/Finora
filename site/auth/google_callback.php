@@ -4,9 +4,8 @@ session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/google_oauth.php';
 
-// Auto-migração: adicionar coluna google_id se não existir
-try { $pdo->exec("ALTER TABLE users ADD COLUMN google_id VARCHAR(128) NULL DEFAULT NULL"); } catch (PDOException $e) {}
-try { $pdo->exec("ALTER TABLE users ADD COLUMN avatar_path VARCHAR(255) NULL DEFAULT NULL"); } catch (PDOException $e) {}
+// As colunas google_id e avatar_path vêm de database/migration_users_profile.sql
+// (antes cada login com Google tentava fazer ALTER TABLE à base de dados).
 
 function googleError($msg) {
     $_SESSION['google_error'] = $msg;
@@ -15,14 +14,14 @@ function googleError($msg) {
 }
 
 // Verificar state anti-CSRF
-$state = $_GET['state'] ?? '';
+$state = (string) ($_GET['state'] ?? '');
 if (empty($_SESSION['google_oauth_state']) || !hash_equals($_SESSION['google_oauth_state'], $state)) {
     googleError('Sessão inválida. Tenta novamente.');
 }
 unset($_SESSION['google_oauth_state']);
 
 // Verificar código
-$code = $_GET['code'] ?? '';
+$code = (string) ($_GET['code'] ?? '');
 if (empty($code)) {
     googleError('Login com Google cancelado.');
 }
@@ -108,64 +107,82 @@ if ($emailVerified !== true) {
     googleError('O email da tua conta Google ainda não está verificado.');
 }
 
-// Verificar se já existe conta com este google_id ou email
-$stmt = $pdo->prepare("SELECT id, username, email, google_id FROM users WHERE google_id = :gid OR email = :email LIMIT 1");
-$stmt->execute([':gid' => $googleId, ':email' => $googleEmail]);
-$user = $stmt->fetch();
+// Nome mostrado na app: sem caracteres de controlo e no máximo 50 (tamanho da coluna)
+$displayName = trim(preg_replace('/\s+/u', ' ', preg_replace('/\p{C}/u', '', $googleName) ?? ''));
+if (mb_strlen($displayName) < 3) $displayName = explode('@', $googleEmail)[0];
+$displayName = mb_substr($displayName, 0, 50);
 
-// Modo vincular conta (chamado a partir das definições)
-$linkMode = !empty($_SESSION['google_link_uid']);
-$linkUid  = $linkMode ? (int)$_SESSION['google_link_uid'] : 0;
-if ($linkMode) unset($_SESSION['google_link_uid']);
-
-if ($linkMode) {
-    // Verificar se este google_id já está noutro utilizador
-    $stmt = $pdo->prepare("SELECT id FROM users WHERE google_id = :gid AND id != :uid LIMIT 1");
-    $stmt->execute([':gid' => $googleId, ':uid' => $linkUid]);
-    if ($stmt->fetch()) {
-        $_SESSION['settings_error'] = 'Esta conta Google já está vinculada a outro utilizador.';
-        header('Location: ../pages/settings.php');
-        exit;
-    }
-    $pdo->prepare("UPDATE users SET google_id = :gid WHERE id = :uid")
-        ->execute([':gid' => $googleId, ':uid' => $linkUid]);
-    $_SESSION['settings_success'] = 'Conta Google vinculada com sucesso!';
+// Mensagem para a página de definições (mesmo formato que settings.php lê)
+function settingsFlash(string $type, string $text): void {
+    $_SESSION['flash_settings'] = [[$type, $text], null];
     header('Location: ../pages/settings.php');
     exit;
 }
 
+// Modo ligar conta (chamado a partir das definições)
+$linkUid = (int) ($_SESSION['google_link_uid'] ?? 0);
+unset($_SESSION['google_link_uid']);
+
+if ($linkUid && $linkUid === (int) ($_SESSION['user_id'] ?? 0)) {
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE google_id = :gid AND id != :uid LIMIT 1');
+    $stmt->execute([':gid' => $googleId, ':uid' => $linkUid]);
+    if ($stmt->fetch()) settingsFlash('danger', 'Esta conta Google já está ligada a outro utilizador.');
+    $pdo->prepare('UPDATE users SET google_id = :gid WHERE id = :uid')
+        ->execute([':gid' => $googleId, ':uid' => $linkUid]);
+    settingsFlash('success', 'Conta Google ligada. Já podes entrar com ela.');
+}
+
+// Primeiro pela conta Google já ligada; só depois pelo email
+$stmt = $pdo->prepare('SELECT id, username, google_id, email_verified FROM users WHERE google_id = :gid LIMIT 1');
+$stmt->execute([':gid' => $googleId]);
+$user = $stmt->fetch();
+if (!$user) {
+    $stmt = $pdo->prepare('SELECT id, username, google_id, email_verified FROM users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $googleEmail]);
+    $user = $stmt->fetch();
+}
+
 if ($user) {
-    // Utilizador já existe — atualizar google_id se ainda não estiver ligado
     if (empty($user['google_id'])) {
-        $pdo->prepare("UPDATE users SET google_id = :gid WHERE id = :id")
-            ->execute([':gid' => $googleId, ':id' => $user['id']]);
+        if (!$user['email_verified']) {
+            // Conta criada com este email mas nunca confirmada: quem a criou pode não ser o dono
+            // do email e saber a palavra-passe. O Google provou quem é o dono, por isso a
+            // palavra-passe antiga é apagada (pre-account takeover).
+            $pdo->prepare('UPDATE users SET google_id = :gid, email_verified = 1, verification_token = NULL, verification_expires = NULL,
+                                  password_hash = :p, password_reset_token = NULL, password_reset_expires = NULL
+                           WHERE id = :id')
+                ->execute([':gid' => $googleId, ':p' => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT), ':id' => $user['id']]);
+        } else {
+            $pdo->prepare('UPDATE users SET google_id = :gid WHERE id = :id')
+                ->execute([':gid' => $googleId, ':id' => $user['id']]);
+        }
     }
-    // Login direto
     session_regenerate_id(true);
     $_SESSION['user_id']  = $user['id'];
     $_SESSION['username'] = $user['username'];
     header('Location: ../dashboard.php');
     exit;
-} else {
-    // Criar conta nova (sem palavra-passe, verificada pelo Google)
-    try {
-        $stmt = $pdo->prepare("INSERT INTO users (username, email, password_hash, email_verified, google_id) VALUES (:u, :e, :p, 1, :gid)");
-        $stmt->execute([
-            ':u'   => $googleName ?: explode('@', $googleEmail)[0],
+}
+
+// Conta nova (sem palavra-passe utilizável, email já confirmado pelo Google)
+try {
+    $pdo->prepare('INSERT INTO users (username, email, password_hash, email_verified, google_id) VALUES (:u, :e, :p, 1, :gid)')
+        ->execute([
+            ':u'   => $displayName,
             ':e'   => $googleEmail,
             ':p'   => password_hash(bin2hex(random_bytes(32)), PASSWORD_DEFAULT),
             ':gid' => $googleId,
         ]);
-        $newId = $pdo->lastInsertId();
-        try {
-            $pdo->prepare("INSERT INTO user_settings (user_id) VALUES (:uid)")->execute([':uid' => $newId]);
-        } catch (PDOException $e) {}
-        session_regenerate_id(true);
-        $_SESSION['user_id']  = $newId;
-        $_SESSION['username'] = $googleName ?: explode('@', $googleEmail)[0];
-        header('Location: ../dashboard.php');
-        exit;
-    } catch (PDOException $e) {
-        googleError('Erro ao criar conta. Tenta novamente.');
-    }
+    $newId = $pdo->lastInsertId();
+    try {
+        $pdo->prepare('INSERT INTO user_settings (user_id) VALUES (:uid)')->execute([':uid' => $newId]);
+    } catch (PDOException $e) {}
+    session_regenerate_id(true);
+    $_SESSION['user_id']  = $newId;
+    $_SESSION['username'] = $displayName;
+    header('Location: ../dashboard.php');
+    exit;
+} catch (PDOException $e) {
+    error_log('[google_callback] ' . $e->getMessage());
+    googleError('Não foi possível criar a conta. Tenta outra vez.');
 }
