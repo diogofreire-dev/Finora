@@ -35,6 +35,13 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Proteção contra CSV injection: no Excel/Sheets, uma célula que começa por = + - @ (ou tab/enter)
+// é tratada como fórmula — p.ex. =HYPERLINK("https://site-mau","Clica"). O ' à frente diz "isto é texto".
+function csv_safe($v): string {
+    $v = (string) $v;
+    return ($v !== '' && strpbrk($v[0], "=+-@\t\r") !== false) ? "'" . $v : $v;
+}
+
 $filename = 'finora_transacoes_' . date('Y-m-d') . '.csv';
 
 header('Content-Type: text/csv; charset=UTF-8');
@@ -52,10 +59,10 @@ fputcsv($out, ['data', 'descricao', 'categoria', 'valor', 'cartao', 'criado_em']
 foreach ($rows as $r) {
     fputcsv($out, [
         $r['transaction_date'],
-        $r['description'],
-        $r['category'] ?? '',
+        csv_safe($r['description']),
+        csv_safe($r['category'] ?? ''),
         number_format((float)$r['amount'], 2, '.', ''),
-        $r['card_name'] ?? '',
+        csv_safe($r['card_name'] ?? ''),
         $r['created_at'],
     ], ';');
 }

@@ -350,7 +350,7 @@ $since        = strtotime($user['created_at']);
 
     @media (prefers-reduced-motion: reduce) { .st-switch, .st-switch::after, .pw-meter i { transition: none; } }
     @media (max-width: 760px) {
-      .st-section { grid-template-columns: 1fr; gap: 14px; padding: 22px 0; }
+      .st-section { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 22px 0; }
       .st-head h1 { font-size: 26px; }
     }
     @media (max-width: 520px) {
