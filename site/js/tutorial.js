@@ -184,21 +184,21 @@
 
     dados: [
       {
-        selector: '.page-header',
-        title: '🗄️ Dados & Relatórios',
-        text: 'Aqui podes exportar, importar e gerir todos os teus dados financeiros. Ideal para fazer backup ou migrar para outra aplicação.',
+        selector: '#sec-exp',
+        title: '📤 Exportar',
+        text: 'Escolhe o mês, a categoria ou o cartão e exporta em PDF ou numa folha de cálculo (CSV).',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:first-of-type',
-        title: '📤 Exportar Dados',
-        text: 'Exporta as tuas transações em formato CSV, JSON ou PDF. O PDF gera um relatório formatado pronto a imprimir.',
+        selector: '#sec-bak',
+        title: '🛡️ Cópia de segurança',
+        text: 'Descarrega um ficheiro com tudo e guarda-o fora da Finora. Se precisares, restauras a partir dele.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group:last-of-type',
-        title: '📥 Importar Dados',
-        text: 'Importa transações a partir de ficheiros CSV ou JSON. Útil para migrar dados de outras aplicações de gestão financeira.',
+        selector: '#dropZone',
+        title: '📥 Importar',
+        text: 'Traz transações do extrato do banco num ficheiro CSV. Vê o formato em "Como deve ser o ficheiro".',
         position: 'top'
       }
     ],
