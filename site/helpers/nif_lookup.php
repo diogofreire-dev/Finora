@@ -5,8 +5,8 @@
  *   1. O nome que ESTE utilizador já deu a este NIF (transações dele lidas por QR)
  *   2. Base local hardcoded (lojas comuns PT) — é código nosso, por isso ganha à cache
  *   3. Tabela nif_empresas (cache partilhada, só com nomes vindos de fontes externas)
- *   4. API nif.pt
- *   5. API nunl.pt (fallback)
+ *   4. VIES (Comissão Europeia): serviço oficial e gratuito de validação de números de IVA.
+ *      Não precisa de chave e devolve o nome das empresas registadas para IVA (quase todas as lojas).
  *
  * A cache é partilhada por todos os utilizadores, por isso só o servidor escreve nela, e só
  * com o que veio das fontes externas. Um utilizador nunca escreve lá: se pudesse, mudava o
@@ -97,10 +97,8 @@ function _nif_http_get(string $url): string|false {
             'timeout'       => 8,
             'method'        => 'GET',
             'header'        => implode("\r\n", [
-                'Accept: application/json, text/html, */*',
-                'Accept-Language: pt-PT,pt;q=0.9',
-                'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36',
-                'Referer: https://www.nif.pt/',
+                'Accept: application/json',
+                'User-Agent: Finora/2.0 (consulta de NIF em faturas)',
             ]),
             'ignore_errors' => true,
         ],
@@ -110,33 +108,38 @@ function _nif_http_get(string $url): string|false {
     return @file_get_contents($url, false, stream_context_create($opts));
 }
 
-function _nif_api_nifpt(string $nif): array {
-    $url  = "https://www.nif.pt/?json&nif=" . urlencode($nif) . "&q=" . urlencode($nif);
-    $resp = _nif_http_get($url);
-    if ($resp === false) return ['success' => false];
-    $data = json_decode($resp, true);
-    if (!$data) return ['success' => false];
-    $nome = null;
-    if (!empty($data['records'])) {
-        $r = reset($data['records']);
-        $nome = $r['title'] ?? $r['name'] ?? null;
-    } elseif (!empty($data['title'])) { $nome = $data['title'];
-    } elseif (!empty($data['name']))  { $nome = $data['name']; }
-    $nome = _nif_limpar_nome(is_string($nome) ? $nome : null);
-    if (!$nome) return ['success' => false];
-    return ['success' => true, 'nome' => $nome, 'source' => 'nif.pt', 'fonte' => 'nifpt', 'id_categoria' => null, 'verified' => true];
+// O VIES devolve os nomes em maiúsculas ("PINGO DOCE - DISTRIBUIÇÃO ALIMENTAR SA").
+// Passa para "Pingo Doce - Distribuição Alimentar SA", mantendo siglas e formas jurídicas.
+function _nif_nome_bonito(string $nome): string {
+    if ($nome !== mb_strtoupper($nome)) return $nome;            // já vem com maiúsculas e minúsculas
+    $manter = ['SA', 'SGPS', 'EPE', 'CRL', 'ACE', 'SU', 'EDP', 'CTT', 'BP', 'NOS', 'MEO', 'TAP', 'IKEA', 'FNAC'];
+    $minus  = ['DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'EM', 'NO', 'NA', 'NOS', 'NAS', 'A', 'O', 'AS', 'OS', 'PARA', 'COM', 'POR'];
+    // Formas jurídicas escritas de várias maneiras: "S A", "S.A.", "L.DA"
+    $nome   = preg_replace(['/\bS\.? ?A\.?$/u', '/\bL\.?DA\.?$/u'], ['SA', 'LDA'], $nome);
+    $partes = explode(' - ', $nome);
+    foreach ($partes as $p => $parte) {
+        $palavras = explode(' ', $parte);
+        // Uma só palavra curta antes de " - " é uma sigla ("CP - Comboios de Portugal", "EPAL - …")
+        $sigla = $p === 0 && count($partes) > 1 && count($palavras) === 1 && mb_strlen($parte) <= 5;
+        foreach ($palavras as $w => $pal) {
+            if ($sigla || (in_array($pal, $manter, true) && !($w > 0 && in_array($pal, $minus, true)))) continue;
+            if ($pal === 'LDA' || $pal === 'LDA.') { $palavras[$w] = 'Lda'; continue; }
+            $palavras[$w] = ($w > 0 && in_array($pal, $minus, true)) ? mb_strtolower($pal) : mb_convert_case($pal, MB_CASE_TITLE);
+        }
+        $partes[$p] = implode(' ', $palavras);
+    }
+    return implode(' - ', $partes);
 }
 
-function _nif_api_nunl(string $nif): array {
-    $url  = "https://www.nunl.pt/consultar-nif/" . urlencode($nif);
-    $resp = _nif_http_get($url);
+function _nif_api_vies(string $nif): array {
+    $resp = _nif_http_get('https://ec.europa.eu/taxation_customs/vies/rest-api/ms/PT/vat/' . $nif);
     if ($resp === false) return ['success' => false];
-    if (preg_match('/<h[12][^>]*>\s*([^<]{4,80})\s*<\/h[12]>/i', $resp, $m)) {
-        $nome = _nif_limpar_nome(html_entity_decode($m[1], ENT_QUOTES, 'UTF-8'));
-        if ($nome && mb_strlen($nome) > 3 && !preg_match('/consultar|nif|nunl|pesquis/i', $nome))
-            return ['success' => true, 'nome' => $nome, 'source' => 'nunl', 'fonte' => 'nifpt', 'id_categoria' => null, 'verified' => false];
-    }
-    return ['success' => false];
+    $data = json_decode($resp, true);
+    // isValid = false: o NIF não está registado para IVA (particulares, algumas associações)
+    if (!is_array($data) || empty($data['isValid']) || !is_string($data['name'] ?? null)) return ['success' => false];
+    $nome = _nif_limpar_nome($data['name']);
+    if (!$nome || $nome === '---') return ['success' => false];       // o VIES usa "---" quando não divulga o nome
+    return ['success' => true, 'nome' => _nif_nome_bonito($nome), 'source' => 'vies', 'id_categoria' => null];
 }
 
 function nif_lookup(string $nif, ?int $uid = null): array {
@@ -169,16 +172,12 @@ function nif_lookup(string $nif, ?int $uid = null): array {
         $stmt->execute([':nif' => $nif]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if ($row && ($nome = _nif_limpar_nome($row['nome_empresa'])))
-            return ['success' => true, 'nome' => $nome, 'id_categoria' => $row['id_categoria'], 'source' => 'cache'];
+            return ['success' => true, 'nome' => _nif_nome_bonito($nome), 'id_categoria' => $row['id_categoria'], 'source' => 'cache'];
     } catch (PDOException $e) { error_log("[nif_lookup] BD: " . $e->getMessage()); }
 
-    // 4. API nif.pt
-    $r = _nif_api_nifpt($nif);
-    if ($r['success']) { _nif_guardar_cache($pdo, $nif, $r['nome'], null, 'nifpt'); return $r; }
-
-    // 5. API nunl.pt
-    $r2 = _nif_api_nunl($nif);
-    if ($r2['success']) { _nif_guardar_cache($pdo, $nif, $r2['nome'], null, 'nifpt'); return $r2; }
+    // 4. VIES
+    $r = _nif_api_vies($nif);
+    if ($r['success']) { _nif_guardar_cache($pdo, $nif, $r['nome'], null, 'vies'); return $r; }
 
     return ['success' => false, 'error' => 'NIF não encontrado', 'source' => 'none'];
 }
