@@ -96,14 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .period-label i { font-size: 22px; }
     .period-label span { font-size: 12px; font-weight: 600; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">
 <?php $activePage='budgets'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
 <main class="main-content">
 <div class="page-content">
-<div class="settings-wrapper">
+<div class="settings-wrapper is-form">
 
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-pencil-square"></i></div>

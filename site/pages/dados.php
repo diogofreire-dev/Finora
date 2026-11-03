@@ -173,7 +173,7 @@ if (!empty($_GET['import_error'])) {
       .s-row { flex-wrap: wrap; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

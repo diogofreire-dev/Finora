@@ -116,14 +116,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .recur-label i { font-size: 18px; }
     .recur-label span { font-size: 11px; font-weight: 600; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">
 <?php $activePage='reminders'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
 <main class="main-content">
 <div class="page-content">
-<div class="settings-wrapper">
+<div class="settings-wrapper is-form">
 
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-pencil-square"></i></div>

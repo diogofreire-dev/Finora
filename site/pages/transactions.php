@@ -182,9 +182,9 @@ function day_label(string $day, array $weekdays): string {
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=3">
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
   <style>
-    .tx { max-width: 880px; margin: 0 auto; padding-bottom: 56px; }
+    .tx { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
 
     /* Título + navegação por mês */
     .tx-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }

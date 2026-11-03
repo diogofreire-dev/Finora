@@ -193,7 +193,7 @@ foreach ($activeCards as $c) {
 
     @media (max-width: 640px) { .stats-bar { grid-template-columns: 1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

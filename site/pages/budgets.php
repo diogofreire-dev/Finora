@@ -112,7 +112,7 @@ $periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
     input[type="number"] { -moz-appearance: textfield; }
     @media (max-width:600px) { .s-row { flex-wrap: wrap; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

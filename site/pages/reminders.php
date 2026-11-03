@@ -275,7 +275,7 @@ $recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal
     [data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); }
     @media (max-width:600px) { .stats-row { flex-wrap: wrap; } .stat-cell { min-width: 50%; } .stat-cell:nth-child(2) { border-right: none; } .stat-cell:nth-child(n+3) { border-top: 1px solid var(--border-color); } .s-row { flex-wrap: wrap; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

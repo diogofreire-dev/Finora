@@ -198,7 +198,7 @@ $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimen
     color: var(--text-primary);
   }
 </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">

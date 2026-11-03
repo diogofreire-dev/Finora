@@ -147,7 +147,7 @@ $activePage='futuro'; $sidebarPrefix='../';
     [data-theme="dark"] .filter-input { background:#1a1d29; color:#ecf0f1; border-color:#34495e; }
     @media(max-width:640px) { .metrics-grid { grid-template-columns:1fr 1fr; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=1">
+  <link rel="stylesheet" href="../css/finora.css?v=4">
 </head>
 <body>
 <div class="app-layout">
