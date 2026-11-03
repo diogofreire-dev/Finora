@@ -229,7 +229,7 @@
 
     settings: [
       {
-        selector: '.st-head',
+        selector: '.pg-head',
         title: '⚙️ Definições',
         text: 'Aqui tratas da tua conta: perfil, acesso e aparência.',
         position: 'bottom'

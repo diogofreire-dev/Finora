@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .form-switch .form-check-input { width: 40px; height: 22px; cursor: pointer; }
     .form-switch .form-check-input:checked { background-color: var(--fn-accent); border-color: var(--fn-accent); }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
 </head>
 <body>
 <div class="app-layout">

@@ -220,7 +220,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
   <link rel="stylesheet" href="../css/sidebar.css?v=6">
-  <link rel="stylesheet" href="../css/finora.css?v=6">
+  <link rel="stylesheet" href="../css/finora.css?v=7">
   <style>
     .an { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
     .an-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
