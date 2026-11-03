@@ -15,7 +15,7 @@ $partners = [
     ['Brevo',            'Envio de emails (verificação, recuperação de palavra-passe, alertas).', 'O teu email, nome e o conteúdo do email.'],
     ['Google',           'Entrar com a conta Google, se escolheres essa opção.',                 'O teu email, nome e identificador Google.'],
     ['Groq',             'Responder às perguntas no Assistente.',                                'A tua pergunta e um resumo dos gastos do mês (categorias, descrições e valores). Sem nome nem email.'],
-    ['nif.pt e VIES',    'Saber o nome da empresa quando lês o QR de uma fatura.',               'Só o NIF da empresa que emitiu a fatura.'],
+    ['VIES (Comissão Europeia)', 'Saber o nome da empresa quando lês o QR de uma fatura.', 'Só o NIF da empresa que emitiu a fatura.'],
     ['Yahoo Finance',    'Cotações na Bolsa e nos Investimentos.',                               'Só os símbolos (ex.: VWCE.DE). Nada sobre ti.'],
     ['Frankfurter (BCE)', 'Câmbios para converter cotações para euros.',                         'Nada sobre ti.'],
     ['jsDelivr e Google Fonts', 'Ícones, estilos e tipos de letra das páginas.',                 'O teu endereço IP e o browser, como em qualquer pedido na Internet.'],
