@@ -284,3 +284,15 @@ body { font-family: var(--fn-font-ui); color: var(--fn-text); }
 .main-content .form-select,
 .main-content .m-form .form-select,
 .modal .form-select { padding-right: 38px; background-position: right 12px center; }
+
+/* Botões dentro de <dialog> nativos (ficam fora do .main-content) */
+dialog .btn-s {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 40px; padding: 8px 16px;
+  border-radius: 10px; border: 1px solid var(--fn-line); background: var(--fn-surface); color: var(--fn-text);
+  font: 600 14px var(--fn-font-ui); cursor: pointer;
+}
+dialog .btn-s:hover { border-color: var(--fn-muted); background: var(--fn-paper); }
+dialog .btn-s-primary, dialog .btn-s-primary:hover { background: var(--fn-accent); border-color: var(--fn-accent); color: #fff; }
+dialog .btn-s-primary:hover { background: var(--fn-accent-hover); border-color: var(--fn-accent-hover); }
+dialog .btn-s:focus-visible, dialog .form-control:focus-visible, dialog .form-select:focus-visible { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
+dialog .form-control:focus, dialog .form-select:focus { border-color: var(--fn-accent); box-shadow: 0 0 0 3px rgba(var(--fn-accent-rgb), .18); }
