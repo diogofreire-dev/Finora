@@ -189,7 +189,7 @@ try {
 
     $addInv = $pdo->prepare('INSERT INTO investments (user_id, name, type, ticker, quantity, buy_price, current_price, price_updated_at, created_at)
                              VALUES (:u, :n, :t, :k, :q, :b, :c, NOW(), :d)');
-    foreach ([['Vanguard FTSE All-World', 'etf', 'VWCE', 14, 104.20, 118.35], ['Bitcoin', 'cripto', 'BTC', 0.0125, 54200, 61850],
+    foreach ([['Vanguard FTSE All-World', 'etf', 'VWCE.DE', 14, 132.40, 132.40], ['Bitcoin', 'cripto', 'BTC', 0.0125, 54200, 61850],
               ['PPR Optimize', 'ppr', null, 1, 2400, 2538], ['Apple', 'acoes', 'AAPL', 4, 182.10, 171.40]] as [$n, $t, $k, $q, $b, $c]) {
         $addInv->execute([':u' => $uid, ':n' => $n, ':t' => $t, ':k' => $k, ':q' => $q, ':b' => $b, ':c' => $c, ':d' => $start->format('Y-m-d 10:00:00')]);
     }
