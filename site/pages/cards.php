@@ -105,6 +105,23 @@ function card_gradient(array $c, array $BANKS, array $cardColors): string {
     if ($bank && !empty($bank['gradient'])) return $bank['gradient'];
     return $cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple'];
 }
+
+// Cor sólida para o cartão 3D: a do banco, senão a cor mais escura do degradê escolhido
+function card_solid_color(array $c, array $BANKS, array $cardColors): string {
+    $bank = $BANKS[$c['bank'] ?? ''] ?? null;
+    if ($bank && !empty($bank['bg'])) return $bank['bg'];
+    preg_match_all('/#[0-9a-fA-F]{6}/', $cardColors[$c['color'] ?? 'purple'] ?? $cardColors['purple'], $m);
+    return $m[0][1] ?? $m[0][0] ?? '#14213d';
+}
+
+// Carteira 3D: os primeiros 5 cartões ativos (os restantes ficam só na lista)
+const WALLET_MAX_CARDS = 5;
+$walletCards = array_map(fn($c) => [
+    'id'    => (int) $c['id'],
+    'name'  => mb_substr($c['name'], 0, 28),
+    'bank'  => $BANKS[$c['bank'] ?? '']['label'] ?? '',
+    'color' => card_solid_color($c, $BANKS, $cardColors),
+], array_slice(array_values($activeCards), 0, WALLET_MAX_CARDS));
 ?>
 <!doctype html>
 <html lang="pt-PT" data-theme="<?=$currentTheme?>">
@@ -141,6 +158,21 @@ function card_gradient(array $c, array $BANKS, array $cardColors): string {
 
     /* Grelha de cartões: ocupa a largura toda */
     .cd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+    /* Carteira 3D */
+    .cd-wallet { display: none; position: relative; height: 380px; margin: 4px 0 22px; }
+    .cd-wallet.is-on { display: block; }
+    .cd-wallet::before {
+      content: ''; position: absolute; inset: 10% 22%; border-radius: 50%; pointer-events: none;
+      background: radial-gradient(closest-side, rgba(196, 138, 18, .14), transparent 70%);
+    }
+    .cd-wallet canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s; touch-action: pan-y; }
+    .cd-wallet.is-live canvas { opacity: 1; }
+    .cd-wallet canvas.is-pointing { cursor: pointer; }
+    .cd-wallet-hint { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; text-align: center; font-size: 13px; color: var(--fn-muted); }
+    .cd-tile { scroll-margin-top: 90px; }
+    .cd-tile.is-picked { box-shadow: 0 0 0 3px var(--fn-gold); transition: box-shadow .3s; }
+    .cd-tile:focus { outline: none; }
+    @media (max-width: 600px) { .cd-wallet { height: 250px; margin-bottom: 14px; } }
     .cd-tile { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 16px; }
     .cd-tile.over { border-color: #fda29b; }
 
@@ -286,6 +318,14 @@ function card_gradient(array $c, array $BANKS, array $cardColors): string {
   <?php else: ?>
 
     <?php if ($activeCount > 0): ?>
+    <!-- Carteira 3D (só aparece se o browser tiver WebGL; a lista em baixo tem a mesma informação) -->
+    <section class="cd-wallet" id="walletStage" aria-hidden="true">
+      <canvas id="walletCanvas"></canvas>
+      <p class="cd-wallet-hint"><i class="bi bi-hand-index"></i> Toca num cartão para o veres em baixo</p>
+    </section>
+    <?php // JSON_HEX_TAG: um nome de cartão com "</script>" não consegue fechar este bloco ?>
+    <script type="application/json" id="walletData"><?= json_encode($walletCards, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
+
     <div class="cd-grid">
       <?php foreach ($activeCards as $c):
         $limit     = (float) $c['limit_amount'];
@@ -295,7 +335,7 @@ function card_gradient(array $c, array $BANKS, array $cardColors): string {
         $bank      = $BANKS[$c['bank'] ?? ''] ?? null;
         $bankLabel = $bank['label'] ?? '';
       ?>
-        <article class="cd-tile <?= $state === 'over' ? 'over' : '' ?>" aria-label="<?= htmlspecialchars($c['name']) ?>">
+        <article class="cd-tile <?= $state === 'over' ? 'over' : '' ?>" id="card-<?= (int) $c['id'] ?>" tabindex="-1" aria-label="<?= htmlspecialchars($c['name']) ?>">
           <div class="cd-visual" style="background:<?= card_gradient($c, $BANKS, $cardColors) ?>">
             <?= bankWatermark($c['bank'] ?? '') ?>
             <div class="top">
@@ -373,5 +413,11 @@ function card_gradient(array $c, array $BANKS, array $cardColors): string {
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<?php if ($activeCount > 0): ?>
+<script type="importmap">
+{ "imports": { "three": "../js/lib/three/three.module.min.js", "three/addons/": "../js/lib/three/addons/" } }
+</script>
+<script type="module" src="../js/cards-wallet.js?v=1"></script>
+<?php endif; ?>
 </body>
 </html>
