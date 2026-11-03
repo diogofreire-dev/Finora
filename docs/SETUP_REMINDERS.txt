@@ -12,7 +12,7 @@ Testes:
 - Executar manualmente:
 
 ```bash
-C:\xampp\php\php.exe C:\xampp\htdocs\PAP\FreeCard\cron\send_reminders.php
+C:\xampp\php\php.exe C:\xampp\htdocs\Finora\cron\send_reminders.php
 ```
 
 Logs:

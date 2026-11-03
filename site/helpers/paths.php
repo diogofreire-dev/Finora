@@ -2,7 +2,7 @@
 // site/helpers/paths.php
 // Caminhos da aplicação e validação do ?next= (proteção contra open redirect).
 
-// Caminho web da pasta site/ (ex: "/FreeCard/site" no localhost, "/site" em produção).
+// Caminho web da pasta site/ (ex: "/Finora/site" no localhost, "/site" em produção).
 // Vem do SCRIPT_NAME, definido pelo servidor — nunca do cabeçalho Host, que o cliente controla.
 function site_base_path(): string {
     $script = $_SERVER['SCRIPT_NAME'] ?? '';

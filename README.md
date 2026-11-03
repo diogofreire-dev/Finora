@@ -61,8 +61,8 @@ Precisas do [XAMPP](https://www.apachefriends.org/) (Apache + PHP 8.2 + MariaDB)
 
 ```bash
 cd /Applications/XAMPP/xamppfiles/htdocs   # no Windows: C:\xampp\htdocs
-git clone https://github.com/diogofreire-dev/FreeCard.git
-cd FreeCard
+git clone https://github.com/diogofreire-dev/Finora.git
+cd Finora
 composer install
 ```
 
@@ -94,7 +94,7 @@ Cria a conta `demo@finora.test` com 14 meses de transações, cartões, orçamen
 
 **5. Abrir**
 
-Liga o Apache e o MySQL no XAMPP e abre <http://localhost/FreeCard/>.
+Liga o Apache e o MySQL no XAMPP e abre <http://localhost/Finora/>.
 
 ### Serviços opcionais
 
@@ -109,7 +109,7 @@ Sem a Brevo, as contas novas não recebem o email de verificação. Para testar 
 Os lembretes por email são enviados por `cron/send_reminders.php`, que só corre no terminal:
 
 ```bash
-0 8 * * * php /caminho/para/FreeCard/cron/send_reminders.php
+0 8 * * * php /caminho/para/Finora/cron/send_reminders.php
 ```
 
 As notificações dentro da app não precisam de cron: são geradas uma vez por dia, quando o utilizador abre a app.
