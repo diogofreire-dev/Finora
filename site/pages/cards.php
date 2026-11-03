@@ -172,7 +172,10 @@ $walletCards = array_map(fn($c) => [
     .cd-tile { scroll-margin-top: 90px; }
     .cd-tile.is-picked { box-shadow: 0 0 0 3px var(--fn-gold); transition: box-shadow .3s; }
     .cd-tile:focus { outline: none; }
-    @media (max-width: 600px) { .cd-wallet { height: 250px; margin-bottom: 14px; } }
+    /* Telemóvel: só decorativa, o toque passa para a página */
+    .cd-wallet.is-touch { height: 230px; margin-bottom: 14px; }
+    .cd-wallet.is-touch canvas { pointer-events: none; }
+    .cd-wallet.is-touch .cd-wallet-hint { display: none; }
     .cd-tile { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 16px; }
     .cd-tile.over { border-color: #fda29b; }
 
@@ -417,7 +420,7 @@ $walletCards = array_map(fn($c) => [
 <script type="importmap">
 { "imports": { "three": "../js/lib/three/three.module.min.js", "three/addons/": "../js/lib/three/addons/" } }
 </script>
-<script type="module" src="../js/cards-wallet.js?v=1"></script>
+<script type="module" src="../js/cards-wallet.js?v=2"></script>
 <?php endif; ?>
 </body>
 </html>
