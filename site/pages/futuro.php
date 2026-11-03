@@ -6,17 +6,14 @@ $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
-// Criar tabela se não existir
-$pdo->exec("CREATE TABLE IF NOT EXISTS future_goals (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    name VARCHAR(120) NOT NULL,
-    target_amount DECIMAL(10,2) NOT NULL,
-    monthly_income DECIMAL(10,2) NOT NULL DEFAULT 0,
-    target_date DATE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-)");
+require_once __DIR__ . '/../helpers/savings.php';
+// A tabela future_goals está no schema.sql (antes era criada aqui em cada visita)
+
+// Data AAAA-MM-DD válida e no futuro, ou null
+function goal_date(string $s): ?string {
+    $d = DateTimeImmutable::createFromFormat('!Y-m-d', $s);
+    return ($d && $d->format('Y-m-d') === $s && $s > date('Y-m-d') && $s < '2100-01-01') ? $s : null;
+}
 
 $message = ''; $messageType = 'info';
 
@@ -26,38 +23,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $name          = trim($_POST['name'] ?? '');
         $targetAmount  = floatval($_POST['target_amount'] ?? 0);
         $monthlyIncome = floatval($_POST['monthly_income'] ?? 0);
-        $targetDate    = $_POST['target_date'] ?? '';
-        if (strlen($name) >= 2 && $targetAmount > 0 && $monthlyIncome > 0 && $targetDate) {
+        $targetDate    = goal_date((string) ($_POST['target_date'] ?? ''));
+        $name          = mb_substr($name, 0, 120);
+        if (mb_strlen($name) >= 2 && $targetAmount > 0 && $targetAmount <= SAVINGS_MAX && $monthlyIncome > 0 && $monthlyIncome <= SAVINGS_MAX && $targetDate) {
             try {
                 $stmt = $pdo->prepare("INSERT INTO future_goals (user_id, name, target_amount, monthly_income, target_date) VALUES (:uid,:name,:amount,:income,:date)");
                 $stmt->execute([':uid'=>$uid,':name'=>$name,':amount'=>$targetAmount,':income'=>$monthlyIncome,':date'=>$targetDate]);
                 $message = 'Meta criada.'; $messageType = 'success';
             } catch (PDOException $e) { $message = 'Não foi possível criar a meta. Tenta novamente.'; $messageType = 'danger'; }
-        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e data.'; $messageType = 'danger'; }
+        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'; $messageType = 'danger'; }
     }
     if ($action === 'delete') {
         $gid = intval($_POST['goal_id'] ?? 0);
         $pdo->prepare("DELETE FROM future_goals WHERE id=:id AND user_id=:uid")->execute([':id'=>$gid,':uid'=>$uid]);
-        $message = 'Meta apagada.'; $messageType = 'info';
+        $message = 'Meta apagada. O dinheiro que lá estava passou para as poupanças sem meta.'; $messageType = 'info';
     }
     if ($action === 'update') {
         $gid           = intval($_POST['goal_id'] ?? 0);
         $name          = trim($_POST['name'] ?? '');
         $targetAmount  = floatval($_POST['target_amount'] ?? 0);
         $monthlyIncome = floatval($_POST['monthly_income'] ?? 0);
-        $targetDate    = $_POST['target_date'] ?? '';
-        if ($gid && strlen($name) >= 2 && $targetAmount > 0 && $monthlyIncome > 0 && $targetDate) {
+        $targetDate    = goal_date((string) ($_POST['target_date'] ?? ''));
+        $name          = mb_substr($name, 0, 120);
+        if ($gid && mb_strlen($name) >= 2 && $targetAmount > 0 && $targetAmount <= SAVINGS_MAX && $monthlyIncome > 0 && $monthlyIncome <= SAVINGS_MAX && $targetDate) {
             try {
                 $stmt = $pdo->prepare("UPDATE future_goals SET name=:name, target_amount=:amount, monthly_income=:income, target_date=:date WHERE id=:id AND user_id=:uid");
                 $stmt->execute([':name'=>$name,':amount'=>$targetAmount,':income'=>$monthlyIncome,':date'=>$targetDate,':id'=>$gid,':uid'=>$uid]);
                 $message = 'Meta atualizada.'; $messageType = 'success';
             } catch (PDOException $e) { $message = 'Não foi possível atualizar a meta. Tenta novamente.'; $messageType = 'danger'; }
-        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e data.'; $messageType = 'danger'; }
+        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'; $messageType = 'danger'; }
     }
 }
 
 $stmt = $pdo->prepare("SELECT * FROM future_goals WHERE user_id=:uid ORDER BY target_date ASC");
 $stmt->execute([':uid'=>$uid]); $goals = $stmt->fetchAll();
+$savedByGoal = savings_by_goal($pdo, (int) $uid);
+$todayYmd    = (string) $pdo->query('SELECT CURDATE()')->fetchColumn();
 
 $stmt = $pdo->prepare("
     SELECT YEAR(transaction_date) as y, MONTH(transaction_date) as m, SUM(amount) as total
@@ -117,6 +118,7 @@ function months_left_label(string $date): string {
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/piggy.css?v=1">
   <style>
     .gl { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
     .gl-head h1 { margin: 0 0 6px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
@@ -136,6 +138,23 @@ function months_left_label(string $date): string {
     .gl-icons button { width: 34px; height: 34px; display: inline-grid; place-items: center; border: 0; border-radius: 9px; background: transparent; color: var(--fn-muted); cursor: pointer; }
     .gl-icons button:hover { background: var(--fn-paper); color: var(--fn-text); }
     .gl-icons .del:hover { background: #fef3f2; color: #b42318; }
+
+    /* Mealheiro da meta: o que já lá está e onde devias estar hoje */
+    .gl-saved { display: flex; gap: 18px; align-items: center; margin-top: 14px; padding: 14px 16px; border-radius: 16px; background: color-mix(in srgb, var(--fn-gold) 7%, var(--fn-paper)); }
+    .gl-saved .info { flex: 1; min-width: 0; }
+    .gl-saved .amt { font-family: var(--fn-font-brand); font-weight: 700; font-size: 26px; letter-spacing: -0.5px; line-height: 1.1; color: var(--fn-ink); }
+    [data-theme="dark"] .gl-saved .amt { color: #fff; }
+    .gl-saved .amt small { font-family: var(--fn-font-ui); font-size: 15px; font-weight: 500; color: var(--fn-muted); letter-spacing: 0; }
+    .gl-status { display: inline-flex; align-items: center; gap: 6px; margin: 6px 0 4px; font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+    .gl-status.ok   { background: #ecfdf3; color: #067647; }
+    .gl-status.late { background: #fffaeb; color: #93370d; }
+    .gl-status.done { background: var(--fn-gold-soft); color: #7a4e00; }
+    [data-theme="dark"] .gl-status.ok   { background: rgba(117,224,167,.12); color: #75e0a7; }
+    [data-theme="dark"] .gl-status.late { background: rgba(254,200,75,.12); color: #fedf89; }
+    [data-theme="dark"] .gl-status.done { color: #f0b53a; }
+    .gl-saved p { margin: 0 0 10px; font-size: 13.5px; color: var(--fn-muted); }
+    .main-content .gl-saved .btn-s { min-height: 38px; }
+    @media (max-width: 480px) { .gl-saved { flex-direction: column; text-align: center; } }
 
     .gl-proj-label { margin-top: 18px; font-size: 14px; color: var(--fn-muted); }
     .gl-proj { font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.5px; line-height: 1.1; color: var(--fn-ink); }
@@ -245,7 +264,7 @@ function months_left_label(string $date): string {
                       data-id="<?= (int) $g['id'] ?>" data-name="<?= htmlspecialchars($g['name']) ?>"
                       data-amount="<?= htmlspecialchars($g['target_amount']) ?>" data-income="<?= htmlspecialchars($g['monthly_income']) ?>"
                       data-date="<?= htmlspecialchars($g['target_date']) ?>"><i class="bi bi-pencil"></i></button>
-              <form method="post" onsubmit="return confirm('Apagar esta meta? Não é possível desfazer.')">
+              <form method="post" onsubmit="return confirm('Apagar esta meta? O dinheiro poupado nela passa para as poupanças sem meta.')">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="goal_id" value="<?= (int) $g['id'] ?>">
@@ -254,7 +273,28 @@ function months_left_label(string $date): string {
             </div>
           </div>
 
-          <div class="gl-proj-label">No prazo vais ter cerca de</div>
+          <?php
+            $saved    = max($savedByGoal[(int) $g['id']] ?? 0, 0);
+            $target   = (float) $g['target_amount'];
+            $expected = goal_expected_today($g, $todayYmd);
+            $savedPct = $target > 0 ? $saved / $target * 100 : 0;
+            $markPct  = $target > 0 ? $expected / $target * 100 : null;
+            $mLeft    = max(1, (strtotime($g['target_date']) - strtotime($todayYmd)) / (30 * 86400));
+            if ($saved >= $target)        { $st = 'done'; $stTxt = 'Meta cumprida'; $stMsg = 'Já tens tudo o que precisavas. Parabéns!'; }
+            elseif ($saved >= $expected)  { $st = 'ok';   $stTxt = 'No caminho';    $stMsg = 'Estás acima da linha de hoje. Faltam ' . fmt_eur($target - $saved, 0) . '.'; }
+            else                          { $st = 'late'; $stTxt = 'Atrasado';      $stMsg = 'Junta ' . fmt_eur(($target - $saved) / $mLeft, 0) . ' por mês para chegares a tempo.'; }
+          ?>
+          <div class="gl-saved">
+            <?= piggy_html($savedPct, 'Mealheiro da meta ' . round(min($savedPct, 100)) . '% cheio; devias estar em ' . round(min((float) $markPct, 100)) . '%', 'sm', $markPct) ?>
+            <div class="info">
+              <div class="amt"><?= fmt_eur($saved, 0) ?> <small>de <?= fmt_eur($target, 0) ?> já poupados</small></div>
+              <span class="gl-status <?= $st ?>"><i class="bi bi-<?= $st === 'late' ? 'exclamation-circle' : ($st === 'done' ? 'trophy' : 'check-circle') ?>"></i> <?= $stTxt ?></span>
+              <p><?= $stMsg ?> <?php if ($st !== 'done'): ?>A linha tracejada mostra onde devias estar hoje (<?= fmt_eur($expected, 0) ?>).<?php endif; ?></p>
+              <a class="btn-s btn-s-primary" href="savings.php?goal=<?= (int) $g['id'] ?>#juntar"><i class="bi bi-plus-lg"></i> Juntar</a>
+            </div>
+          </div>
+
+          <div class="gl-proj-label">Se continuares a gastar como agora, no prazo vais ter cerca de</div>
           <div class="gl-proj"><?= fmt_eur(max($p['projected'], 0), 0) ?> <small>de <?= fmt_eur($g['target_amount'], 0) ?></small></div>
           <div class="gl-meter" role="img" aria-label="Projeção: <?= round($pct) ?>% da meta"><span class="<?= $p['tone'] ?>" style="width:<?= round($pct, 1) ?>%"></span></div>
 

@@ -22,6 +22,7 @@ $_pageTitles = [
     'transactions' => 'Transações',
     'cards'        => 'Cartões',
     'budgets'      => 'Orçamentos',
+    'savings'      => 'Poupanças',
     'futuro'       => 'Metas',
     'investments'  => 'Investimentos',
     'reminders'    => 'Lembretes',
@@ -119,7 +120,10 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
     <div class="sidebar-section-label">Planeamento</div>
     <a href="<?= $_sp ?>pages/budgets.php"      class="<?= _sidebarClass('budgets',      $_ap) ?>"<?= _ariaCurrent('budgets', $_ap) ?>>
-      <i class="bi bi-piggy-bank"></i> Orçamentos
+      <i class="bi bi-pie-chart"></i> Orçamentos
+    </a>
+    <a href="<?= $_sp ?>pages/savings.php"      class="<?= _sidebarClass('savings',      $_ap) ?>"<?= _ariaCurrent('savings', $_ap) ?>>
+      <i class="bi bi-piggy-bank"></i> Poupanças
     </a>
     <a href="<?= $_sp ?>pages/futuro.php"       class="<?= _sidebarClass('futuro',       $_ap) ?>"<?= _ariaCurrent('futuro', $_ap) ?>>
       <i class="bi bi-flag"></i> Metas
@@ -260,4 +264,4 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 <?php /* ── Tutorial System ── */ ?>
 <link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=2">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js?v=17"></script>
+<script src="<?= $_sp ?>js/tutorial.js?v=18"></script>

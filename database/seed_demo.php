@@ -9,6 +9,7 @@
 // - Nunca toca noutras contas: apaga e volta a criar só demo@finora.test.
 // - As datas são relativas a hoje (relógio do MySQL), por isso funciona em qualquer mês.
 // - No fim mostra a palavra-passe (nova a cada execução).
+// - Inclui poupanças (se a tabela savings existir: database/migration_savings.sql).
 
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
@@ -36,6 +37,8 @@ try {
     $old->execute([':e' => DEMO_EMAIL]);
     if ($oldId = $old->fetchColumn()) {
         $pdo->prepare('DELETE rh FROM reminder_history rh JOIN payment_reminders r ON r.id = rh.reminder_id WHERE r.user_id = :u')->execute([':u' => $oldId]);
+        $hasSavings = (bool) $pdo->query("SHOW TABLES LIKE 'savings'")->fetch();
+        if ($hasSavings) $pdo->prepare('DELETE FROM savings WHERE user_id = :u')->execute([':u' => $oldId]);
         foreach (['transactions', 'payment_reminders', 'budgets', 'future_goals', 'investments', 'cards', 'user_settings'] as $t) {
             $pdo->prepare("DELETE FROM $t WHERE user_id = :u")->execute([':u' => $oldId]);
         }
@@ -161,9 +164,28 @@ try {
                       ':due' => $today->modify('-2 days')->format('Y-m-d'), ':next' => $today->modify('-2 days')->format('Y-m-d'), ':rec' => 'once'] + ($hasAnchor ? [':anchor' => (int) $today->modify('-2 days')->format('j')] : []));
 
     // ── 7. Metas e investimentos ───────────────────────────────────────────
-    $addGoal = $pdo->prepare('INSERT INTO future_goals (user_id, name, target_amount, monthly_income, target_date) VALUES (:u, :n, :t, :i, :d)');
-    $addGoal->execute([':u' => $uid, ':n' => 'Viagem ao Japão', ':t' => 3200, ':i' => 1480, ':d' => $today->modify('+10 months')->format('Y-m-d')]);
-    $addGoal->execute([':u' => $uid, ':n' => 'Fundo de emergência', ':t' => 5000, ':i' => 1480, ':d' => $today->modify('+18 months')->format('Y-m-d')]);
+    // As metas começam no início dos dados (assim a linha de "onde devias estar" faz sentido)
+    $addGoal = $pdo->prepare('INSERT INTO future_goals (user_id, name, target_amount, monthly_income, target_date, created_at) VALUES (:u, :n, :t, :i, :d, :c)');
+    $addGoal->execute([':u' => $uid, ':n' => 'Viagem ao Japão', ':t' => 3200, ':i' => 2450, ':d' => $today->modify('+10 months')->format('Y-m-d'), ':c' => $start->format('Y-m-d 10:00:00')]);
+    $japan = (int) $pdo->lastInsertId();
+    $addGoal->execute([':u' => $uid, ':n' => 'Fundo de emergência', ':t' => 5000, ':i' => 2450, ':d' => $today->modify('+18 months')->format('Y-m-d'), ':c' => $start->format('Y-m-d 10:00:00')]);
+    $emergency = (int) $pdo->lastInsertId();
+
+    // Poupanças: todos os meses ao dia 3 (Japão um pouco abaixo do ritmo, emergência em dia) + 2 levantamentos
+    if ((bool) $pdo->query("SHOW TABLES LIKE 'savings'")->fetch()) {
+        $addSave = $pdo->prepare('INSERT INTO savings (user_id, goal_id, amount, note, saved_on) VALUES (:u, :g, :a, :n, :d)');
+        $i = 0;
+        for ($m = $start; $m <= $today; $m = $m->modify('+1 month'), $i++) {
+            $day = $m->setDate((int) $m->format('Y'), (int) $m->format('n'), 3);
+            if ($day > $today) break;
+            $d = $day->format('Y-m-d');
+            $addSave->execute([':u' => $uid, ':g' => $japan,     ':a' => 110, ':n' => 'Para o Japão', ':d' => $d]);
+            $addSave->execute([':u' => $uid, ':g' => $emergency, ':a' => 160, ':n' => 'Fundo de emergência', ':d' => $d]);
+            $addSave->execute([':u' => $uid, ':g' => null, ':a' => rnd(30, 90), ':n' => 'Sobrou do ordenado', ':d' => $day->modify('+24 days')->format('Y-m-d') <= $today->format('Y-m-d') ? $day->modify('+24 days')->format('Y-m-d') : $d]);
+            if ($i === 4) $addSave->execute([':u' => $uid, ':g' => null, ':a' => -150, ':n' => 'Reparação do carro', ':d' => $day->modify('+12 days')->format('Y-m-d')]);
+            if ($i === 9) $addSave->execute([':u' => $uid, ':g' => null, ':a' => -60, ':n' => 'Prenda de anos', ':d' => $day->modify('+8 days')->format('Y-m-d')]);
+        }
+    }
 
     $addInv = $pdo->prepare('INSERT INTO investments (user_id, name, type, ticker, quantity, buy_price, current_price, price_updated_at, created_at)
                              VALUES (:u, :n, :t, :k, :q, :b, :c, NOW(), :d)');
