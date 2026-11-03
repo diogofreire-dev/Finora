@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS payment_reminders (
   category               VARCHAR(100)  NULL,
   card_id                INT UNSIGNED  NULL,
   due_date               DATE          NOT NULL,
+  anchor_day             TINYINT UNSIGNED NULL,          -- dia original (mensais/anuais não escorregam)
   recurrence             ENUM('once','weekly','monthly','yearly') NOT NULL DEFAULT 'once',
   active                 TINYINT(1)    DEFAULT 1,
   notify_days_before     INT           DEFAULT 3,
