@@ -85,21 +85,21 @@
 
     budgets: [
       {
-        selector: '.page-header',
-        title: '🐷 Orçamentos',
-        text: 'Os orçamentos ajudam-te a controlar gastos por categoria. Define um limite mensal e recebe alertas quando te aproximas dele.',
+        selector: '.bg-head .btn-s-primary',
+        title: '🐷 Criar orçamento',
+        text: 'Define quanto queres gastar por mês, semana ou ano — no total, numa categoria ou num cartão.',
         position: 'bottom'
       },
       {
-        selector: '.page-header .btn-s-primary',
-        title: '➕ Criar Orçamento',
-        text: 'Clica aqui para criar um novo orçamento. Escolhe a categoria (alimentação, transportes, lazer…) e define o limite mensal.',
-        position: 'bottom'
+        selector: '.bg-tile',
+        title: '📊 Quanto ainda podes gastar',
+        text: 'Em destaque vês quanto te resta. O traço na barra mostra onde devias estar hoje: se a barra já passou o traço, estás a gastar mais depressa do que o previsto.',
+        position: 'right'
       },
       {
-        selector: '.settings-group',
-        title: '📊 Os Teus Orçamentos',
-        text: 'Cada orçamento mostra o valor gasto versus o limite definido. A barra muda de cor conforme te aproximas do limite — verde, amarelo e vermelho.',
+        selector: '.bg-hint',
+        title: '📅 Por dia',
+        text: 'Quanto podes gastar por dia até ao fim do período, para não passares o orçamento.',
         position: 'top'
       }
     ],
