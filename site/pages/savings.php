@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->prepare('INSERT INTO savings (user_id, goal_id, amount, note, saved_on) VALUES (:u, :g, :a, :n, :d)')
                 ->execute([':u' => $uid, ':g' => $goalId, ':a' => $kind === 'out' ? -$amount : $amount, ':n' => $note !== '' ? $note : null, ':d' => $date]);
             $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_eur($amount) . '.' : 'Boa! Puseste ' . fmt_eur($amount) . ' de lado.'];
+            if ($kind === 'in') $_SESSION['savings_drop'] = true;   // moeda a cair no mealheiro
         }
     } elseif ($action === 'delete') {
         $del = $pdo->prepare('DELETE FROM savings WHERE id = :id AND user_id = :u');
@@ -49,11 +50,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $flash = $del->rowCount() ? ['success', 'Movimento apagado.'] : ['danger', 'Esse movimento já não existe.'];
     }
     $_SESSION['flash_savings'] = $flash;
-    header('Location: savings.php');
+    parse_str((string) ($_POST['back'] ?? ''), $back);       // volta com os mesmos filtros (validados outra vez)
+    header('Location: savings.php?' . http_build_query(savings_filters($back, $goalIds)));
     exit;
 }
 [$flashType, $flashText] = $_SESSION['flash_savings'] ?? ['', ''];
 unset($_SESSION['flash_savings']);
+$coinDrop = !empty($_SESSION['savings_drop']);
+unset($_SESSION['savings_drop']);
 
 // ── Números ─────────────────────────────────────────────────────────────────
 $byGoal = savings_by_goal($pdo, $uid);
@@ -80,13 +84,32 @@ $maxBar  = max(1, max(array_map('abs', $bars)));
 $lastSix = array_slice($bars, -7, 6);          // 6 meses completos antes do atual
 $avgSix  = $lastSix ? array_sum($lastSix) / count($lastSix) : 0;
 
-// Movimentos (os 80 mais recentes), agrupados por mês
-$stmt = $pdo->prepare('SELECT s.id, s.amount, s.note, s.saved_on, g.name AS goal_name FROM savings s
-                       LEFT JOIN future_goals g ON g.id = s.goal_id
-                       WHERE s.user_id = :u ORDER BY s.saved_on DESC, s.id DESC LIMIT 80');
-$stmt->execute([':u' => $uid]);
+// ── Movimentos com filtros (?p=período, g=meta, t=tipo, n=páginas de 30) ─────
+// Tudo validado contra listas fixas; a meta tem de ser do próprio utilizador.
+$filters = savings_filters($_GET, $goalIds);
+$where   = ['s.user_id = :u'];
+$params  = [':u' => $uid];
+$periods = ['mes' => "DATE_FORMAT(CURDATE(), '%Y-%m-01')", '3m' => 'DATE_SUB(CURDATE(), INTERVAL 3 MONTH)', '12m' => 'DATE_SUB(CURDATE(), INTERVAL 12 MONTH)'];
+if (isset($periods[$filters['p']])) $where[] = 's.saved_on >= ' . $periods[$filters['p']];   // SQL fixo, nunca vem do pedido
+if ($filters['g'] === 'sem')        $where[] = 's.goal_id IS NULL';
+elseif ($filters['g'] !== 'todas') { $where[] = 's.goal_id = :g'; $params[':g'] = (int) $filters['g']; }
+if ($filters['t'] === 'in')  $where[] = 's.amount > 0';
+if ($filters['t'] === 'out') $where[] = 's.amount < 0';
+$whereSql = implode(' AND ', $where);
+
+$stmt = $pdo->prepare("SELECT COUNT(*) AS n, COALESCE(SUM(s.amount), 0) AS total FROM savings s WHERE $whereSql");
+$stmt->execute($params);
+$found = $stmt->fetch();
+
+$limit = SAVINGS_PAGE * $filters['n'];
+$stmt  = $pdo->prepare("SELECT s.id, s.amount, s.note, s.saved_on, g.name AS goal_name FROM savings s
+                        LEFT JOIN future_goals g ON g.id = s.goal_id
+                        WHERE $whereSql ORDER BY s.saved_on DESC, s.id DESC LIMIT $limit");
+$stmt->execute($params);
 $moves = [];
 foreach ($stmt as $m) $moves[substr($m['saved_on'], 0, 7)][] = $m;
+$shown = array_sum(array_map('count', $moves));
+$query = fn(array $change = []) => '?' . http_build_query(array_merge($filters, $change)) . '#svMoves';
 
 $milestone = savings_next_milestone(max($total, 0));
 $fillPct   = $milestone > 0 ? max($total, 0) / $milestone * 100 : 0;
@@ -107,7 +130,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=7">
-  <link rel="stylesheet" href="../css/piggy.css?v=1">
+  <link rel="stylesheet" href="../css/piggy.css?v=3">
   <style>
     .sv { max-width: 1120px; margin: 0 auto; padding-bottom: 56px; }
     .sv h1 { margin: 0 0 18px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
@@ -152,6 +175,19 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
     .sv-del { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--fn-muted); cursor: pointer; }
     .sv-del:hover { background: #fef3f2; color: #b42318; }
     .sv-empty { padding: 36px 24px; text-align: center; color: var(--fn-muted); }
+    .sv-empty a { color: var(--fn-text); font-weight: 600; }
+    /* Filtros */
+    .sv-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; padding: 14px 20px 4px; border-bottom: 1px solid var(--fn-line); padding-bottom: 14px; }
+    .sv-filter { display: grid; gap: 4px; min-width: 0; flex: 1 1 150px; margin: 0; }
+    .sv-filter span { font-size: 12.5px; font-weight: 600; color: var(--fn-muted); }
+    .sv-filter .form-select { min-height: 40px; border-radius: 10px; font-size: 14px; }
+    .sv-seg { display: inline-flex; padding: 3px; border-radius: 11px; background: var(--fn-paper); flex: 0 0 auto; }
+    .sv-seg input { position: absolute; opacity: 0; pointer-events: none; }
+    .sv-seg label { padding: 0 14px; min-height: 34px; display: grid; place-items: center; border-radius: 8px; font-size: 13.5px; font-weight: 600; color: var(--fn-muted); cursor: pointer; }
+    .sv-seg input:checked + label { background: var(--fn-surface); color: var(--fn-text); box-shadow: 0 1px 3px rgba(20, 33, 61, .15); }
+    .sv-seg input:focus-visible + label { outline: 3px solid var(--fn-gold); }
+    .sv-more { padding: 6px 20px 18px; text-align: center; }
+    .sv-more span { color: var(--fn-muted); font-weight: 400; }
 
     /* Lado: metas e últimos 12 meses */
     .sv-goal { display: block; padding: 12px 20px; text-decoration: none; color: inherit; }
@@ -209,7 +245,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <?php endif; ?>
 
   <section class="sv-hero" aria-labelledby="svTotalLabel">
-    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_eur($milestone, 0)) ?>
+    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_eur($milestone, 0), 'lg', null, $coinDrop ? 'drop' : '') ?>
     <div>
       <p class="sv-label" id="svTotalLabel">Tens poupado</p>
       <p class="sv-total"><?= fmt_eur(max($total, 0)) ?></p>
@@ -235,9 +271,31 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 
   <div class="sv-grid">
     <section class="pg-card" style="--tone: var(--cat-3)" aria-labelledby="svMoves">
-      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves">Movimentos</h2><p>Tudo o que puseste de lado ou tiraste.</p></div></header>
-      <?php if (!$moves): ?>
+      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves">Movimentos</h2><p><?= (int) $found['n'] ?> movimento<?= $found['n'] == 1 ? '' : 's' ?> · <?= ($found['total'] >= 0 ? '+' : '−') . fmt_eur(abs($found['total'])) ?></p></div></header>
+      <form class="sv-filters" method="get" action="savings.php#svMoves" aria-label="Filtrar movimentos">
+        <label class="sv-filter"><span>Período</span>
+          <select name="p" class="form-select">
+            <?php foreach (['mes' => 'Este mês', '3m' => 'Últimos 3 meses', '12m' => 'Últimos 12 meses', 'tudo' => 'Tudo'] as $k => $l): ?>
+              <option value="<?= $k ?>" <?= $filters['p'] === $k ? 'selected' : '' ?>><?= $l ?></option>
+            <?php endforeach; ?>
+          </select></label>
+        <label class="sv-filter"><span>Meta</span>
+          <select name="g" class="form-select">
+            <option value="todas">Todas</option>
+            <option value="sem" <?= $filters['g'] === 'sem' ? 'selected' : '' ?>>Sem meta</option>
+            <?php foreach ($goals as $g): ?><option value="<?= (int) $g['id'] ?>" <?= $filters['g'] === (string) $g['id'] ? 'selected' : '' ?>><?= htmlspecialchars($g['name']) ?></option><?php endforeach; ?>
+          </select></label>
+        <div class="sv-seg" role="radiogroup" aria-label="Tipo">
+          <?php foreach (['todos' => 'Tudo', 'in' => 'Pus', 'out' => 'Tirei'] as $k => $l): ?>
+            <input type="radio" name="t" id="t_<?= $k ?>" value="<?= $k ?>" <?= $filters['t'] === $k ? 'checked' : '' ?>><label for="t_<?= $k ?>"><?= $l ?></label>
+          <?php endforeach; ?>
+        </div>
+        <noscript><button type="submit" class="btn-s">Filtrar</button></noscript>
+      </form>
+      <?php if (!$moves && (int) $found['n'] === 0 && $filters === savings_filters([], $goalIds) && $total == 0): ?>
         <div class="sv-empty">Ainda não há movimentos. Começa com "Pôr de lado", mesmo que sejam 5 €.</div>
+      <?php elseif (!$moves): ?>
+        <div class="sv-empty">Nenhum movimento com estes filtros. <a href="<?= $query(['p' => 'tudo', 'g' => 'todas', 't' => 'todos', 'n' => 1]) ?>">Ver todos</a></div>
       <?php endif; ?>
       <?php foreach ($moves as $ym => $items): $sum = array_sum(array_column($items, 'amount')); ?>
         <div class="sv-month"><?= $monthName($ym) ?><span><?= ($sum >= 0 ? '+' : '−') . fmt_eur(abs($sum)) ?></span></div>
@@ -253,6 +311,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
               <form method="post" onsubmit="return confirm('Apagar este movimento?')">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
+                <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">
                 <input type="hidden" name="saving_id" value="<?= (int) $m['id'] ?>">
                 <button type="submit" class="sv-del" aria-label="Apagar movimento de <?= fmt_eur(abs($m['amount'])) ?>"><i class="bi bi-trash3"></i></button>
               </form>
@@ -260,6 +319,9 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
           <?php endforeach; ?>
         </ul>
       <?php endforeach; ?>
+      <?php if ($shown < (int) $found['n']): ?>
+        <div class="sv-more"><a class="btn-s" href="<?= $query(['n' => $filters['n'] + 1]) ?>">Ver mais <span>(faltam <?= (int) $found['n'] - $shown ?>)</span></a></div>
+      <?php endif; ?>
     </section>
 
     <div>
@@ -297,6 +359,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <form method="post">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="add">
+    <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">
     <div class="sv-kind" role="radiogroup" aria-label="Tipo de movimento">
       <input type="radio" name="kind" id="kindIn" value="in" checked><label for="kindIn"><i class="bi bi-arrow-down-left"></i> Pôr de lado</label>
       <input type="radio" name="kind" id="kindOut" value="out"><label for="kindOut"><i class="bi bi-arrow-up-right"></i> Tirar</label>
@@ -343,6 +406,9 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   document.querySelectorAll('input[name="kind"]').forEach((r) => r.addEventListener('change', () => setKind(r.value)));
   dlg.querySelector('[data-close]').addEventListener('click', () => dlg.close());
   dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+  // Filtros: aplicam-se logo ao mudar (sem JS há o botão "Filtrar")
+  const ff = document.querySelector('.sv-filters');
+  if (ff) ff.addEventListener('change', () => ff.submit());
   // Vindo das Metas com "Juntar" (savings.php?goal=ID#juntar): abre logo o formulário
   if (location.hash === '#juntar') { setKind('in'); dlg.showModal(); document.getElementById('svAmount').focus(); }
 })();
