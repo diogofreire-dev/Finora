@@ -1,0 +1,97 @@
+# CI da Finora: corre em cada push para a main e em cada pull request.
+#  - lint:    erros de sintaxe em todos os ficheiros PHP
+#  - segredos: gitleaks procura chaves/tokens nos commits (as chaves antigas, já canceladas, estão no .gitleaksignore)
+#  - app:     instala a BD a partir do schema.sql (2×, para provar que não apaga nada), cria a conta demo
+#             e abre todas as páginas com sessão iniciada (tests/smoke.sh)
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Sintaxe PHP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: none
+      - name: php -l em todos os ficheiros
+        run: |
+          errors="$(find . -name '*.php' -not -path './vendor/*' -print0 \
+                    | xargs -0 -n1 php -l 2>&1 | grep -v '^No syntax errors' || true)"
+          if [ -n "$errors" ]; then echo "$errors"; exit 1; fi
+          echo "Todos os ficheiros PHP sem erros de sintaxe."
+
+  secrets:
+    name: Segredos (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  app:
+    name: Instalação e páginas
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:10.4          # a mesma versão do XAMPP
+        env:
+          MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: pdo_mysql, mbstring, gd, curl
+          ini-values: display_errors=On, error_reporting=E_ALL
+          tools: composer
+
+      - name: Dependências
+        run: composer install --no-interaction --no-progress
+
+      - name: Configuração a partir dos exemplos
+        run: |
+          cp config/db.example.php           config/db.php
+          cp config/brevo.example.php        config/brevo.php
+          cp config/google_oauth.example.php config/google_oauth.php
+
+      - name: Base de dados (schema.sql duas vezes)
+        run: |
+          mysql -h 127.0.0.1 -u root < database/schema.sql
+          mysql -h 127.0.0.1 -u root < database/schema.sql
+          mysql -h 127.0.0.1 -u root -N -e "SELECT COUNT(*) AS tabelas FROM information_schema.TABLES WHERE TABLE_SCHEMA='pap'"
+
+      - name: Conta demo
+        id: seed
+        run: |
+          out="$(php database/seed_demo.php)"
+          pass="$(sed -nE 's/.*Palavra-passe: *(.+)$/\1/p' <<<"$out")"
+          echo "::add-mask::$pass"
+          echo "pass=$pass" >> "$GITHUB_OUTPUT"
+          head -1 <<<"$out"
+
+      - name: Abrir todas as páginas
+        run: |
+          php -S 127.0.0.1:8000 -t . > /tmp/php-server.log 2>&1 &
+          sleep 1
+          tests/smoke.sh http://127.0.0.1:8000/site demo@finora.test '${{ steps.seed.outputs.pass }}'
+
+      - name: Log do servidor PHP (se falhar)
+        if: failure()
+        run: cat /tmp/php-server.log
