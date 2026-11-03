@@ -40,6 +40,9 @@ if (isset($pdo) && isset($uid)) {
         $_avatarPath = $_s->fetchColumn();
     } catch (Exception $_e) {}
 }
+// Só mostrar a foto se o ficheiro existir; ?v= muda quando a foto muda (evita a versão antiga em cache)
+$_avatarFile = $_avatarPath ? __DIR__ . '/../' . $_avatarPath : null;
+$_avatarPath = ($_avatarFile && is_file($_avatarFile)) ? $_avatarPath . '?v=' . filemtime($_avatarFile) : null;
 $_username = $_SESSION['username'] ?? '';
 $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 ?>
@@ -189,6 +192,12 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     if (e.key !== 'Escape') return;
     if (!uMenu.hidden) { toggleUserMenu(false); uBtn.focus(); }
     else closeSidebar();
+  });
+
+  // Os modais do Bootstrap têm de ser filhos diretos do <body>. Dentro do .main-content,
+  // a regra ".main-content > *" do theme.css tira-lhes o position:fixed e ficam partidos.
+  document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.main-content .modal').forEach(m => document.body.appendChild(m));
   });
 
   // Usados pelo overlay, pelo botão de fechar e pelo tutorial
