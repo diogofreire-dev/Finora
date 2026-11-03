@@ -256,16 +256,16 @@
 
     scan_fatura: [
       {
-        selector: '.page-header',
-        title: '📷 Ler Fatura QR',
-        text: 'Digitaliza o QR code de faturas portuguesas (AT) para importar automaticamente os dados da despesa sem precisar de introduzir nada à mão.',
+        selector: '#scTitle',
+        title: '📷 Ler fatura',
+        text: 'Liga a câmara e aponta para o código QR da fatura, ou escolhe "Imagem" para usar uma foto.',
         position: 'bottom'
       },
       {
-        selector: '.settings-group',
-        title: '📋 Como Funciona',
-        text: 'Aponta a câmara para o QR code na fatura, ou faz upload de uma imagem. A aplicação extrai automaticamente o valor, data, NIF e descrição.',
-        position: 'top'
+        selector: '#formTitle',
+        title: '🧾 Despesa',
+        text: 'A Finora preenche o valor, a data e o nome da loja. Confirma, escolhe a categoria e guarda.',
+        position: 'bottom'
       }
     ]
 
