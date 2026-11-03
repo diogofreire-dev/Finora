@@ -22,3 +22,4 @@ require_once __DIR__ . '/ownership.php';
 
 // Formatação em português (fmt_eur, month_name_pt) disponível em todas as páginas
 require_once __DIR__ . '/format.php';
+require_once __DIR__ . '/categories.php';

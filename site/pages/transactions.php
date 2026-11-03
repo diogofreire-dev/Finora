@@ -101,68 +101,76 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
     }
 }
 
-// ── FILTERS ─────────────────────────────────────────────────────────────────
-$category = $_GET['category'] ?? '';
-$card_id  = !empty($_GET['card_id']) ? intval($_GET['card_id']) : null;
+// ── FILTROS ──────────────────────────────────────────────────────────────────
 $month    = $_GET['month'] ?? date('Y-m');
+if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) $month = date('Y-m');
+$category = trim($_GET['category'] ?? '');
+$card_id  = !empty($_GET['card_id']) ? intval($_GET['card_id']) : null;
+$q        = trim(mb_substr($_GET['q'] ?? '', 0, 80));
 
-$stmt = $pdo->prepare("SELECT DISTINCT category FROM transactions WHERE user_id = :uid AND category IS NOT NULL ORDER BY category");
+$monthTs   = strtotime($month . '-01');
+$prevMonth = date('Y-m', strtotime('-1 month', $monthTs));
+$nextMonth = date('Y-m', strtotime('+1 month', $monthTs));
+$isCurrent = $month === date('Y-m');
+$monthLabel = month_name_pt((int) date('n', $monthTs)) . ' ' . date('Y', $monthTs);
+
+// URL desta página com os filtros atuais, alterando só o que for pedido
+function tx_url(array $changes = []): string {
+    global $month, $category, $card_id, $q;
+    $p = array_merge(['month' => $month, 'category' => $category, 'card_id' => $card_id, 'q' => $q], $changes);
+    return 'transactions.php?' . http_build_query(array_filter($p, fn($v) => $v !== '' && $v !== null));
+}
+
+$stmt = $pdo->prepare("SELECT DISTINCT category FROM transactions WHERE user_id = :uid AND category IS NOT NULL AND category <> '' ORDER BY category");
 $stmt->execute([':uid' => $uid]);
 $categories = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
-$stmt = $pdo->prepare("SELECT id, name FROM cards WHERE user_id = :uid ORDER BY name");
+$stmt = $pdo->prepare("SELECT id, name FROM cards WHERE user_id = :uid AND active = 1 ORDER BY name");
 $stmt->execute([':uid' => $uid]);
 $cards = $stmt->fetchAll();
 
-// ── QUERY (só cartões activos OU sem cartão; cartões inativos excluídos) ────
+// ── CONSULTA (só cartões ativos ou sem cartão) ──────────────────────────────
 $sql = "
     SELECT t.*, c.name AS card_name
     FROM transactions t
     LEFT JOIN cards c ON c.id = t.card_id
     WHERE t.user_id = :uid
       AND (t.card_id IS NULL OR c.active = 1)
+      AND t.transaction_date >= :from AND t.transaction_date < :to
 ";
-$params = [':uid' => $uid];
-if ($category) { $sql .= " AND t.category = :cat"; $params[':cat'] = $category; }
-if ($card_id)  { $sql .= " AND t.card_id = :cid"; $params[':cid'] = $card_id; }
-if ($month)    { $sql .= " AND DATE_FORMAT(t.transaction_date, '%Y-%m') = :month"; $params[':month'] = $month; }
+$params = [':uid' => $uid, ':from' => date('Y-m-01', $monthTs), ':to' => $nextMonth . '-01'];
+if ($category !== '') { $sql .= " AND t.category = :cat"; $params[':cat'] = $category; }
+if ($card_id)         { $sql .= " AND t.card_id = :cid"; $params[':cid'] = $card_id; }
+if ($q !== '') {
+    // Escapar % e _ para a pesquisa ser literal
+    $sql .= " AND t.description LIKE :q";
+    $params[':q'] = '%' . addcslashes($q, '%_\\') . '%';
+}
 $sql .= " ORDER BY t.transaction_date DESC, t.id DESC LIMIT 200";
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $transactions = $stmt->fetchAll();
 
-$total = array_sum(array_column($transactions, 'amount'));
+$total    = array_sum(array_column($transactions, 'amount'));
+$count    = count($transactions);
+$filtered = $category !== '' || $card_id || $q !== '';
 
-$categoryColors = [
-    'Compras'        => '#3498db',
-    'Alimentação'    => '#e74c3c',
-    'Transporte'     => '#f39c12',
-    'Saúde'          => '#1abc9c',
-    'Entretenimento' => '#9b59b6',
-    'Educação'       => '#34495e',
-    'Casa'           => '#e67e22',
-    'Outros'         => '#95a5a6',
-];
-$categoryIcons = [
-    'Compras'        => 'cart',
-    'Alimentação'    => 'cup-straw',
-    'Transporte'     => 'bus-front',
-    'Saúde'          => 'heart-pulse',
-    'Entretenimento' => 'controller',
-    'Educação'       => 'book',
-    'Casa'           => 'house-door',
-    'Outros'         => 'three-dots',
-];
+$stmt = $pdo->prepare("SELECT COUNT(*) FROM transactions WHERE user_id = :uid");
+$stmt->execute([':uid' => $uid]);
+$hasAnyTransaction = $stmt->fetchColumn() > 0;
 
 $byDay = [];
 foreach ($transactions as $t) {
-    $day = date('Y-m-d', strtotime($t['transaction_date']));
-    $byDay[$day][] = $t;
+    $byDay[date('Y-m-d', strtotime($t['transaction_date']))][] = $t;
 }
-
-$diasSemana = ['Sunday'=>'Domingo','Monday'=>'Segunda-feira','Tuesday'=>'Terça-feira','Wednesday'=>'Quarta-feira','Thursday'=>'Quinta-feira','Friday'=>'Sexta-feira','Saturday'=>'Sábado'];
-$meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'=>'abril','May'=>'maio','June'=>'junho','July'=>'julho','August'=>'agosto','September'=>'setembro','October'=>'outubro','November'=>'novembro','December'=>'dezembro'];
+$weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+function day_label(string $day, array $weekdays): string {
+    if ($day === date('Y-m-d')) return 'Hoje';
+    if ($day === date('Y-m-d', strtotime('-1 day'))) return 'Ontem';
+    $ts = strtotime($day);
+    return ucfirst($weekdays[(int) date('w', $ts)]) . ', ' . date('j', $ts) . ' de ' . month_name_pt((int) date('n', $ts));
+}
 ?>
 <!doctype html>
 <html lang="pt-PT" data-theme="<?=$currentTheme?>">
@@ -171,224 +179,207 @@ $meses = ['January'=>'janeiro','February'=>'fevereiro','March'=>'março','April'
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Transações - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--bg-primary); color: var(--text-primary); }
-    .settings-wrapper { max-width: 820px; margin: 0 auto; padding: 0 16px 60px; }
-
-    .page-header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; padding-top: 8px; }
-    .page-header-icon { width: 42px; height: 42px; border-radius: 12px; background: var(--bg-secondary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-    .page-header h2 { font-size: 20px; font-weight: 600; margin: 0 0 2px; color: var(--text-primary); }
-    .page-header p { font-size: 13px; color: var(--text-secondary); margin: 0; }
-
-    .settings-group { margin-bottom: 24px; }
-    .group-label { font-size: 11px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--text-secondary); margin: 0 0 8px 4px; }
-    .settings-card { background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; overflow: hidden; }
-
-    .s-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 20px; }
-    .s-row:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .s-row-label { font-size: 14px; font-weight: 500; color: var(--text-primary); margin: 0; }
-
-    .btn-s { font-size: 13px; font-weight: 500; padding: 7px 16px; border-radius: 9px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); cursor: pointer; transition: all .15s; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
-    .btn-s:hover { border-color: #999; background: var(--bg-hover); color: var(--text-primary); }
-    .btn-s-primary { background: var(--fn-accent); color: #fff; border-color: var(--fn-accent); }
-    .btn-s-primary:hover { background: var(--fn-accent-hover); color: #fff; border-color: var(--fn-accent-hover); }
-    .btn-s-danger { border-color: #dc2626; color: #dc2626; background: transparent; }
-    .btn-s-danger:hover { background: rgba(239,68,68,.07); }
-
-    .s-alert { border-radius: 10px; padding: 12px 16px; font-size: 13px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; border: 1px solid transparent; }
-    .s-alert-success { background: rgba(16,185,129,.1); border-color: rgba(16,185,129,.3); color: #065f46; }
-    .s-alert-danger  { background: rgba(239,68,68,.1);  border-color: rgba(239,68,68,.3);  color: #7f1d1d; }
-    [data-theme="dark"] .s-alert-success { color: #6ee7b7; }
-    [data-theme="dark"] .s-alert-danger  { color: #fca5a5; }
-
-    .s-badge { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px; background: var(--bg-primary); border: 1px solid var(--border-color); color: var(--text-secondary); }
-    .s-badge-invoice { background: rgba(var(--fn-accent-rgb),.12); border-color: rgba(var(--fn-accent-rgb),.3); color: var(--fn-accent-hover); }
-
-    .empty-state { padding: 48px 20px; text-align: center; }
-    .empty-state i { font-size: 48px; color: var(--border-color); display: block; margin-bottom: 12px; }
-    .empty-state p { font-size: 14px; color: var(--text-secondary); margin-bottom: 16px; }
-
-    .t-block { padding: 13px 20px; }
-    .t-block:not(:last-child) { border-bottom: 1px solid var(--border-color); }
-    .t-icon { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
-
-    .filter-body { padding: 16px 20px; }
-    .m-form label { font-size: 11px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; display: block; }
-    .m-form .form-control, .m-form .form-select { font-size: 14px; border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 12px; background: var(--bg-primary); color: var(--text-primary); width: 100%; }
-    .m-form .form-control:focus, .m-form .form-select:focus { border-color: var(--fn-accent); box-shadow: none; outline: none; }
-    [data-theme="dark"] .m-form .form-control,
-    [data-theme="dark"] .m-form .form-select { background: var(--bg-primary); color: var(--text-primary); border-color: var(--border-color); }
-
-    .filter-grid { display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
-    @media (max-width: 640px) { .filter-grid { grid-template-columns: 1fr 1fr; } .filter-actions { grid-column: 1 / -1; } }
-    @media (max-width: 380px)  { .filter-grid { grid-template-columns: 1fr; } }
-    @media (max-width: 500px)  { .t-amount-col { flex-direction: column; align-items: flex-end; gap: 6px; } }
-  </style>
+  <link rel="stylesheet" href="../css/sidebar.css?v=3">
   <link rel="stylesheet" href="../css/finora.css?v=1">
+  <style>
+    .tx { max-width: 880px; margin: 0 auto; padding-bottom: 56px; }
+
+    /* Título + navegação por mês */
+    .tx-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
+    .tx-head h1 { margin: 0; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
+    .tx-month { display: inline-flex; align-items: center; gap: 4px; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 12px; padding: 4px; }
+    .tx-month a, .tx-month span { display: inline-flex; align-items: center; justify-content: center; height: 36px; border-radius: 9px; text-decoration: none; }
+    .tx-month a { width: 36px; color: var(--fn-text); }
+    .tx-month a:hover { background: var(--fn-paper); }
+    .tx-month a[aria-disabled="true"] { opacity: .3; pointer-events: none; }
+    .tx-month span { min-width: 150px; padding: 0 8px; font-weight: 700; font-size: 15px; color: var(--fn-text); }
+    .tx-month span::first-letter { text-transform: uppercase; }
+
+    .tx-summary { margin: 0 0 22px; font-size: 15px; color: var(--fn-muted); }
+    .tx-summary strong { color: var(--fn-text); font-weight: 700; }
+
+    /* Filtros */
+    .tx-filters { display: flex; flex-direction: column; gap: 12px; margin-bottom: 26px; }
+    .tx-filter-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .tx-search { flex: 1 1 260px; position: relative; }
+    .tx-search i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--fn-muted); pointer-events: none; }
+    .main-content .tx-search .form-control { padding-left: 40px; }
+    .main-content .tx-card-select { flex: 0 1 220px; }
+    .tx-chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: thin; }
+    .tx-chip { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--fn-line); background: var(--fn-surface); color: var(--fn-text); font-size: 14px; font-weight: 600; white-space: nowrap; text-decoration: none; }
+    .tx-chip:hover { border-color: var(--fn-muted); color: var(--fn-text); }
+    .tx-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .tx-chip[aria-current="true"] { background: var(--fn-accent); border-color: var(--fn-accent); color: #fff; }
+    .tx-chip[aria-current="true"] .dot { box-shadow: 0 0 0 2px #fff; }
+    .tx-clear { font-size: 14px; font-weight: 600; color: var(--fn-muted); align-self: center; text-decoration: underline; }
+
+    /* Lista agrupada por dia */
+    .tx-day + .tx-day { margin-top: 22px; }
+    .tx-day-head { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 8px; }
+    .tx-day-head h2 { margin: 0; font-size: 15px; font-weight: 700; color: var(--fn-text); }
+    .tx-day-head span { font-size: 14px; color: var(--fn-muted); }
+    .tx-list { list-style: none; margin: 0; padding: 0; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
+    .tx-item { display: flex; align-items: center; gap: 14px; padding: 13px 16px 13px 18px; }
+    .tx-item + .tx-item { border-top: 1px solid var(--fn-line); }
+    .tx-ico { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; font-size: 17px; flex-shrink: 0; }
+    .tx-main { flex: 1; min-width: 0; }
+    .tx-desc { font-size: 15px; font-weight: 600; color: var(--fn-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tx-meta { margin-top: 2px; font-size: 13px; color: var(--fn-muted); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .tx-tag { font-size: 12px; font-weight: 600; padding: 1px 7px; border-radius: 6px; background: rgba(var(--fn-accent-rgb), .1); color: var(--fn-accent); }
+    [data-theme="dark"] .tx-tag { color: #c9d4ef; }
+    .tx-amt { font-size: 15px; font-weight: 700; color: var(--fn-text); white-space: nowrap; }
+    .tx-actions { display: flex; gap: 2px; }
+    .tx-actions a, .tx-actions button {
+      width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 9px;
+      border: 0; background: transparent; color: var(--fn-muted); font-size: 15px; cursor: pointer; text-decoration: none;
+    }
+    .tx-actions a:hover { background: var(--fn-paper); color: var(--fn-text); }
+    .tx-actions button:hover { background: #fef3f2; color: #b42318; }
+    [data-theme="dark"] .tx-actions button:hover { background: rgba(253,162,155,.1); color: #fda29b; }
+    .tx-actions form { margin: 0; }
+
+    .tx-empty { padding: 48px 24px; text-align: center; background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 16px; }
+    .tx-empty h2 { margin: 0 0 6px; font-size: 18px; font-weight: 700; color: var(--fn-text); }
+    .tx-empty p { margin: 0 auto 18px; max-width: 44ch; color: var(--fn-muted); font-size: 15px; }
+    .tx-limit { margin: 16px 4px 0; font-size: 13px; color: var(--fn-muted); }
+
+    @media (max-width: 560px) {
+      .tx-head h1 { font-size: 26px; }
+      .tx-month { width: 100%; justify-content: space-between; }
+      .tx-item { padding: 12px 10px 12px 14px; gap: 12px; }
+      .tx-actions a, .tx-actions button { width: 30px; }
+      .main-content .tx-card-select { flex: 1 1 100%; }
+    }
+  </style>
 </head>
 <body>
 <div class="app-layout">
 <?php $activePage='transactions'; $sidebarPrefix='../'; include __DIR__.'/../components/sidebar.php'; ?>
 <main class="main-content">
 <div class="page-content">
-<div class="settings-wrapper">
+<div class="tx">
 
-  <div class="page-header">
-    <div class="page-header-icon"><i class="bi bi-receipt"></i></div>
-    <div style="flex:1">
-      <h2>As Minhas Transações</h2>
-      <p>Histórico completo de despesas</p>
-    </div>
-    <a href="create_transaction.php" class="btn-s btn-s-primary">
-      <i class="bi bi-plus-circle"></i> Nova
-    </a>
+  <div class="tx-head">
+    <h1>Transações</h1>
+    <nav class="tx-month" aria-label="Escolher mês">
+      <a href="<?= htmlspecialchars(tx_url(['month' => $prevMonth])) ?>" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></a>
+      <span aria-live="polite"><?= $monthLabel ?></span>
+      <a href="<?= htmlspecialchars(tx_url(['month' => $nextMonth])) ?>" aria-label="Mês seguinte"<?= $isCurrent ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-right"></i></a>
+    </nav>
   </div>
+
+  <p class="tx-summary">
+    <?php if ($count > 0): ?>
+      <strong><?= $count ?></strong> transaç<?= $count === 1 ? 'ão' : 'ões' ?> ·
+      <strong><?= fmt_eur($total) ?></strong> no total ·
+      média de <?= fmt_eur($total / $count) ?>
+    <?php else: ?>
+      Sem transações neste período.
+    <?php endif; ?>
+  </p>
 
   <?php if ($message): ?>
-    <div class="s-alert s-alert-<?=$messageType?>">
-      <i class="bi bi-<?=$messageType==='success'?'check-circle':'exclamation-circle'?>" style="flex-shrink:0;margin-top:1px"></i>
-      <span><?=htmlspecialchars($message)?></span>
+    <div class="s-alert s-alert-<?= $messageType ?>" role="status">
+      <i class="bi bi-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
+      <span><?= htmlspecialchars($message) ?></span>
     </div>
   <?php endif; ?>
 
-  <?php if (!empty($transactions)): ?>
-  <div class="settings-group">
-    <p class="group-label">Resumo do período</p>
-    <div class="settings-card">
-      <div class="s-row">
-        <p class="s-row-label">Transações</p>
-        <span style="font-size:15px;font-weight:700;color:var(--text-primary)"><?=count($transactions)?></span>
-      </div>
-      <div class="s-row">
-        <p class="s-row-label">Total gasto</p>
-        <span style="font-size:15px;font-weight:700;color:#e74c3c"><?=fmt_eur($total)?></span>
-      </div>
-      <div class="s-row">
-        <p class="s-row-label">Média por transação</p>
-        <span style="font-size:15px;font-weight:700;color:var(--fn-accent)">€<?=count($transactions)>0?number_format($total/count($transactions),2):'0.00'?></span>
-      </div>
+  <?php if ($hasAnyTransaction): ?>
+  <form class="tx-filters" method="get" role="search">
+    <input type="hidden" name="month" value="<?= htmlspecialchars($month) ?>">
+    <?php if ($category !== ''): ?><input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>"><?php endif; ?>
+    <div class="tx-filter-row">
+      <label class="tx-search">
+        <span class="visually-hidden">Pesquisar pela descrição</span>
+        <i class="bi bi-search"></i>
+        <input type="search" name="q" class="form-control" placeholder="Pesquisar pela descrição" value="<?= htmlspecialchars($q) ?>">
+      </label>
+      <label class="tx-card-select">
+        <span class="visually-hidden">Cartão</span>
+        <select name="card_id" class="form-select" onchange="this.form.submit()">
+          <option value="">Todos os cartões</option>
+          <?php foreach ($cards as $c): ?>
+            <option value="<?= $c['id'] ?>" <?= $card_id == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
+          <?php endforeach; ?>
+        </select>
+      </label>
     </div>
-  </div>
+    <?php if ($categories): ?>
+    <div class="tx-chips" aria-label="Filtrar por categoria">
+      <a class="tx-chip" href="<?= htmlspecialchars(tx_url(['category' => ''])) ?>" aria-current="<?= $category === '' ? 'true' : 'false' ?>">Todas</a>
+      <?php foreach ($categories as $cat): ?>
+        <a class="tx-chip" href="<?= htmlspecialchars(tx_url(['category' => $cat])) ?>" aria-current="<?= $category === $cat ? 'true' : 'false' ?>">
+          <span class="dot" style="background:<?= category_color($cat) ?>"></span><?= htmlspecialchars($cat) ?>
+        </a>
+      <?php endforeach; ?>
+      <?php if ($filtered): ?><a class="tx-clear" href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>">Limpar filtros</a><?php endif; ?>
+    </div>
+    <?php endif; ?>
+  </form>
   <?php endif; ?>
-
-  <div class="settings-group">
-    <p class="group-label">Filtros</p>
-    <div class="settings-card">
-      <div class="filter-body">
-        <form method="get" class="m-form">
-          <div class="filter-grid">
-            <div>
-              <label><i class="bi bi-calendar"></i> Mês</label>
-              <input type="month" name="month" class="form-control" value="<?=htmlspecialchars($month)?>">
-            </div>
-            <div>
-              <label><i class="bi bi-tag"></i> Categoria</label>
-              <select name="category" class="form-select">
-                <option value="">Todas</option>
-                <?php foreach($categories as $cat): ?>
-                  <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?=htmlspecialchars($cat)?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div>
-              <label><i class="bi bi-credit-card"></i> Cartão</label>
-              <select name="card_id" class="form-select">
-                <option value="">Todos</option>
-                <?php foreach($cards as $c): ?>
-                  <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>><?=htmlspecialchars($c['name'])?></option>
-                <?php endforeach; ?>
-              </select>
-            </div>
-            <div class="filter-actions" style="display:flex;gap:6px">
-              <button type="submit" class="btn-s btn-s-primary" style="padding:8px 14px"><i class="bi bi-search"></i> Filtrar</button>
-              <a href="transactions.php" class="btn-s" style="padding:8px 12px"><i class="bi bi-x-lg"></i></a>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
 
   <?php if (empty($transactions)): ?>
-    <div class="settings-card">
-      <div class="empty-state">
-        <i class="bi bi-receipt"></i>
-        <p>Nenhuma transação encontrada.<br>Altera os filtros ou cria a tua primeira transação.</p>
-        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-circle"></i> Criar Transação</a>
-      </div>
+    <div class="tx-empty">
+      <?php if (!$hasAnyTransaction): ?>
+        <h2>Ainda não registaste nenhuma transação</h2>
+        <p>Regista os teus gastos para veres para onde vai o dinheiro e acompanhares os orçamentos.</p>
+        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+      <?php elseif ($filtered): ?>
+        <h2>Nenhuma transação com estes filtros</h2>
+        <p>Em <?= $monthLabel ?> não há transações que correspondam à pesquisa ou aos filtros escolhidos.</p>
+        <a href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>" class="btn-s">Limpar filtros</a>
+      <?php else: ?>
+        <h2>Sem transações em <?= $monthLabel ?></h2>
+        <p>Usa as setas para ver outros meses ou regista um gasto deste mês.</p>
+        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+      <?php endif; ?>
     </div>
   <?php else: ?>
-    <?php foreach($byDay as $day => $dayTransactions):
-      $dayObj    = new DateTime($day);
-      $today     = new DateTime();
-      $yesterday = (new DateTime())->modify('-1 day');
-      if ($dayObj->format('Y-m-d') === $today->format('Y-m-d'))          { $dayLabel = 'Hoje'; }
-      elseif ($dayObj->format('Y-m-d') === $yesterday->format('Y-m-d'))  { $dayLabel = 'Ontem'; }
-      else { $dayLabel = $diasSemana[$dayObj->format('l')].', '.$dayObj->format('d').' de '.$meses[$dayObj->format('F')]; }
-      $dayTotal = array_sum(array_column($dayTransactions, 'amount'));
-    ?>
-    <div class="settings-group">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin:0 0 8px 4px">
-        <p class="group-label" style="margin:0"><?=htmlspecialchars($dayLabel)?></p>
-        <span style="font-size:12px;font-weight:700;color:#e74c3c">−<?=fmt_eur($dayTotal)?></span>
-      </div>
-      <div class="settings-card">
-        <?php foreach($dayTransactions as $t): ?>
-        <div class="t-block">
-          <div style="display:flex;align-items:center;gap:12px">
-            <?php
-              $cat   = $t['category'] ?? '';
-              $tColor = $categoryColors[$cat] ?? '#95a5a6';
-              $tIcon  = $categoryIcons[$cat]  ?? 'receipt';
-            ?>
-            <div class="t-icon" style="background:<?=$tColor?>1a;color:<?=$tColor?>;border:1px solid <?=$tColor?>33">
-              <i class="bi bi-<?=$tIcon?>"></i>
-            </div>
-            <div style="flex:1;min-width:0">
-              <div style="font-size:14px;font-weight:500;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
-                <?=htmlspecialchars($t['description'])?>
+    <?php foreach ($byDay as $day => $items): ?>
+      <section class="tx-day" aria-labelledby="d<?= $day ?>">
+        <div class="tx-day-head">
+          <h2 id="d<?= $day ?>"><?= day_label($day, $weekdays) ?></h2>
+          <span><?= fmt_eur(array_sum(array_column($items, 'amount'))) ?></span>
+        </div>
+        <ul class="tx-list">
+          <?php foreach ($items as $t):
+            $cat = $t['category'] ?: 'Outros';
+            $col = category_color($cat);
+          ?>
+            <li class="tx-item">
+              <span class="tx-ico" style="background:<?= $col ?>1f;color:<?= $col ?>"><i class="bi bi-<?= category_icon($cat) ?>"></i></span>
+              <div class="tx-main">
+                <div class="tx-desc"><?= htmlspecialchars($t['description'] ?: 'Sem descrição') ?></div>
+                <div class="tx-meta">
+                  <span><?= htmlspecialchars($cat) ?></span>·
+                  <span><?= $t['card_name'] ? htmlspecialchars($t['card_name']) : 'Dinheiro' ?></span>
+                  <?php if (($t['source'] ?? '') === 'invoice'): ?><span class="tx-tag">Fatura</span><?php endif; ?>
+                </div>
               </div>
-              <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
-                <?php if($t['category']): ?>
-                  <span class="s-badge" style="background:<?=$tColor?>15;border-color:<?=$tColor?>30;color:<?=$tColor?>"><i class="bi bi-tag" style="font-size:10px"></i> <?=htmlspecialchars($t['category'])?></span>
-                <?php endif; ?>
-                <?php if($t['card_name']): ?>
-                  <span class="s-badge"><i class="bi bi-credit-card" style="font-size:10px"></i> <?=htmlspecialchars($t['card_name'])?></span>
-                <?php else: ?>
-                  <span class="s-badge"><i class="bi bi-cash" style="font-size:10px"></i> Dinheiro</span>
-                <?php endif; ?>
-                <?php if(!empty($t['source']) && $t['source'] === 'invoice'): ?>
-                  <span class="s-badge s-badge-invoice"><i class="bi bi-file-earmark-text" style="font-size:10px"></i> Fatura</span>
-                <?php endif; ?>
-              </div>
-            </div>
-            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:7px;flex-shrink:0" class="t-amount-col">
-              <span style="font-size:15px;font-weight:700;color:#e74c3c">−<?=fmt_eur($t['amount'])?></span>
-              <div style="display:flex;gap:5px">
-                <a href="edit_transaction.php?id=<?=$t['id']?>" class="btn-s" style="padding:4px 10px;font-size:12px">
-                  <i class="bi bi-pencil"></i>
-                </a>
-                <form method="post" style="margin:0" onsubmit="return confirm('Remover esta transação? Esta ação não pode ser revertida.')"><?= csrf_field() ?>
+              <span class="tx-amt">−<?= fmt_eur($t['amount']) ?></span>
+              <div class="tx-actions">
+                <a href="edit_transaction.php?id=<?= $t['id'] ?>" aria-label="Editar <?= htmlspecialchars($t['description']) ?>" title="Editar"><i class="bi bi-pencil"></i></a>
+                <form method="post" onsubmit="return confirm('Apagar esta transação? Não é possível desfazer.')">
+                  <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
-                  <input type="hidden" name="transaction_id" value="<?=$t['id']?>">
-                  <button class="btn-s btn-s-danger" style="padding:4px 10px;font-size:12px" type="submit">
-                    <i class="bi bi-trash3"></i>
-                  </button>
+                  <input type="hidden" name="transaction_id" value="<?= $t['id'] ?>">
+                  <button type="submit" aria-label="Apagar <?= htmlspecialchars($t['description']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
                 </form>
               </div>
-            </div>
-          </div>
-        </div>
-        <?php endforeach; ?>
-      </div>
-    </div>
+            </li>
+          <?php endforeach; ?>
+        </ul>
+      </section>
     <?php endforeach; ?>
+    <?php if ($count >= 200): ?>
+      <p class="tx-limit">A mostrar as 200 transações mais recentes deste mês. Usa a pesquisa ou os filtros para encontrares as restantes.</p>
+    <?php endif; ?>
   <?php endif; ?>
 
-</div><!-- /settings-wrapper -->
+</div><!-- /tx -->
 </div><!-- /page-content -->
 </main>
 </div>

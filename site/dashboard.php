@@ -51,19 +51,8 @@ if ($mainBudget && $mainBudget['amount'] > 0) {
     $budgetPercentage = ($mainBudget['current_spent'] / $mainBudget['amount']) * 100;
 }
 
-// Cores das categorias, harmonizadas com o azul-marinho e o dourado da Finora
-$categoryColors = [
-    'Alimentação'    => '#d99a1e',
-    'Compras'        => '#4361a6',
-    'Transporte'     => '#2a9d8f',
-    'Casa'           => '#c8553d',
-    'Saúde'          => '#5a9e6f',
-    'Entretenimento' => '#8e6bbf',
-    'Educação'       => '#1f7a8c',
-    'Outros'         => '#8a93a6',
-    'Sem Categoria'  => '#b6bdcc',
-];
-$catColor = fn($c) => $categoryColors[$c] ?? '#8a93a6';
+// Cores das categorias: helpers/categories.php (partilhado com as Transações)
+$catColor = 'category_color';
 
 $stmt = $pdo->prepare("SELECT r.*, c.name as card_name, CASE WHEN r.due_date<CURDATE() THEN 'overdue' WHEN r.due_date<=DATE_ADD(CURDATE(),INTERVAL 7 DAY) THEN 'upcoming' ELSE 'future' END as status, DATEDIFF(r.due_date,CURDATE()) as days_until FROM payment_reminders r LEFT JOIN cards c ON c.id=r.card_id WHERE r.user_id=:uid AND r.active=1 AND r.due_date<=DATE_ADD(CURDATE(),INTERVAL 7 DAY) ORDER BY r.due_date ASC LIMIT 5");
 $stmt->execute([':uid'=>$uid]); $upcomingReminders=$stmt->fetchAll();
@@ -346,7 +335,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
               $ts  = strtotime($r['transaction_date']);
             ?>
               <li class="dsh-row">
-                <span class="dsh-cat-ico" style="background:<?= $col ?>1f;color:<?= $col ?>"><i class="bi bi-receipt"></i></span>
+                <span class="dsh-cat-ico" style="background:<?= $col ?>1f;color:<?= $col ?>"><i class="bi bi-<?= category_icon($cat) ?>"></i></span>
                 <div class="main">
                   <div class="t1"><?= htmlspecialchars($r['description'] ?: 'Sem descrição') ?></div>
                   <div class="t2">
