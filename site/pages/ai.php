@@ -65,7 +65,7 @@ $currentTheme = getUserTheme($pdo, $uid);
     @media (max-width: 820px) { .ai-grid { grid-template-columns: minmax(0, 1fr); } }
     @media (max-width: 520px) { .msg { max-width: 92%; } }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=8">
+  <link rel="stylesheet" href="../css/finora.css?v=9">
 </head>
 <body>
 <div class="app-layout">
