@@ -7,6 +7,7 @@ require_once __DIR__ . '/../helpers/theme_helper.php';
 $currentTheme = getUserTheme($pdo, $uid);
 
 require_once __DIR__ . '/../helpers/banks.php';
+require_once __DIR__ . '/../helpers/bank_watermark.php';
 
 $errors  = [];
 $card_id = !empty($_GET['id']) ? intval($_GET['id']) : null;
@@ -142,7 +143,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .form-switch .form-check-input { width: 40px; height: 22px; cursor: pointer; }
     .form-switch .form-check-input:checked { background-color: var(--fn-accent); border-color: var(--fn-accent); }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
 </head>
 <body>
 <div class="app-layout">
@@ -181,13 +182,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="card-visual-lg" id="cardPreview" style="background:<?=$initGradient?>">
           <!-- Watermark do banco -->
           <?php $initBankKey = $card['bank'] ?? ''; ?>
-          <div id="bankWatermarkEl" style="position:absolute;right:10px;bottom:8px;width:40%;height:75%;opacity:0.13;display:<?=!empty($initBankKey) && $initBankKey !== 'outro' ? 'flex' : 'none'?>;align-items:flex-end;justify-content:flex-end;pointer-events:none;overflow:hidden;">
-            <img id="bankWatermarkImg" src="" style="max-width:100%;max-height:100%;width:auto;height:auto;object-fit:contain;object-position:right bottom;" alt="">
-          </div>
+          <div id="bankWatermarkEl" class="bank-wm" style="display:none" aria-hidden="true"><img id="bankWatermarkImg" src="" alt=""></div>
           <div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
               <i class="bi bi-credit-card" style="font-size:22px;position:relative"></i>
               <?php $initBankLabel = $BANKS[$initBankKey]['label'] ?? ''; ?>
+              <img id="bankLogoImg" class="bank-logo-img" src="" alt="" style="display:none;position:absolute;top:18px;right:20px">
               <div id="bankLogoEl" class="bank-logo" style="display:<?=$initBankLabel?'block':'none'?>"><?=htmlspecialchars($initBankLabel)?></div>
             </div>
             <div class="cv-number">•••• •••• •••• ••••</div>
@@ -328,20 +328,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <script>
 const cardColorsMap = <?=json_encode(array_map(fn($c) => $c['gradient'], $cardColors))?>;
 
-const bankLogos = <?php
-  $logos = [];
-  $logoFiles = ['millennium'=>'millennium.svg','cgd'=>'cgd.svg','revolut'=>'revolut.svg','n26'=>'n26.svg','santander'=>'santander.svg','bpi'=>'bpi.svg','novobanco'=>'novobanco.svg','montepio'=>'montepio.svg','wise'=>'wise.svg','activobank'=>'activobank.svg','mbway'=>'mbway.svg','visa'=>'visa.svg','mastercard'=>'mastercard.svg'];
-  foreach ($logoFiles as $key => $file) {
-    $path = __DIR__ . '/../assets/banks/' . $file;
-    if (file_exists($path)) {
-      $svg = file_get_contents($path);
-      $svg = preg_replace('/fill="(?!none)[^"]*"/', 'fill="white"', $svg);
-      $svg = preg_replace('/stroke="(?!none|white)[^"]*"/', 'stroke="white"', $svg);
-      $logos[$key] = 'data:image/svg+xml;base64,' . base64_encode($svg);
-    }
-  }
-  echo json_encode($logos);
-?>;
+// Logos dos bancos para a pré-visualização
+const bankLogos = <?= json_encode(bankLogoUrls()) ?>;
 
 document.getElementById('cardName').addEventListener('input', function() {
   document.getElementById('preview-name').textContent = (this.value || 'NOME DO CARTAO').toUpperCase();
@@ -350,6 +338,7 @@ document.getElementById('cardName').addEventListener('input', function() {
 const bankSelect      = document.getElementById('bankSelect');
 const colorSection    = document.querySelector('.color-grid').closest('.form-section');
 const bankLogoEl      = document.getElementById('bankLogoEl');
+const bankLogoImg     = document.getElementById('bankLogoImg');
 const bankWatermarkEl = document.getElementById('bankWatermarkEl');
 const bankWatermarkImg= document.getElementById('bankWatermarkImg');
 
@@ -373,8 +362,13 @@ bankSelect.addEventListener('change', function() {
     if (checked) document.getElementById('cardPreview').style.background = cardColorsMap[checked.value];
   }
 
+  // Logo do banco no canto; sem logo, fica o nome em texto
+  const logo = bankLogos[bankKey];
+  bankLogoImg.src = logo || '';
+  bankLogoImg.alt = logo ? opt.textContent.trim() : '';
+  bankLogoImg.style.display = logo ? 'block' : 'none';
   bankLogoEl.textContent = label || '';
-  bankLogoEl.style.display = label ? 'block' : 'none';
+  bankLogoEl.style.display = label && !logo ? 'block' : 'none';
 
   if (bankLogos[bankKey]) {
     bankWatermarkImg.src = bankLogos[bankKey];

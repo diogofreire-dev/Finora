@@ -190,7 +190,7 @@ $walletCards = array_map(fn($c) => [
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
   <style>
     .cd { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
     .cd-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
@@ -241,7 +241,7 @@ $walletCards = array_map(fn($c) => [
       box-shadow: 0 10px 24px -12px rgba(20, 33, 61, .45);
     }
     .cd-visual::after { content: ''; position: absolute; inset: 0; background: linear-gradient(120deg, rgba(255,255,255,.18), transparent 45%); pointer-events: none; }
-    .cd-visual .top { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 1; }
+    .cd-visual .top { display: flex; justify-content: space-between; align-items: center; position: relative; z-index: 1; }
     .cd-chip { width: 38px; height: 28px; border-radius: 6px; background: linear-gradient(135deg, #f6d58e, #c99a3a); box-shadow: inset 0 0 0 1px rgba(0,0,0,.15); }
     .cd-bank { font-size: 12px; font-weight: 800; letter-spacing: .5px; padding: 3px 8px; border-radius: 6px; background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3); }
     .cd-visual .num { position: relative; z-index: 1; font-size: 15px; letter-spacing: 3px; opacity: .85; }
@@ -415,7 +415,8 @@ $walletCards = array_map(fn($c) => [
             <?= bankWatermark($c['bank'] ?? '') ?>
             <div class="top">
               <span class="cd-chip" aria-hidden="true"></span>
-              <?php if ($bankLabel): ?><span class="cd-bank"><?= htmlspecialchars($bankLabel) ?></span><?php endif; ?>
+              <?php if ($logo = bankLogo($c['bank'] ?? '', $bank['name'] ?? '')): ?><?= $logo ?>
+              <?php elseif ($bankLabel): ?><span class="cd-bank"><?= htmlspecialchars($bankLabel) ?></span><?php endif; ?>
             </div>
             <div class="num" aria-hidden="true">•••• •••• •••• ••••</div>
             <div class="bottom">

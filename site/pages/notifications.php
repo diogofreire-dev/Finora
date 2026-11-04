@@ -57,7 +57,7 @@ $unread = notif_unread_count($pdo, $uid);
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
   <style>
     .nt { max-width: 760px; margin: 0 auto; padding-bottom: 56px; }
     .nt-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 14px; flex-wrap: wrap; margin-bottom: 18px; }

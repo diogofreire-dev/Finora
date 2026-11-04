@@ -13,6 +13,9 @@
   --ln-text:    #1b2438;
   --ln-muted:   #5f6982;
   --ln-glow:    rgba(196, 138, 18, .16);
+  --ln-grid:    rgba(20, 33, 61, .05);
+  --ln-glow-gold: rgba(226, 176, 74, .22);
+  --ln-glow-blue: rgba(42, 120, 214, .14);
   --fn-logo-gold: #c48a12;
   --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100;
   --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
@@ -28,6 +31,9 @@
   --ln-text:    #e8ecf5;
   --ln-muted:   #9aa4bb;
   --ln-glow:    rgba(226, 176, 74, .18);
+  --ln-grid:    rgba(255, 255, 255, .045);
+  --ln-glow-gold: rgba(226, 176, 74, .14);
+  --ln-glow-blue: rgba(57, 135, 229, .16);
   --fn-logo-gold: #e2b04a;
   --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500;
   --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
@@ -36,7 +42,19 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-body { margin: 0; background: var(--ln-paper); color: var(--ln-text); font: 400 16px/1.6 var(--ln-font); -webkit-font-smoothing: antialiased; }
+/* Fundo do topo: papel quadriculado, como um livro de contas, com dois brilhos suaves
+   (dourado atrás do título, azul atrás do cartão). Desvanece antes da primeira secção. */
+body::before {
+  content: ''; position: absolute; inset: 0 0 auto; height: min(820px, 100vh); z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(38rem 26rem at 12% 18%, var(--ln-glow-gold), transparent 70%),
+    radial-gradient(42rem 30rem at 82% 30%, var(--ln-glow-blue), transparent 70%),
+    linear-gradient(var(--ln-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--ln-grid) 1px, transparent 1px) 0 0 / 32px 32px;
+  -webkit-mask-image: linear-gradient(#000 40%, transparent);
+  mask-image: linear-gradient(#000 40%, transparent);
+}
+body { position: relative; margin: 0; background: var(--ln-paper); color: var(--ln-text); font: 400 16px/1.6 var(--ln-font); -webkit-font-smoothing: antialiased; }
 h1, h2, h3, p, ul, ol { margin: 0; }
 a { color: inherit; }
 :focus-visible { outline: 3px solid var(--ln-gold-hi); outline-offset: 3px; border-radius: 6px; }

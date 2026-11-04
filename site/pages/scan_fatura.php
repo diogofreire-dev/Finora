@@ -156,7 +156,7 @@ unset($_SESSION['flash_scan']);
       .sc-form .row2 { grid-template-columns: 1fr; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
 </head>
 <body>
 <div class="app-layout">

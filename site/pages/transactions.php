@@ -185,7 +185,7 @@ function day_label(string $day, array $weekdays): string {
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
   <style>
     .tx { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
 
