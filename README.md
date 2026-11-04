@@ -46,7 +46,7 @@ A aplicação passou por uma auditoria baseada no OWASP Top 10. As correções e
 
 | Camada | |
 |---|---|
-| Servidor | PHP 8.2, Apache (XAMPP), Composer |
+| Servidor | PHP 8.2–8.3, Apache, Composer (local: XAMPP; online: Ubuntu no Azure, ver `docs/DEPLOY_AZURE.md`) |
 | Base de dados | MySQL / MariaDB 10.4 |
 | Interface | HTML, CSS, JavaScript, Bootstrap 5, Bootstrap Icons, Chart.js |
 | 3D | three.js 0.170 (local em `site/js/lib/three`), modelos e renders em Blender |
