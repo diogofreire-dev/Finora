@@ -53,6 +53,19 @@ CREATE TABLE IF NOT EXISTS cards (
 
 CREATE INDEX IF NOT EXISTS idx_cards_user_active ON cards(user_id, active);
 
+-- 2b. CARD_PAYMENTS (pagar o extrato: repõe o saldo usado sem contar como gasto)
+CREATE TABLE IF NOT EXISTS card_payments (
+  id         INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
+  user_id    INT UNSIGNED  NOT NULL,
+  card_id    INT UNSIGNED  NOT NULL,
+  amount     DECIMAL(10,2) NOT NULL,
+  paid_on    DATE          NOT NULL,
+  created_at DATETIME      DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_card_payments_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  CONSTRAINT fk_card_payments_card FOREIGN KEY (card_id) REFERENCES cards(id) ON DELETE CASCADE,
+  INDEX idx_card_payments_card (card_id, paid_on)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- 3. TRANSACTIONS
 CREATE TABLE IF NOT EXISTS transactions (
   id               INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

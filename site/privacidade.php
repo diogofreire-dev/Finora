@@ -110,7 +110,7 @@ $partners = [
     <h2>Que dados guardamos</h2>
     <ul>
       <li><b>Conta:</b> nome, email, palavra-passe (guardada como hash, nunca em texto), foto de perfil se a carregares e, se entrares com o Google, o identificador da tua conta Google.</li>
-      <li><b>O que registas:</b> cartões (nome e limite — nunca o número do cartão), transações, orçamentos, lembretes, poupanças, metas, investimentos e a lista de títulos que segues.</li>
+      <li><b>O que registas:</b> cartões (nome e limite — nunca o número do cartão) e pagamentos de extrato, transações, orçamentos, lembretes, poupanças, metas, investimentos e a lista de títulos que segues.</li>
       <li><b>Preferências:</b> tema, notificações e as notificações geradas para ti.</li>
       <li><b>Segurança:</b> tentativas de entrada falhadas e pedidos ao Assistente (só a hora, para limitar abusos). Os endereços IP usados para travar ataques são guardados como hash e apagados ao fim de 1 dia.</li>
     </ul>
