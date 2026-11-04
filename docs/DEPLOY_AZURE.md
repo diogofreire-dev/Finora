@@ -223,6 +223,18 @@ sudo nano config/brevo.php                  # BREVO_API_KEY e APP_URL = 'https:/
 sudo nano config/google_oauth.php           # redirect: https://<dominio>/site/auth/google_callback.php
 ```
 
+Para pôr as chaves sem abrir o editor (a chave não aparece no ecrã nem fica no histórico):
+
+```bash
+read -rsp "Chave Brevo: " K; echo; sudo sed -i -E "s|(BREVO_API_KEY', ')[^']*'|\1$K'|" config/brevo.php; unset K
+```
+
+> **Cuidado com o nano:** se a primeira linha (`<?php`) for apagada, o PHP mostra o ficheiro como texto — **com as chaves** —
+> em todas as páginas que o incluem. O `php -l` não apanha isto (texto sem `<?php` é válido). Depois de editar, confirma:
+> `sudo sh -c 'head -c 5 config/*.php'` → cada um começa por `<?php`. O `tests/smoke.sh` também falha se alguma página mostrar
+> código PHP ou chaves. Se uma chave chegar a aparecer numa página pública, **troca-a**: há bots a visitar todos os sites
+> com certificados novos.
+
 Confirma que a app liga com o utilizador certo: `sudo php -r 'require "config/db.php"; echo $pdo->query("SELECT CURRENT_USER()")->fetchColumn();'` → `finora@localhost`.
 
 **Permissões** — o Apache (`www-data`) lê o código mas só escreve na pasta das fotos e no log dos lembretes:
