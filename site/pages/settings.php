@@ -406,7 +406,7 @@ $since        = strtotime($user['created_at']);
     .st-form .st-sub a, .st-foot a { color: inherit; text-underline-offset: 3px; }
     #apagar-conta { scroll-margin-top: 90px; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=8">
+  <link rel="stylesheet" href="../css/finora.css?v=9">
 </head>
 <body>
 <div class="app-layout">

@@ -190,7 +190,7 @@ $walletCards = array_map(fn($c) => [
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=8">
+  <link rel="stylesheet" href="../css/finora.css?v=9">
   <style>
     .cd { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
     .cd-head { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 6px; }
