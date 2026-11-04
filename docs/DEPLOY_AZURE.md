@@ -210,6 +210,7 @@ Na **mesma sessão** do passo 6 (usa o `$P`):
 ```bash
 sudo git clone https://github.com/diogofreire-dev/Finora.git /var/www/finora
 cd /var/www/finora
+sudo git config core.fileMode false         # as permissões são nossas (passo abaixo); sem isto o git pull recusa atualizar
 sudo COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction
 sudo mysql < database/schema.sql            # seguro: nunca apaga nada
 
@@ -388,13 +389,22 @@ E testa a configuração TLS em <https://www.ssllabs.com/ssltest/> (objetivo: A)
 ```bash
 sudo -i                                         # o diogo não entra em /var/www/finora (passo 7)
 cd /var/www/finora
-mysqldump --single-transaction pap | gzip > /var/backups/finora/antes-update-$(date +%F).sql.gz
-git pull
+mysqldump --single-transaction pap | gzip > /var/backups/finora/antes-update-$(date +%F-%H%M).sql.gz
+git pull --ff-only
 COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction
 mysql < database/schema.sql                     # cria tabelas/colunas novas, não apaga nada
-chown -R root:www-data /var/www/finora && chown -R www-data:www-data site/assets/avatars cron/send_reminders.log
+# os ficheiros novos chegam com as permissões por defeito: repor as do passo 7
+chown -R root:www-data /var/www/finora
+find /var/www/finora -type d -exec chmod 750 {} + && find /var/www/finora -type f -exec chmod 640 {} +
+chown -R www-data:www-data site/assets/avatars cron/send_reminders.log
+chown www-data:root config/*.php && chmod 600 config/*.php
 exit
 ```
+
+Se o `git pull` disser *"Your local changes … would be overwritten"* sem teres mudado nada, falta o
+`git config core.fileMode false` (passo 7): o git está a ver as permissões do `chmod 640` como alterações.
+
+Depois de atualizar, corre o teste de páginas do passo 11.
 
 Se houver uma `database/migration_*.sql` nova que altere colunas existentes, lê-a antes e corre-a com `sudo mysql pap < …`.
 
