@@ -24,6 +24,9 @@ $cardColors = [
 
 // Pagar o extrato: regista o pagamento e baixa o saldo usado. Não é um gasto, por isso
 // não entra em transactions (contava duas vezes na análise).
+// "Hoje" vem do MySQL (hora de Portugal); o PHP deste servidor está noutro fuso.
+$today = (string) $pdo->query('SELECT CURDATE()')->fetchColumn();
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay') {
     require_once __DIR__ . '/../helpers/ownership.php';
     $cardId = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? 0);   // 403 se não for do utilizador
@@ -33,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay')
     $flash = null;
     if (!$cardId || $amount <= 0) {
         $flash = ['danger', 'Indica um valor maior que zero.'];
-    } elseif (!$d || $d->format('Y-m-d') !== $paidOn || $paidOn > date('Y-m-d', strtotime('+1 day'))) {
+    } elseif (!$d || $d->format('Y-m-d') !== $paidOn || $paidOn > $today) {
         $flash = ['danger', 'A data do pagamento não é válida.'];
     } else {
         try {
@@ -505,7 +508,7 @@ $walletCards = array_map(fn($c) => [
       </div>
       <div>
         <label class="form-label" for="payDate">Data</label>
-        <input type="date" class="form-control" id="payDate" name="paid_on" required value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>">
+        <input type="date" class="form-control" id="payDate" name="paid_on" required value="<?= $today ?>" max="<?= $today ?>">
       </div>
     </div>
     <p class="note">O pagamento repõe o disponível do cartão. Não conta como gasto na análise, porque as compras já lá estão.</p>
