@@ -9,6 +9,8 @@ set -euo pipefail
 BASE="${1:?url da pasta site}"; EMAIL="${2:?email}"; PASS="${3:?palavra-passe}"
 JAR="$(mktemp)"; trap 'rm -f "$JAR"' EXIT
 ERRORS='Fatal error|Parse error|Warning:|Notice:|Deprecated:|Uncaught|SQLSTATE'
+# Código PHP ou chaves no HTML: acontece se um ficheiro de config/ perder o "<?php" e for mostrado como texto
+LEAKS='<\?php|define\(|xkeysib-|gsk_[A-Za-z0-9]{20}|GOCSPX-'
 fail=0
 
 check() {   # check <caminho> [estado esperado]
@@ -19,6 +21,8 @@ check() {   # check <caminho> [estado esperado]
     echo "✗ $path → HTTP $code (esperado $want)"; fail=1
   elif grep -qE "$ERRORS" <<<"$body"; then
     echo "✗ $path → erro de PHP:"; grep -oE "($ERRORS).{0,160}" <<<"$body" | head -2; fail=1
+  elif grep -qE "$LEAKS" <<<"$body"; then
+    echo "✗ $path → mostra código PHP ou uma chave (o valor não é impresso)"; fail=1
   else
     echo "✓ $path"
   fi

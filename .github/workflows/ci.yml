@@ -42,11 +42,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   app:
-    name: Instalação e páginas
+    name: Instalação e páginas (PHP ${{ matrix.php }}, MariaDB ${{ matrix.mariadb }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.2', mariadb: '10.4' }    # o XAMPP local
+          - { php: '8.3', mariadb: '10.11' }   # o servidor (Ubuntu 24.04, docs/DEPLOY_AZURE.md)
     services:
       mariadb:
-        image: mariadb:10.4          # a mesma versão do XAMPP
+        image: mariadb:${{ matrix.mariadb }}
         env:
           MARIADB_ALLOW_EMPTY_ROOT_PASSWORD: 'yes'
         ports: ['3306:3306']
@@ -57,7 +63,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: shivammathur/setup-php@v2
         with:
-          php-version: '8.2'
+          php-version: ${{ matrix.php }}
           extensions: pdo_mysql, mbstring, gd, curl
           ini-values: display_errors=On, error_reporting=E_ALL
           tools: composer
