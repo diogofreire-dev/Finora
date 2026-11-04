@@ -22,6 +22,52 @@ $cardColors = [
     'indigo' => 'linear-gradient(135deg, #3F51B5 0%, #1A237E 100%)',
 ];
 
+// Pagar o extrato: regista o pagamento e baixa o saldo usado. Não é um gasto, por isso
+// não entra em transactions (contava duas vezes na análise).
+// "Hoje" vem do MySQL (hora de Portugal); o PHP deste servidor está noutro fuso.
+$today = (string) $pdo->query('SELECT CURDATE()')->fetchColumn();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay') {
+    require_once __DIR__ . '/../helpers/ownership.php';
+    $cardId = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? 0);   // 403 se não for do utilizador
+    $amount = round((float) str_replace(',', '.', $_POST['amount'] ?? '0'), 2);
+    $paidOn = (string) ($_POST['paid_on'] ?? '');
+    $d = DateTime::createFromFormat('!Y-m-d', $paidOn);
+    $flash = null;
+    if (!$cardId || $amount <= 0) {
+        $flash = ['danger', 'Indica um valor maior que zero.'];
+    } elseif (!$d || $d->format('Y-m-d') !== $paidOn || $paidOn > $today) {
+        $flash = ['danger', 'A data do pagamento não é válida.'];
+    } else {
+        try {
+            $pdo->beginTransaction();
+            // Só paga se houver saldo suficiente (a condição no WHERE evita pagar duas vezes com dois cliques)
+            $st = $pdo->prepare("UPDATE cards SET balance = balance - :a WHERE id = :id AND user_id = :uid AND balance >= :a2");
+            $st->execute([':a' => $amount, ':a2' => $amount, ':id' => $cardId, ':uid' => $uid]);
+            if ($st->rowCount() === 1) {
+                $pdo->prepare("INSERT INTO card_payments (user_id, card_id, amount, paid_on) VALUES (:uid, :id, :a, :d)")
+                    ->execute([':uid' => $uid, ':id' => $cardId, ':a' => $amount, ':d' => $paidOn]);
+                $pdo->commit();
+                $flash = ['success', 'Pagamento de ' . fmt_eur($amount) . ' registado.'];
+            } else {
+                $pdo->rollBack();
+                $flash = ['danger', 'O valor é maior do que o que está em uso no cartão.'];
+            }
+        } catch (PDOException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            error_log('[cards] pagar extrato: ' . $e->getMessage());
+            $flash = ['danger', 'Não foi possível registar o pagamento.'];
+        }
+    }
+    $_SESSION['flash_cards'] = $flash;
+    header('Location: cards.php' . ($flash[0] === 'success' ? '#card-' . $cardId : ''));
+    exit;
+}
+if (!empty($_SESSION['flash_cards'])) {
+    [$messageType, $message] = $_SESSION['flash_cards'];
+    unset($_SESSION['flash_cards']);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST['action'] === 'toggle') {
     $cardId = intval($_POST['card_id'] ?? 0);
     try {
@@ -47,6 +93,15 @@ $stmt = $pdo->prepare("
 ");
 $stmt->execute([':uid' => $uid]);
 $allCards = $stmt->fetchAll();
+
+// Último pagamento de extrato de cada cartão
+$lastPay = [];
+try {
+    $st = $pdo->prepare("SELECT p.card_id, p.amount, p.paid_on FROM card_payments p
+                         JOIN (SELECT card_id, MAX(id) AS id FROM card_payments WHERE user_id = :uid GROUP BY card_id) m ON m.id = p.id");
+    $st->execute([':uid' => $uid]);
+    foreach ($st as $r) $lastPay[(int) $r['card_id']] = $r;
+} catch (PDOException $e) { error_log('[cards] card_payments: ' . $e->getMessage()); }   // migração por correr
 
 $activeCards   = array_filter($allCards, fn($c) => $c['active']);
 $inactiveCards = array_filter($allCards, fn($c) => !$c['active']);
@@ -207,6 +262,23 @@ $walletCards = array_map(fn($c) => [
     .cd-actions { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 6px 4px; }
     .cd-actions form { margin: 0; }
     .cd-actions .btn-s { min-height: 36px; padding: 6px 12px; font-size: 13px; }
+    .cd-paid { margin-top: 6px; color: #067647; }
+    [data-theme="dark"] .cd-paid { color: #75e0a7; }
+
+    /* Pagar extrato: <dialog> nativo (fecha com Esc e gere o foco) */
+    .pay-dialog { border: 1px solid var(--fn-line); border-radius: 18px; padding: 24px; width: min(440px, calc(100% - 32px)); background: var(--fn-surface); color: var(--fn-text); }
+    .pay-dialog::backdrop { background: rgba(14, 20, 32, .45); }
+    .pay-dialog h2 { margin: 0 0 4px; font-family: var(--fn-font-brand); font-size: 20px; font-weight: 700; color: var(--fn-ink); }
+    .pay-dialog .sub { margin: 0 0 18px; font-size: 14px; color: var(--fn-muted); }
+    .pay-dialog .form-label { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+    .pay-dialog .form-control { min-height: 44px; border-radius: 10px; border: 1px solid var(--fn-line); background: var(--fn-surface); color: var(--fn-text); }
+    .pay-dialog .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .pay-dialog .quick { display: flex; gap: 6px; margin-top: 8px; }
+    .pay-dialog .quick button { border: 1px solid var(--fn-line); background: var(--fn-paper); color: var(--fn-text); border-radius: 999px; padding: 3px 10px; font-size: 13px; cursor: pointer; }
+    .pay-dialog .quick button:hover { border-color: var(--fn-accent); }
+    .pay-dialog .note { margin: 14px 0 0; font-size: 13px; color: var(--fn-muted); }
+    .pay-dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+    @media (max-width: 420px) { .pay-dialog .row2 { grid-template-columns: 1fr; } }
 
     .cd-section-title { margin: 36px 0 12px; font-size: 17px; font-weight: 700; color: var(--fn-text); }
     .cd-section-title small { font-weight: 400; font-size: 14px; color: var(--fn-muted); }
@@ -370,9 +442,15 @@ $walletCards = array_map(fn($c) => [
               <span><?= (int) $c['transaction_count'] ?> transaç<?= $c['transaction_count'] == 1 ? 'ão' : 'ões' ?></span>
               <span>desde <?= mb_substr(month_name_pt((int) date('n', strtotime($c['created_at']))), 0, 3) ?>. <?= date('Y', strtotime($c['created_at'])) ?></span>
             </div>
+            <?php if ($lp = $lastPay[(int) $c['id']] ?? null): ?>
+              <div class="cd-line cd-paid"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Pago <?= fmt_eur($lp['amount']) ?> a <?= (int) date('j', strtotime($lp['paid_on'])) ?> <?= mb_substr(month_name_pt((int) date('n', strtotime($lp['paid_on']))), 0, 3) ?>.</span></div>
+            <?php endif; ?>
           </div>
 
           <div class="cd-actions">
+            <?php if ($c['balance'] > 0): ?>
+              <button type="button" class="btn-s btn-s-primary" data-pay="<?= (int) $c['id'] ?>" data-name="<?= htmlspecialchars($c['name']) ?>" data-balance="<?= number_format((float) $c['balance'], 2, '.', '') ?>"><i class="bi bi-cash-coin"></i> Pagar extrato</button>
+            <?php endif; ?>
             <a href="transactions.php?card_id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-list-ul"></i> Ver transações</a>
             <a href="edit_card.php?id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-pencil"></i> Editar</a>
             <form method="post">
@@ -415,6 +493,49 @@ $walletCards = array_map(fn($c) => [
 </div><!-- /page-content -->
 </main>
 </div>
+<dialog class="pay-dialog" id="payDialog" aria-labelledby="payTitle">
+  <form method="post">
+    <?= csrf_field() ?>
+    <input type="hidden" name="action" value="pay">
+    <input type="hidden" name="card_id" id="payCard">
+    <h2 id="payTitle">Pagar extrato</h2>
+    <p class="sub" id="paySub"></p>
+    <div class="row2">
+      <div>
+        <label class="form-label" for="payAmount">Valor pago (€)</label>
+        <input type="number" class="form-control" id="payAmount" name="amount" step="0.01" min="0.01" required inputmode="decimal">
+        <div class="quick"><button type="button" data-frac="1">Tudo</button><button type="button" data-frac="0.5">Metade</button></div>
+      </div>
+      <div>
+        <label class="form-label" for="payDate">Data</label>
+        <input type="date" class="form-control" id="payDate" name="paid_on" required value="<?= $today ?>" max="<?= $today ?>">
+      </div>
+    </div>
+    <p class="note">O pagamento repõe o disponível do cartão. Não conta como gasto na análise, porque as compras já lá estão.</p>
+    <div class="acts">
+      <button type="button" class="btn-s" onclick="this.closest('dialog').close()">Cancelar</button>
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> Registar pagamento</button>
+    </div>
+  </form>
+</dialog>
+<script>
+(function () {
+  const dlg = document.getElementById('payDialog'), amt = document.getElementById('payAmount');
+  const eur = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+  let bal = 0;
+  document.querySelectorAll('[data-pay]').forEach((b) => b.addEventListener('click', () => {
+    bal = parseFloat(b.dataset.balance);
+    document.getElementById('payCard').value = b.dataset.pay;
+    document.getElementById('payTitle').textContent = 'Pagar extrato · ' + b.dataset.name;
+    document.getElementById('paySub').textContent = 'Em uso neste cartão: ' + eur(bal);
+    amt.max = bal.toFixed(2); amt.value = bal.toFixed(2);
+    dlg.showModal(); amt.select();
+  }));
+  dlg.querySelectorAll('[data-frac]').forEach((b) => b.addEventListener('click', () => {
+    amt.value = (Math.round(bal * parseFloat(b.dataset.frac) * 100) / 100).toFixed(2); amt.focus();
+  }));
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <?php if ($activeCount > 0): ?>
 <script type="importmap">

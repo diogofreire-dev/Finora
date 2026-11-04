@@ -66,13 +66,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
             $stmt = $pdo->prepare("UPDATE transactions SET amount=:amt,description=:desc,category=:cat,card_id=:cid,transaction_date=:tdate WHERE id=:id AND user_id=:uid");
             $stmt->execute([':amt'=>$amount,':desc'=>$description,':cat'=>$category?:null,':cid'=>$card_id,':tdate'=>$transaction_date,':id'=>$transaction_id,':uid'=>$uid]);
-            if ($old_card_id) {
-                $stmt = $pdo->prepare("UPDATE cards SET balance = balance - :amt WHERE id = :cid AND user_id = :uid");
-                $stmt->execute([':amt'=>$old_amount,':cid'=>$old_card_id,':uid'=>$uid]);
-            }
-            if ($card_id) {
-                $stmt = $pdo->prepare("UPDATE cards SET balance = balance + :amt WHERE id = :cid AND user_id = :uid");
-                $stmt->execute([':amt'=>$amount,':cid'=>$card_id,':uid'=>$uid]);
+            // O saldo nunca fica negativo (a compra pode já ter sido paga com "Pagar extrato").
+            // Mesmo cartão: aplica só a diferença, senão tirar o valor antigo e voltar a somar dava outro resultado.
+            if ($old_card_id && (int) $old_card_id === (int) $card_id) {
+                $stmt = $pdo->prepare("UPDATE cards SET balance = GREATEST(balance + :d, 0) WHERE id = :cid AND user_id = :uid");
+                $stmt->execute([':d'=>$amount - $old_amount,':cid'=>$card_id,':uid'=>$uid]);
+            } else {
+                if ($old_card_id) {
+                    $stmt = $pdo->prepare("UPDATE cards SET balance = GREATEST(balance - :amt, 0) WHERE id = :cid AND user_id = :uid");
+                    $stmt->execute([':amt'=>$old_amount,':cid'=>$old_card_id,':uid'=>$uid]);
+                }
+                if ($card_id) {
+                    $stmt = $pdo->prepare("UPDATE cards SET balance = balance + :amt WHERE id = :cid AND user_id = :uid");
+                    $stmt->execute([':amt'=>$amount,':cid'=>$card_id,':uid'=>$uid]);
+                }
             }
             $pdo->commit();
             header('Location: transactions.php?success=transaction_updated');

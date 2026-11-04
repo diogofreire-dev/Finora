@@ -19,7 +19,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
         $transaction = $stmt->fetch();
         if ($transaction) {
             if ($transaction['card_id']) {
-                $stmt = $pdo->prepare("UPDATE cards SET balance = balance - :amount WHERE id = :card_id AND user_id = :uid");
+                // Nunca abaixo de zero: a compra pode já ter sido paga com "Pagar extrato"
+                $stmt = $pdo->prepare("UPDATE cards SET balance = GREATEST(balance - :amount, 0) WHERE id = :card_id AND user_id = :uid");
                 $stmt->execute([':amount' => $transaction['amount'], ':card_id' => $transaction['card_id'], ':uid' => $uid]);
             }
             $stmt = $pdo->prepare("DELETE FROM transactions WHERE id = :id AND user_id = :uid");
