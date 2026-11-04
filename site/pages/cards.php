@@ -541,7 +541,7 @@ $walletCards = array_map(fn($c) => [
 <script type="importmap">
 { "imports": { "three": "../js/lib/three/three.module.min.js", "three/addons/": "../js/lib/three/addons/" } }
 </script>
-<script type="module" src="../js/cards-wallet.js?v=2"></script>
+<script type="module" src="../js/cards-wallet.js?v=3"></script>
 <?php endif; ?>
 </body>
 </html>
