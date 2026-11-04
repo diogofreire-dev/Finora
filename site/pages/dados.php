@@ -104,7 +104,7 @@ $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
       .dt-row .btn-s, .dt-row form { margin-left: 50px; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
 </head>
 <body>
 <div class="app-layout">

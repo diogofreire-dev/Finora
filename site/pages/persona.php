@@ -191,7 +191,7 @@ $tone = "var(--cat-$pSlot)";
       .ps-stat { flex-direction: column; gap: 8px; }
     }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
 </head>
 <body>
 <div class="app-layout">

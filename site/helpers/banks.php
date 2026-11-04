@@ -1,49 +1,4 @@
 <?php
-// Logos SVG inline — fundo semi-transparente no cartão
-$BANK_LOGOS = [
-  'millennium' => '<svg viewBox="0 0 120 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="32" font-family="Arial Black,Arial" font-weight="900" font-size="28" letter-spacing="-1">BCP</text>
-  </svg>',
-  'cgd' => '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0" y="10" width="18" height="40" rx="3" fill="white"/>
-    <rect x="26" y="10" width="18" height="40" rx="3" fill="white"/>
-    <rect x="52" y="10" width="18" height="40" rx="3" fill="white"/>
-    <text x="0" y="58" font-family="Arial" font-weight="700" font-size="11" fill="white" letter-spacing="1">CAIXA</text>
-  </svg>',
-  'revolut' => '<svg viewBox="0 0 130 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="32" font-family="Arial Black,Arial" font-weight="900" font-size="26" letter-spacing="-1">Revolut</text>
-  </svg>',
-  'n26' => '<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="34" font-family="Arial Black,Arial" font-weight="900" font-size="36" letter-spacing="-2">N26</text>
-  </svg>',
-  'santander' => '<svg viewBox="0 0 100 60" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="30" cy="30" r="28" fill="none" stroke="white" stroke-width="4"/>
-    <circle cx="55" cy="30" r="28" fill="none" stroke="white" stroke-width="4"/>
-  </svg>',
-  'bpi' => '<svg viewBox="0 0 80 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="34" font-family="Arial Black,Arial" font-weight="900" font-size="36" letter-spacing="2">BPI</text>
-  </svg>',
-  'novobanco' => '<svg viewBox="0 0 110 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="30" font-family="Arial" font-weight="900" font-size="20" letter-spacing="0">novo</text>
-    <text x="0" y="52" font-family="Arial" font-weight="900" font-size="20" letter-spacing="0">banco</text>
-  </svg>',
-  'montepio' => '<svg viewBox="0 0 130 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="32" font-family="Arial" font-weight="900" font-size="22" letter-spacing="0">Montepio</text>
-  </svg>',
-  'wise' => '<svg viewBox="0 0 90 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="34" font-family="Arial Black,Arial" font-weight="900" font-size="32" letter-spacing="-1">Wise</text>
-  </svg>',
-  'activobank' => '<svg viewBox="0 0 130 40" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <text x="0" y="30" font-family="Arial" font-weight="900" font-size="18">Activo</text>
-    <text x="0" y="50" font-family="Arial" font-weight="900" font-size="18">Bank</text>
-  </svg>',
-  'mbway' => '<svg viewBox="0 0 110 50" xmlns="http://www.w3.org/2000/svg" fill="white">
-    <rect x="0" y="0" width="46" height="30" rx="5" fill="white"/>
-    <text x="5" y="22" font-family="Arial Black" font-weight="900" font-size="18" fill="#E30613">MB</text>
-    <text x="52" y="22" font-family="Arial Black" font-weight="900" font-size="18" fill="white">WAY</text>
-  </svg>',
-];
-
 $BANKS = [
   '' => [
     'name'     => '— Selecionar banco —',

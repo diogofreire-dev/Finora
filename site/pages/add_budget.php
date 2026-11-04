@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .tip-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; }
     .tip-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--bg-primary); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=7">
+  <link rel="stylesheet" href="../css/finora.css?v=8">
 </head>
 <body>
 <div class="app-layout">

@@ -313,3 +313,11 @@ dialog .form-control:focus, dialog .form-select:focus { border-color: var(--fn-a
 .main-content .pg-grow { flex: 1; min-width: 0; }
 @media (max-width: 520px) { .main-content .pg-head h1 { font-size: 26px; } }
 .main-content .pg-card-head .pg-ico { background: var(--tone, var(--fn-accent)); color: #fff; box-shadow: 0 4px 12px color-mix(in srgb, var(--tone, var(--fn-accent)) 30%, transparent); }
+
+/* ── Logo do banco nos cartões (Cartões, Adicionar, Editar) ──
+   Os SVG estão a cores; o filtro passa-os a branco para ficarem bem sobre a cor do banco. */
+.bank-logo-img { display: block; height: 26px; max-width: 46%; width: auto; object-fit: contain; object-position: right center;
+  filter: brightness(0) invert(1) drop-shadow(0 1px 2px rgba(0, 0, 0, .25)); }
+.bank-wm { position: absolute; right: -4%; bottom: -10%; width: 62%; height: 70%; opacity: .09; pointer-events: none;
+  display: flex; align-items: flex-end; justify-content: flex-end; }
+.bank-wm img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: right bottom; filter: brightness(0) invert(1); }
