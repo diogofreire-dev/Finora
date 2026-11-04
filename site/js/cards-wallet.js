@@ -111,9 +111,11 @@ async function start() {
     return { card, obj, base, lift: 0 };
   });
 
-  // Enquadramento: da base da carteira ao topo do cartão mais alto
-  const topY = -0.5 + (n - 1) * 0.75 + CARD_H / 2;
-  const midY = (topY + -3.3) / 2, spanY = topY + 3.3;
+  // Enquadramento: da base da carteira ao topo do cartão mais alto.
+  // A distância da câmara é sempre a de 5 cartões; senão, com 1 cartão a carteira aparecia enorme
+  const topOf = (k) => -0.5 + (k - 1) * 0.75 + CARD_H / 2;
+  const topY = topOf(n);
+  const midY = (topY + -3.3) / 2, spanY = topOf(Math.max(n, 5)) + 3.3;
   holder.position.y = -midY * 0.92;
   const REST = { x: -0.28, y: -0.22 };
   const state = { x: REST.x, y: REST.y, dragging: false, moved: 0, lastX: 0, lastY: 0, hover: -1 };
