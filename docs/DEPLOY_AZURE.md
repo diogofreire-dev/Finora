@@ -292,8 +292,8 @@ sudo apachectl configtest && sudo systemctl reload apache2
 Sem HTTPS o login não funciona (o `session.cookie_secure` do passo 5 só deixa o cookie viajar por HTTPS) — e ainda bem.
 
 **Nome grátis do Azure:** no IP público → **Configuration** → *DNS name label* `finora` dá
-`finora.<regiao>.cloudapp.azure.com`, que serve para o certificado. Um domínio próprio junta-se depois:
-cria um registo **A** para `<dominio>` → IP público da VM e repete o `certbot` com os dois `-d`.
+`finora.<regiao>.cloudapp.azure.com`, que serve para o certificado. Um domínio próprio junta-se depois
+(ver **Juntar um domínio próprio**, no fim deste passo).
 
 Quando `http://<dominio>/site/` abrir a Finora:
 
@@ -313,6 +313,31 @@ sudo certbot --apache -d <dominio> --redirect --agree-tos --register-unsafely-wi
 ```apache
 Header always set Strict-Transport-Security "max-age=31536000"
 ```
+
+### Juntar um domínio próprio
+
+A Finora está em `finora.diogofreire.is-a.dev`, um subdomínio do portefólio pedido ao [is-a.dev](https://is-a.dev)
+(PR com um ficheiro `domains/finora.diogofreire.json` e um registo `A` para o IP da VM). A ordem conta:
+
+1. **DNS:** quando o registo `A` estiver ativo, `dig +short <dominio>` devolve o IP da VM.
+2. **Apache:** junta `ServerAlias <dominio>` ao `finora.conf` e ao `finora-le-ssl.conf`.
+3. **Certificado com os dois nomes:**
+   ```bash
+   sudo certbot --apache --non-interactive --cert-name <nome-azure> -d <nome-azure> -d <dominio> --expand --redirect
+   ```
+   A regra que o certbot escreve (`RewriteCond %{SERVER_NAME} =<nome-azure>`) só apanha o nome da Azure. Com
+   `UseCanonicalName Off`, `%{SERVER_NAME}` é o nome que o browser pediu. Troca-a por um redirecionamento sem condição.
+4. **Google:** na Google Console, junta `https://<dominio>/site/auth/google_callback.php` aos *Authorized redirect URIs*.
+   Deixa ficar o antigo. **Só depois** muda `GOOGLE_REDIRECT_URI` (`config/google_oauth.php`) e `APP_URL`
+   (`config/brevo.php`). Se trocares a ordem, o login com Google deixa de funcionar até o Google aceitar o endereço novo.
+5. **Nome antigo → novo:** no `<VirtualHost *:443>`, a seguir ao HSTS:
+   ```apache
+   RewriteEngine on
+   RewriteCond %{HTTP_HOST} ^<nome-azure-com-pontos-escapados>$ [NC]
+   RewriteRule ^ https://<dominio>%{REQUEST_URI} [L,NE,R=301]
+   ```
+   No `<VirtualHost *:80>`: `RewriteRule ^ https://<dominio>%{REQUEST_URI} [END,NE,R=permanent]`.
+6. Confirma que `head -c 5` dos ficheiros de config dá `<?php` e corre o smoke test no domínio novo.
 
 ```bash
 sudo apachectl configtest && sudo systemctl reload apache2
