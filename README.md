@@ -4,6 +4,8 @@
 
 Aplicação web de finanças pessoais, feita em PHP e MySQL: cartões, gastos, orçamentos, lembretes de pagamento, poupanças e metas num só sítio.
 
+**Online em <https://finora.diogofreire.is-a.dev>** (servidor próprio no Azure; ver [docs/DEPLOY_AZURE.md](docs/DEPLOY_AZURE.md)).
+
 Começou como Prova de Aptidão Profissional de Diogo Freire e Jandro Antunes. Depois da PAP, continua a ser desenvolvida como projeto de portefólio e de aprendizagem, com especial atenção à segurança.
 
 ---
