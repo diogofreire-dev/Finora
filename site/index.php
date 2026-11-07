@@ -91,7 +91,7 @@ $features = [
   <section class="ln-hero">
     <div class="ln-wrap ln-hero-grid">
       <div class="ln-hero-copy">
-        <h1><?= te('Sabe para onde vai cada euro.') ?></h1>
+        <h1><?= te('Sabe para onde vai cada cêntimo.') ?></h1>
         <p class="ln-lead"><?= te('Junta os teus cartões, regista os gastos e define orçamentos. A Finora mostra-te o mês inteiro num só ecrã, de graça.') ?></p>
         <div class="ln-cta">
           <a href="auth/register.php" class="ln-btn ln-btn-main ln-btn-lg"><?= te('Criar conta grátis') ?></a>

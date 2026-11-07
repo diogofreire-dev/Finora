@@ -266,7 +266,7 @@ return [
     'Segurança' => 'Security',
     'Quem somos' => 'About us',
     'A tua conta e todos os dados foram apagados. Obrigado por teres usado a Finora.' => 'Your account and all its data have been deleted. Thank you for using Finora.',
-    'Sabe para onde vai cada euro.' => 'Know where every euro goes.',
+    'Sabe para onde vai cada cêntimo.' => 'Know where every cent goes.',
     'Junta os teus cartões, regista os gastos e define orçamentos. A Finora mostra-te o mês inteiro num só ecrã, de graça.' => 'Bring your cards together, record your spending and set budgets. Finora shows you the whole month on one screen, for free.',
     'Criar conta grátis' => 'Sign up for free',
     'Já tenho conta' => 'I have an account',
