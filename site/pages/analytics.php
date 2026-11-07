@@ -211,7 +211,7 @@ $cardTotal = array_sum(array_column($cardSpending, 'total'));
 $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0;
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

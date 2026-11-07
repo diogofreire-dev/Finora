@@ -122,7 +122,7 @@ $preGoal   = (int) ($_GET['goal'] ?? 0);
 $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -369,7 +369,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
       <input type="radio" name="kind" id="kindOut" value="out"><label for="kindOut"><i class="bi bi-arrow-up-right"></i> Tirar</label>
     </div>
     <div class="sv-field">
-      <label class="form-label" for="svAmount">Valor (<?= currency_symbol() ?>)</label>
+      <label class="form-label" for="svAmount"><?= te('Valor ({symbol})', ['symbol' => currency_symbol()]) ?></label>
       <input type="number" class="form-control sv-amount-input" id="svAmount" name="amount" step="0.01" min="0.01" max="1000000" inputmode="decimal" placeholder="0,00" required>
     </div>
     <div class="row2">

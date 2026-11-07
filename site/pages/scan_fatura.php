@@ -67,7 +67,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
 unset($_SESSION['flash_scan']);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -230,7 +230,7 @@ include __DIR__ . '/../components/sidebar.php';
 
         <div class="row2 mb">
           <div>
-            <label class="form-label" for="fAmount">Valor (<?= currency_symbol() ?>)</label>
+            <label class="form-label" for="fAmount"><?= te('Valor ({symbol})', ['symbol' => currency_symbol()]) ?></label>
             <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="0,00" autocomplete="off">
           </div>
           <div>

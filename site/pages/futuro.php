@@ -106,7 +106,7 @@ function months_left_label(string $date): string {
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -324,11 +324,11 @@ function months_left_label(string $date): string {
           <input id="gName" type="text" name="name" class="form-control" placeholder="Ex: Férias de verão" required minlength="2" maxlength="120">
         </div>
         <div class="gl-field">
-          <label class="form-label" for="gAmount">Quanto queres juntar (<?= currency_symbol() ?>)</label>
+          <label class="form-label" for="gAmount"><?= te('Quanto queres juntar ({symbol})', ['symbol' => currency_symbol()]) ?></label>
           <input id="gAmount" type="number" name="target_amount" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="2000" required>
         </div>
         <div class="gl-field">
-          <label class="form-label" for="gIncome">Rendimento mensal líquido (<?= currency_symbol() ?>)</label>
+          <label class="form-label" for="gIncome"><?= te('Rendimento mensal líquido ({symbol})', ['symbol' => currency_symbol()]) ?></label>
           <input id="gIncome" type="number" name="monthly_income" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="1200" required>
           <div class="form-hint">O que recebes por mês, já sem impostos.</div>
         </div>
@@ -358,11 +358,11 @@ function months_left_label(string $date): string {
     </div>
     <div class="row2 mb-3">
       <div>
-        <label class="form-label" for="edit_target_amount">Meta (<?= currency_symbol() ?>)</label>
+        <label class="form-label" for="edit_target_amount"><?= te('Meta ({symbol})', ['symbol' => currency_symbol()]) ?></label>
         <input type="number" name="target_amount" id="edit_target_amount" class="form-control" step="0.01" min="1" required>
       </div>
       <div>
-        <label class="form-label" for="edit_monthly_income">Rendimento (<?= currency_symbol() ?>/mês)</label>
+        <label class="form-label" for="edit_monthly_income"><?= te('Rendimento ({symbol}/mês)', ['symbol' => currency_symbol()]) ?></label>
         <input type="number" name="monthly_income" id="edit_monthly_income" class="form-control" step="0.01" min="1" required>
       </div>
     </div>

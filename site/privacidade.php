@@ -22,7 +22,7 @@ $partners = [
 ];
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="light">
+<html lang="<?= html_lang() ?>" data-theme="light">
 <head>
 <script>
   (function () {

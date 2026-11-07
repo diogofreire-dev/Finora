@@ -46,7 +46,7 @@ $items  = $st->fetchAll();
 $unread = notif_unread_count($pdo, $uid);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

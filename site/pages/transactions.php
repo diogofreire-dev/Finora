@@ -26,16 +26,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
             $stmt = $pdo->prepare("DELETE FROM transactions WHERE id = :id AND user_id = :uid");
             $stmt->execute([':id' => $transactionId, ':uid' => $uid]);
             $pdo->commit();
-            $message = 'Transação removida com sucesso!';
+            $message = t('Transação removida com sucesso!');
             $messageType = 'success';
         } else {
             $pdo->rollBack();
-            $message = 'Transação não encontrada.';
+            $message = t('Transação não encontrada.');
             $messageType = 'danger';
         }
     } catch (PDOException $e) {
         $pdo->rollBack();
-        $message = 'Erro ao remover transação.';
+        $message = t('Erro ao remover transação.');
         $messageType = 'danger';
     }
 }
@@ -92,12 +92,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
         }
 
         $pdo->commit();
-        $message     = "$imported linha(s) importada(s) da fatura com sucesso!";
+        $message     = t('{n} linha(s) importada(s) da fatura com sucesso!', ['n' => $imported]);
         $messageType = 'success';
     } catch (PDOException $e) {
         $pdo->rollBack();
         error_log('[transactions] Erro ao importar fatura: ' . $e->getMessage());
-        $message     = 'Erro ao importar fatura. Tenta novamente.';
+        $message     = t('Erro ao importar fatura. Tenta novamente.');
         $messageType = 'danger';
     }
 }
@@ -113,7 +113,7 @@ $monthTs   = strtotime($month . '-01');
 $prevMonth = date('Y-m', strtotime('-1 month', $monthTs));
 $nextMonth = date('Y-m', strtotime('+1 month', $monthTs));
 $isCurrent = $month === date('Y-m');
-$monthLabel = month_name_pt((int) date('n', $monthTs)) . ' ' . date('Y', $monthTs);
+$monthLabel = fmt_month_year($monthTs);
 
 // URL desta página com os filtros atuais, alterando só o que for pedido
 function tx_url(array $changes = []): string {
@@ -165,20 +165,19 @@ $byDay = [];
 foreach ($transactions as $t) {
     $byDay[date('Y-m-d', strtotime($t['transaction_date']))][] = $t;
 }
-$weekdays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
-function day_label(string $day, array $weekdays): string {
-    if ($day === date('Y-m-d')) return 'Hoje';
-    if ($day === date('Y-m-d', strtotime('-1 day'))) return 'Ontem';
+function day_label(string $day): string {
+    if ($day === date('Y-m-d')) return t('Hoje');
+    if ($day === date('Y-m-d', strtotime('-1 day'))) return t('Ontem');
     $ts = strtotime($day);
-    return ucfirst($weekdays[(int) date('w', $ts)]) . ', ' . date('j', $ts) . ' de ' . month_name_pt((int) date('n', $ts));
+    return ucfirst(weekday_name((int) date('w', $ts))) . ', ' . fmt_date_long($ts);
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Transações - Finora</title>
+  <title><?= te('Transações - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -265,21 +264,20 @@ function day_label(string $day, array $weekdays): string {
 <div class="tx">
 
   <div class="tx-head">
-    <h1>Transações</h1>
-    <nav class="tx-month" aria-label="Escolher mês">
-      <a href="<?= htmlspecialchars(tx_url(['month' => $prevMonth])) ?>" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></a>
+    <h1><?= te('Transações') ?></h1>
+    <nav class="tx-month" aria-label="<?= te('Escolher mês') ?>">
+      <a href="<?= htmlspecialchars(tx_url(['month' => $prevMonth])) ?>" aria-label="<?= te('Mês anterior') ?>"><i class="bi bi-chevron-left"></i></a>
       <span aria-live="polite"><?= $monthLabel ?></span>
-      <a href="<?= htmlspecialchars(tx_url(['month' => $nextMonth])) ?>" aria-label="Mês seguinte"<?= $isCurrent ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-right"></i></a>
+      <a href="<?= htmlspecialchars(tx_url(['month' => $nextMonth])) ?>" aria-label="<?= te('Mês seguinte') ?>"<?= $isCurrent ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-right"></i></a>
     </nav>
   </div>
 
   <p class="tx-summary">
     <?php if ($count > 0): ?>
-      <strong><?= $count ?></strong> transaç<?= $count === 1 ? 'ão' : 'ões' ?> ·
-      <strong><?= fmt_money($total) ?></strong> no total ·
-      média de <?= fmt_money($total / $count) ?>
+      <?= t($count === 1 ? '{n} transação · {total} no total · média de {avg}' : '{n} transações · {total} no total · média de {avg}',
+            ['n' => '<strong>' . $count . '</strong>', 'total' => '<strong>' . fmt_money($total) . '</strong>', 'avg' => fmt_money($total / $count)]) ?>
     <?php else: ?>
-      Sem transações neste período.
+      <?= te('Sem transações neste período.') ?>
     <?php endif; ?>
   </p>
 
@@ -296,14 +294,14 @@ function day_label(string $day, array $weekdays): string {
     <?php if ($category !== ''): ?><input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>"><?php endif; ?>
     <div class="tx-filter-row">
       <label class="tx-search">
-        <span class="visually-hidden">Pesquisar pela descrição</span>
+        <span class="visually-hidden"><?= te('Pesquisar pela descrição') ?></span>
         <i class="bi bi-search"></i>
-        <input type="search" name="q" class="form-control" placeholder="Pesquisar pela descrição" value="<?= htmlspecialchars($q) ?>">
+        <input type="search" name="q" class="form-control" placeholder="<?= te('Pesquisar pela descrição') ?>" value="<?= htmlspecialchars($q) ?>">
       </label>
       <label class="tx-card-select">
-        <span class="visually-hidden">Cartão</span>
+        <span class="visually-hidden"><?= te('Cartão') ?></span>
         <select name="card_id" class="form-select" onchange="this.form.submit()">
-          <option value="">Todos os cartões</option>
+          <option value=""><?= te('Todos os cartões') ?></option>
           <?php foreach ($cards as $c): ?>
             <option value="<?= $c['id'] ?>" <?= $card_id == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
           <?php endforeach; ?>
@@ -311,14 +309,14 @@ function day_label(string $day, array $weekdays): string {
       </label>
     </div>
     <?php if ($categories): ?>
-    <div class="tx-chips" aria-label="Filtrar por categoria">
-      <a class="tx-chip" href="<?= htmlspecialchars(tx_url(['category' => ''])) ?>" aria-current="<?= $category === '' ? 'true' : 'false' ?>">Todas</a>
+    <div class="tx-chips" aria-label="<?= te('Filtrar por categoria') ?>">
+      <a class="tx-chip" href="<?= htmlspecialchars(tx_url(['category' => ''])) ?>" aria-current="<?= $category === '' ? 'true' : 'false' ?>"><?= te('Todas') ?></a>
       <?php foreach ($categories as $cat): ?>
         <a class="tx-chip" href="<?= htmlspecialchars(tx_url(['category' => $cat])) ?>" aria-current="<?= $category === $cat ? 'true' : 'false' ?>">
-          <span class="dot" style="background:<?= category_color($cat) ?>"></span><?= htmlspecialchars($cat) ?>
+          <span class="dot" style="background:<?= category_color($cat) ?>"></span><?= te($cat) ?>
         </a>
       <?php endforeach; ?>
-      <?php if ($filtered): ?><a class="tx-clear" href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>">Limpar filtros</a><?php endif; ?>
+      <?php if ($filtered): ?><a class="tx-clear" href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>"><?= te('Limpar filtros') ?></a><?php endif; ?>
     </div>
     <?php endif; ?>
   </form>
@@ -327,24 +325,24 @@ function day_label(string $day, array $weekdays): string {
   <?php if (empty($transactions)): ?>
     <div class="tx-empty">
       <?php if (!$hasAnyTransaction): ?>
-        <h2>Ainda não registaste nenhuma transação</h2>
-        <p>Regista os teus gastos para veres para onde vai o dinheiro e acompanhares os orçamentos.</p>
-        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+        <h2><?= te('Ainda não registaste nenhuma transação') ?></h2>
+        <p><?= te('Regista os teus gastos para veres para onde vai o dinheiro e acompanhares os orçamentos.') ?></p>
+        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Registar uma transação') ?></a>
       <?php elseif ($filtered): ?>
-        <h2>Nenhuma transação com estes filtros</h2>
-        <p>Em <?= $monthLabel ?> não há transações que correspondam à pesquisa ou aos filtros escolhidos.</p>
-        <a href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>" class="btn-s">Limpar filtros</a>
+        <h2><?= te('Nenhuma transação com estes filtros') ?></h2>
+        <p><?= te('Em {month} não há transações que correspondam à pesquisa ou aos filtros escolhidos.', ['month' => $monthLabel]) ?></p>
+        <a href="<?= htmlspecialchars(tx_url(['category' => '', 'card_id' => null, 'q' => ''])) ?>" class="btn-s"><?= te('Limpar filtros') ?></a>
       <?php else: ?>
-        <h2>Sem transações em <?= $monthLabel ?></h2>
-        <p>Usa as setas para ver outros meses ou regista um gasto deste mês.</p>
-        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+        <h2><?= te('Sem transações em {month}', ['month' => $monthLabel]) ?></h2>
+        <p><?= te('Usa as setas para ver outros meses ou regista um gasto deste mês.') ?></p>
+        <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Registar uma transação') ?></a>
       <?php endif; ?>
     </div>
   <?php else: ?>
     <?php foreach ($byDay as $day => $items): ?>
       <section class="tx-day" aria-labelledby="d<?= $day ?>">
         <div class="tx-day-head">
-          <h2 id="d<?= $day ?>"><?= day_label($day, $weekdays) ?></h2>
+          <h2 id="d<?= $day ?>"><?= day_label($day) ?></h2>
           <span><?= fmt_money(array_sum(array_column($items, 'amount'))) ?></span>
         </div>
         <ul class="tx-list">
@@ -355,21 +353,21 @@ function day_label(string $day, array $weekdays): string {
             <li class="tx-item">
               <span class="tx-ico" style="background:<?= category_tint($cat) ?>;color:<?= $col ?>"><i class="bi bi-<?= category_icon($cat) ?>"></i></span>
               <div class="tx-main">
-                <div class="tx-desc"><?= htmlspecialchars($t['description'] ?: 'Sem descrição') ?></div>
+                <div class="tx-desc"><?= htmlspecialchars($t['description'] ?: t('Sem descrição')) ?></div>
                 <div class="tx-meta">
-                  <span><?= htmlspecialchars($cat) ?></span>·
-                  <span><?= $t['card_name'] ? htmlspecialchars($t['card_name']) : 'Dinheiro' ?></span>
-                  <?php if (($t['source'] ?? '') === 'invoice'): ?><span class="tx-tag">Fatura</span><?php endif; ?>
+                  <span><?= te($cat) ?></span>·
+                  <span><?= $t['card_name'] ? htmlspecialchars($t['card_name']) : te('Dinheiro') ?></span>
+                  <?php if (($t['source'] ?? '') === 'invoice'): ?><span class="tx-tag"><?= te('Fatura') ?></span><?php endif; ?>
                 </div>
               </div>
               <span class="tx-amt">−<?= fmt_money($t['amount']) ?></span>
               <div class="tx-actions">
-                <a href="edit_transaction.php?id=<?= $t['id'] ?>" aria-label="Editar <?= htmlspecialchars($t['description']) ?>" title="Editar"><i class="bi bi-pencil"></i></a>
-                <form method="post" onsubmit="return confirm('Apagar esta transação? Não é possível desfazer.')">
+                <a href="edit_transaction.php?id=<?= $t['id'] ?>" aria-label="<?= te('Editar {name}', ['name' => $t['description']]) ?>" title="<?= te('Editar') ?>"><i class="bi bi-pencil"></i></a>
+                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar esta transação? Não é possível desfazer.')) ?>)">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="transaction_id" value="<?= $t['id'] ?>">
-                  <button type="submit" aria-label="Apagar <?= htmlspecialchars($t['description']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                  <button type="submit" aria-label="<?= te('Apagar {name}', ['name' => $t['description']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
                 </form>
               </div>
             </li>
@@ -378,7 +376,7 @@ function day_label(string $day, array $weekdays): string {
       </section>
     <?php endforeach; ?>
     <?php if ($count >= 200): ?>
-      <p class="tx-limit">A mostrar as 200 transações mais recentes deste mês. Usa a pesquisa ou os filtros para encontrares as restantes.</p>
+      <p class="tx-limit"><?= te('A mostrar as 200 transações mais recentes deste mês. Usa a pesquisa ou os filtros para encontrares as restantes.') ?></p>
     <?php endif; ?>
   <?php endif; ?>
 

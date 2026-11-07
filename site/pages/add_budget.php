@@ -20,8 +20,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = !empty($_POST['category']) ? trim($_POST['category']) : null;
     $card_id  = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
 
-    if (strlen($name) < 3) $errors[] = 'O nome deve ter pelo menos 3 caracteres.';
-    if ($amount <= 0)       $errors[] = 'O valor deve ser maior que zero.';
+    if (strlen($name) < 3) $errors[] = t('O nome deve ter pelo menos 3 caracteres.');
+    if ($amount <= 0)       $errors[] = t('O valor deve ser maior que zero.');
 
     if (empty($errors)) {
         try {
@@ -30,17 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: budgets.php?success=created');
             exit;
         } catch (PDOException $e) {
-            $errors[] = 'Erro ao criar orçamento. Tenta novamente.';
+            $errors[] = t('Erro ao criar orçamento. Tenta novamente.');
         }
     }
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Novo Orçamento - Finora</title>
+  <title><?= te('Novo Orçamento - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -96,10 +96,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-piggy-bank"></i></div>
     <div style="flex:1">
-      <h2>Novo Orçamento</h2>
-      <p>Define um limite de gastos por período</p>
+      <h2><?= te('Novo Orçamento') ?></h2>
+      <p><?= te('Define um limite de gastos por período') ?></p>
     </div>
-    <a href="budgets.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <a href="budgets.php" class="btn-s"><i class="bi bi-arrow-left"></i> <?= te('Voltar') ?></a>
   </div>
 
   <?php if (!empty($errors)): ?>
@@ -110,70 +110,70 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="settings-group">
-    <p class="group-label">Detalhes do orçamento</p>
+    <p class="group-label"><?= te('Detalhes do orçamento') ?></p>
     <div class="settings-card">
       <form method="post" class="m-form"><?= csrf_field() ?>
 
         <!-- Nome -->
         <div class="form-section">
-          <label class="form-label">Nome *</label>
-          <input type="text" name="name" class="form-control" placeholder="Ex: Alimentação mensal, Lazer..." value="<?=htmlspecialchars($name)?>" required>
-          <p class="form-hint">Dá um nome claro para identificares este orçamento.</p>
+          <label class="form-label"><?= te('Nome *') ?></label>
+          <input type="text" name="name" class="form-control" placeholder="<?= te('Ex: Alimentação mensal, Lazer...') ?>" value="<?=htmlspecialchars($name)?>" required>
+          <p class="form-hint"><?= te('Dá um nome claro para identificares este orçamento.') ?></p>
         </div>
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor limite (<?= currency_symbol() ?>) *</label>
+          <label class="form-label" style="text-align:center;width:100%"><?= te('Valor limite ({symbol}) *', ['symbol' => currency_symbol()]) ?></label>
           <input type="number" name="amount" step="0.01" min="0.01" class="form-control amount-input" placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
 
         <!-- Período -->
         <div class="form-section">
-          <label class="form-label">Período</label>
+          <label class="form-label"><?= te('Período') ?></label>
           <div class="period-grid">
             <div class="period-option">
               <input type="radio" name="period" id="period_weekly" value="weekly" <?=$period==='weekly'?'checked':''?>>
-              <label class="period-label" for="period_weekly"><i class="bi bi-calendar-week"></i><span>Semanal</span></label>
+              <label class="period-label" for="period_weekly"><i class="bi bi-calendar-week"></i><span><?= te('Semanal') ?></span></label>
             </div>
             <div class="period-option">
               <input type="radio" name="period" id="period_monthly" value="monthly" <?=($period==='monthly'||$period==='')?'checked':''?>>
-              <label class="period-label" for="period_monthly"><i class="bi bi-calendar-month"></i><span>Mensal</span></label>
+              <label class="period-label" for="period_monthly"><i class="bi bi-calendar-month"></i><span><?= te('Mensal') ?></span></label>
             </div>
             <div class="period-option">
               <input type="radio" name="period" id="period_yearly" value="yearly" <?=$period==='yearly'?'checked':''?>>
-              <label class="period-label" for="period_yearly"><i class="bi bi-calendar3"></i><span>Anual</span></label>
+              <label class="period-label" for="period_yearly"><i class="bi bi-calendar3"></i><span><?= te('Anual') ?></span></label>
             </div>
           </div>
         </div>
 
         <!-- Categoria -->
         <div class="form-section">
-          <label class="form-label">Categoria <span class="form-label-sub">(opcional — deixa vazio para global)</span></label>
+          <label class="form-label"><?= te('Categoria') ?> <span class="form-label-sub"><?= te('(opcional — deixa vazio para global)') ?></span></label>
           <select name="category" class="form-select">
-            <option value="">Todas as categorias</option>
+            <option value=""><?= te('Todas as categorias') ?></option>
             <?php foreach($categories as $cat): ?>
-              <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?=htmlspecialchars($cat)?></option>
+              <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?= te($cat) ?></option>
             <?php endforeach; ?>
           </select>
-          <p class="form-hint">Filtra o orçamento por uma categoria específica.</p>
+          <p class="form-hint"><?= te('Filtra o orçamento por uma categoria específica.') ?></p>
         </div>
 
         <!-- Cartão -->
         <div class="form-section">
-          <label class="form-label">Cartão <span class="form-label-sub">(opcional)</span></label>
+          <label class="form-label"><?= te('Cartão') ?> <span class="form-label-sub"><?= te('(opcional)') ?></span></label>
           <select name="card_id" class="form-select">
-            <option value="">Todos os cartões</option>
+            <option value=""><?= te('Todos os cartões') ?></option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>><?=htmlspecialchars($c['name'])?></option>
             <?php endforeach; ?>
           </select>
-          <p class="form-hint">Deixa vazio para abranger todos os cartões.</p>
+          <p class="form-hint"><?= te('Deixa vazio para abranger todos os cartões.') ?></p>
         </div>
 
         <!-- Botões -->
         <div class="form-section" style="display:flex;gap:8px;justify-content:flex-end">
-          <a href="budgets.php" class="btn-s">Cancelar</a>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Criar Orçamento</button>
+          <a href="budgets.php" class="btn-s"><?= te('Cancelar') ?></a>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Criar Orçamento') ?></button>
         </div>
 
       </form>
@@ -181,19 +181,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <div class="settings-group">
-    <p class="group-label">Dicas</p>
+    <p class="group-label"><?= te('Dicas') ?></p>
     <div class="settings-card" style="padding:4px 20px">
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-lightbulb" style="color:#f59e0b"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Orçamento global</div><div style="font-size:12px;color:var(--text-secondary)">Sem categoria nem cartão, o orçamento conta todas as tuas transações.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Orçamento global') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('Sem categoria nem cartão, o orçamento conta todas as tuas transações.') ?></div></div>
       </div>
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-tag" style="color:var(--fn-accent)"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Por categoria</div><div style="font-size:12px;color:var(--text-secondary)">Escolhe uma categoria para controlar gastos nessa área específica.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Por categoria') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('Escolhe uma categoria para controlar gastos nessa área específica.') ?></div></div>
       </div>
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-bell" style="color:#22c55e"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Alertas automáticos</div><div style="font-size:12px;color:var(--text-secondary)">Recebes um aviso quando estiveres perto do limite.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Alertas automáticos') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('Recebes um aviso quando estiveres perto do limite.') ?></div></div>
       </div>
     </div>
   </div>

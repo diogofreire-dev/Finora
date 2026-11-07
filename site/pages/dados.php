@@ -36,7 +36,7 @@ unset($_SESSION['flash_dados']);
 $plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">

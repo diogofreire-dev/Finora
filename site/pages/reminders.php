@@ -237,7 +237,7 @@ $groups = [
 $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -653,7 +653,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
           <div><label class="form-label">Nome do Pagamento *</label><input type="text" name="name" class="form-control" placeholder="ex: Netflix, Renda, Conta da Luz" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
+            <div><label class="form-label"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
             <div><label class="form-label">Data de Vencimento *</label><input type="date" name="due_date" class="form-control" min="<?=date('Y-m-d')?>" required></div>
           </div>
           <div><label class="form-label">Recorrência</label><select name="recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly" selected>Mensal</option><option value="yearly">Anual</option></select></div>
@@ -715,7 +715,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
           <div><label class="form-label">Nome *</label><input type="text" name="name" id="edit_name" class="form-control" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
+            <div><label class="form-label"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
             <div><label class="form-label">Data *</label><input type="date" name="due_date" id="edit_due_date" class="form-control" required></div>
           </div>
           <div><label class="form-label">Recorrência</label><select name="recurrence" id="edit_recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div>

@@ -9,7 +9,7 @@ $currentTheme = getUserTheme($pdo, $uid);
 $message = ''; $messageType = 'info';
 
 if (!empty($_GET['success'])) {
-    $message = $_GET['success'] === 'created' ? 'Orçamento criado com sucesso!' : 'Orçamento atualizado com sucesso!';
+    $message = $_GET['success'] === 'created' ? t('Orçamento criado com sucesso!') : t('Orçamento atualizado com sucesso!');
     $messageType = 'success';
 }
 
@@ -21,23 +21,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action'])) {
             $category = !empty($_POST['category']) ? trim($_POST['category']) : null;
             $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
             if ($amount > 0 && strlen($name) >= 3) {
-                try { $stmt = $pdo->prepare("INSERT INTO budgets (user_id, name, amount, period, category, card_id, start_date) VALUES (:uid,:name,:amount,:period,:category,:card_id,CURDATE())"); $stmt->execute([':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = 'Orçamento criado com sucesso!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro ao criar orçamento.'; $messageType = 'danger'; }
-            } else { $message = 'Dados inválidos.'; $messageType = 'danger'; }
+                try { $stmt = $pdo->prepare("INSERT INTO budgets (user_id, name, amount, period, category, card_id, start_date) VALUES (:uid,:name,:amount,:period,:category,:card_id,CURDATE())"); $stmt->execute([':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = t('Orçamento criado com sucesso!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro ao criar orçamento.'); $messageType = 'danger'; }
+            } else { $message = t('Dados inválidos.'); $messageType = 'danger'; }
             break;
         case 'edit':
             $budget_id = intval($_POST['budget_id'] ?? 0); $name = trim($_POST['name'] ?? ''); $amount = floatval($_POST['amount'] ?? 0);
             $period = $_POST['period'] ?? 'monthly'; $category = !empty($_POST['category']) ? trim($_POST['category']) : null; $card_id = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
             if ($amount > 0 && strlen($name) >= 3) {
-                try { $stmt = $pdo->prepare("UPDATE budgets SET name=:name,amount=:amount,period=:period,category=:category,card_id=:card_id WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = 'Orçamento atualizado!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro ao atualizar.'; $messageType = 'danger'; }
-            } else { $message = 'Dados inválidos.'; $messageType = 'danger'; }
+                try { $stmt = $pdo->prepare("UPDATE budgets SET name=:name,amount=:amount,period=:period,category=:category,card_id=:card_id WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid,':name'=>$name,':amount'=>$amount,':period'=>$period,':category'=>$category,':card_id'=>$card_id]); $message = t('Orçamento atualizado!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro ao atualizar.'); $messageType = 'danger'; }
+            } else { $message = t('Dados inválidos.'); $messageType = 'danger'; }
             break;
         case 'toggle':
             $budget_id = intval($_POST['budget_id'] ?? 0);
-            try { $stmt = $pdo->prepare("UPDATE budgets SET active = NOT active WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid]); $message = 'Estado alterado!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro.'; $messageType = 'danger'; }
+            try { $stmt = $pdo->prepare("UPDATE budgets SET active = NOT active WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid]); $message = t('Estado alterado!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro.'); $messageType = 'danger'; }
             break;
         case 'delete':
             $budget_id = intval($_POST['budget_id'] ?? 0);
-            try { $stmt = $pdo->prepare("DELETE FROM budgets WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid]); $message = 'Orçamento removido!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro.'; $messageType = 'danger'; }
+            try { $stmt = $pdo->prepare("DELETE FROM budgets WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$budget_id,':uid'=>$uid]); $message = t('Orçamento removido!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro.'); $messageType = 'danger'; }
             break;
     }
 }
@@ -51,22 +51,22 @@ $stmt = $pdo->prepare("SELECT id, name FROM cards WHERE user_id=:uid ORDER BY na
 $stmt->execute([':uid'=>$uid]);
 $cards = $stmt->fetchAll();
 
-$periodLabels = ['monthly'=>'Mensal','weekly'=>'Semanal','yearly'=>'Anual'];
+$periodLabels = ['monthly' => t('Mensal'), 'weekly' => t('Semanal'), 'yearly' => t('Anual')];
 // ── Ritmo: quanto do período já passou e quantos dias faltam ───────────────
 function period_progress(string $period): array {
     $now = time();
     switch ($period) {
         case 'weekly':
             $day = (int) date('N', $now);                       // 1 (segunda) … 7 (domingo)
-            return ['done' => $day / 7, 'left' => 7 - $day + 1, 'unit' => 'até domingo'];
+            return ['done' => $day / 7, 'left' => 7 - $day + 1, 'unit' => t('até domingo')];
         case 'yearly':
             $days = (int) date('L', $now) ? 366 : 365;
             $day  = (int) date('z', $now) + 1;
-            return ['done' => $day / $days, 'left' => $days - $day + 1, 'unit' => 'até ao fim do ano'];
+            return ['done' => $day / $days, 'left' => $days - $day + 1, 'unit' => t('até ao fim do ano')];
         default:
             $days = (int) date('t', $now);
             $day  = (int) date('j', $now);
-            return ['done' => $day / $days, 'left' => $days - $day + 1, 'unit' => 'até ao fim do mês'];
+            return ['done' => $day / $days, 'left' => $days - $day + 1, 'unit' => t('até ao fim do mês')];
     }
 }
 
@@ -85,11 +85,11 @@ foreach ($activeB as &$b) {
 unset($b);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Orçamentos - Finora</title>
+  <title><?= te('Orçamentos - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -182,14 +182,14 @@ unset($b);
 <div class="bg">
 
   <div class="bg-head">
-    <h1>Orçamentos</h1>
-    <a href="add_budget.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Criar orçamento</a>
+    <h1><?= te('Orçamentos') ?></h1>
+    <a href="add_budget.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Criar orçamento') ?></a>
   </div>
 
   <?php if ($activeB): ?>
     <p class="bg-summary">
-      <?php if ($counts['ok']): ?><span><i style="background:#12b76a"></i><strong><?= $counts['ok'] ?></strong> no bom caminho</span><?php endif; ?>
-      <?php if ($counts['warn']): ?><span><i style="background:#d97706"></i><strong><?= $counts['warn'] ?></strong> a precisar de atenção</span><?php endif; ?>
+      <?php if ($counts['ok']): ?><span><i style="background:#12b76a"></i><strong><?= $counts['ok'] ?></strong> <?= te('no bom caminho') ?></span><?php endif; ?>
+      <?php if ($counts['warn']): ?><span><i style="background:#d97706"></i><strong><?= $counts['warn'] ?></strong> <?= te('a precisar de atenção') ?></span><?php endif; ?>
       <?php if ($counts['over']): ?><span><i style="background:#d92d20"></i><strong><?= $counts['over'] ?></strong> ultrapassado<?= $counts['over'] > 1 ? 's' : '' ?></span><?php endif; ?>
     </p>
   <?php else: ?>
@@ -206,9 +206,9 @@ unset($b);
   <?php if (empty($budgets)): ?>
     <div class="bg-empty">
       <div class="bg-empty-art" aria-hidden="true"></div>
-      <h2>Ainda não tens orçamentos</h2>
-      <p>Define quanto queres gastar por mês, semana ou ano, no total ou numa categoria. A Finora mostra quanto ainda podes gastar e avisa-te se estiveres a gastar depressa demais.</p>
-      <a href="add_budget.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Criar o primeiro orçamento</a>
+      <h2><?= te('Ainda não tens orçamentos') ?></h2>
+      <p><?= te('Define quanto queres gastar por mês, semana ou ano, no total ou numa categoria. A Finora mostra quanto ainda podes gastar e avisa-te se estiveres a gastar depressa demais.') ?></p>
+      <a href="add_budget.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Criar o primeiro orçamento') ?></a>
     </div>
   <?php else: ?>
 
@@ -225,46 +225,46 @@ unset($b);
               <h2 class="bg-name" id="b<?= $b['id'] ?>"><?= htmlspecialchars($b['name']) ?></h2>
               <p class="bg-scope">
                 <span><?= $periodLabels[$b['period']] ?? 'Mensal' ?></span>·
-                <?php if ($b['category']): ?><span class="bg-cat"><span class="dot" style="background:<?= category_color($b['category']) ?>"></span><?= htmlspecialchars($b['category']) ?></span><?php else: ?><span>Todas as categorias</span><?php endif; ?>
+                <?php if ($b['category']): ?><span class="bg-cat"><span class="dot" style="background:<?= category_color($b['category']) ?>"></span><?= te($b['category']) ?></span><?php else: ?><span><?= te('Todas as categorias') ?></span><?php endif; ?>
                 <?php if ($b['card_name']): ?>·<span><?= htmlspecialchars($b['card_name']) ?></span><?php endif; ?>
               </p>
             </div>
-            <span class="bg-status <?= $state ?>"><?= $state === 'over' ? 'Ultrapassado' : ($state === 'warn' ? 'Atenção' : 'No bom caminho') ?></span>
+            <span class="bg-status <?= $state ?>"><?= $state === 'over' ? te('Ultrapassado') : ($state === 'warn' ? te('Atenção') : te('No bom caminho')) ?></span>
           </div>
 
-          <div class="bg-left-label"><?= $b['left'] < 0 ? 'Passaste o orçamento em' : 'Ainda podes gastar' ?></div>
+          <div class="bg-left-label"><?= $b['left'] < 0 ? te('Passaste o orçamento em') : te('Ainda podes gastar') ?></div>
           <div class="bg-left <?= $b['left'] < 0 ? 'over' : '' ?>"><?= fmt_money(abs($b['left'])) ?></div>
 
-          <div class="bg-meter" role="img" aria-label="<?= round($b['pct']) ?>% gasto; já passou <?= round($pace['done'] * 100) ?>% do período">
+          <div class="bg-meter" role="img" aria-label="<?= te('{pct}% gasto; já passou {done}% do período', ['pct' => round($b['pct']), 'done' => round($pace['done'] * 100)]) ?>">
             <span class="fill <?= $state === 'ok' ? '' : $state ?>" style="width:<?= min(round($b['pct'], 1), 100) ?>%"></span>
-            <span class="pace" style="left:<?= round($pace['done'] * 100, 1) ?>%" title="Onde devias estar hoje"></span>
+            <span class="pace" style="left:<?= round($pace['done'] * 100, 1) ?>%" title="<?= te('Onde devias estar hoje') ?>"></span>
           </div>
           <div class="bg-line">
-            <span><?= fmt_money($b['current_spent']) ?> de <?= fmt_money($b['amount']) ?></span>
+            <span><?= te('{amount} de {limit}', ['amount' => fmt_money($b['current_spent']), 'limit' => fmt_money($b['amount'])]) ?></span>
             <span><?= round($b['pct']) ?>%</span>
           </div>
 
           <?php if ($b['left'] < 0): ?>
-            <p class="bg-hint over">Ultrapassaste o limite deste período.</p>
+            <p class="bg-hint over"><?= te('Ultrapassaste o limite deste período.') ?></p>
           <?php elseif ($b['ahead']): ?>
-            <p class="bg-hint warn">Estás a gastar mais depressa do que o previsto. Para não passares, gasta até <?= fmt_money($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
+            <p class="bg-hint warn"><?= te('Estás a gastar mais depressa do que o previsto. Para não passares, gasta até {amount} por dia {until}.', ['amount' => fmt_money($perDay), 'until' => $pace['unit']]) ?></p>
           <?php else: ?>
-            <p class="bg-hint">Podes gastar cerca de <?= fmt_money($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
+            <p class="bg-hint"><?= te('Podes gastar cerca de {amount} por dia {until}.', ['amount' => fmt_money($perDay), 'until' => $pace['unit']]) ?></p>
           <?php endif; ?>
 
           <div class="bg-actions">
-            <a href="edit_budget.php?id=<?= $b['id'] ?>"><i class="bi bi-pencil"></i> Editar</a>
+            <a href="edit_budget.php?id=<?= $b['id'] ?>"><i class="bi bi-pencil"></i> <?= te('Editar') ?></a>
             <form method="post">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="toggle">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
-              <button type="submit"><i class="bi bi-pause-circle"></i> Pausar</button>
+              <button type="submit"><i class="bi bi-pause-circle"></i> <?= te('Pausar') ?></button>
             </form>
-            <form method="post" class="del" onsubmit="return confirm('Apagar o orçamento «<?= htmlspecialchars(addslashes($b['name'])) ?>»? Não é possível desfazer.')">
+            <form method="post" class="del" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']])) ?>)">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
-              <button type="submit" class="del" aria-label="Apagar <?= htmlspecialchars($b['name']) ?>"><i class="bi bi-trash3"></i></button>
+              <button type="submit" class="del" aria-label="<?= te('Apagar {name}', ['name' => $b['name']]) ?>"><i class="bi bi-trash3"></i></button>
             </form>
           </div>
         </article>
@@ -273,25 +273,25 @@ unset($b);
     <?php endif; ?>
 
     <?php if ($inactiveB): ?>
-      <h2 class="bg-section-title">Em pausa <small>· não geram alertas</small></h2>
+      <h2 class="bg-section-title"><?= te('Em pausa') ?> <small><?= te('· não geram alertas') ?></small></h2>
       <ul class="bg-paused">
         <?php foreach ($inactiveB as $b): ?>
           <li>
             <div class="main">
               <div class="nm"><?= htmlspecialchars($b['name']) ?></div>
-              <div class="mt"><?= fmt_money($b['amount']) ?> · <?= $periodLabels[$b['period']] ?? 'Mensal' ?><?= $b['category'] ? ' · ' . htmlspecialchars($b['category']) : '' ?></div>
+              <div class="mt"><?= fmt_money($b['amount']) ?> · <?= $periodLabels[$b['period']] ?? t('Mensal') ?><?= $b['category'] ? ' · ' . te($b['category']) : '' ?></div>
             </div>
             <form method="post">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="toggle">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
-              <button type="submit" class="btn-s"><i class="bi bi-play-circle"></i> Retomar</button>
+              <button type="submit" class="btn-s"><i class="bi bi-play-circle"></i> <?= te('Retomar') ?></button>
             </form>
-            <form method="post" onsubmit="return confirm('Apagar o orçamento «<?= htmlspecialchars(addslashes($b['name'])) ?>»? Não é possível desfazer.')">
+            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']])) ?>)">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
-              <button type="submit" class="btn-s btn-s-danger" aria-label="Apagar <?= htmlspecialchars($b['name']) ?>"><i class="bi bi-trash3"></i></button>
+              <button type="submit" class="btn-s btn-s-danger" aria-label="<?= te('Apagar {name}', ['name' => $b['name']]) ?>"><i class="bi bi-trash3"></i></button>
             </form>
           </li>
         <?php endforeach; ?>

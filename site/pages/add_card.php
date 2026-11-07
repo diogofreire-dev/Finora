@@ -39,10 +39,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $color = $BANKS[$bank]['color'];
     }
 
-    if (strlen($name) < 3)        { $errors[] = 'O nome do cartao deve ter pelo menos 3 caracteres.'; }
-    if ($limit < 0)                { $errors[] = 'O limite nao pode ser negativo.'; }
-    if ($balance < 0)              { $errors[] = 'O saldo nao pode ser negativo.'; }
-    if ($balance > $limit)         { $errors[] = 'O saldo nao pode ser superior ao limite.'; }
+    if (strlen($name) < 3)        { $errors[] = t('O nome do cartão deve ter pelo menos 3 caracteres.'); }
+    if ($limit < 0)                { $errors[] = t('O limite não pode ser negativo.'); }
+    if ($balance < 0)              { $errors[] = t('O saldo não pode ser negativo.'); }
+    if ($balance > $limit)         { $errors[] = t('O saldo não pode ser superior ao limite.'); }
     if (!array_key_exists($color, $cardColors)) { $color = 'purple'; }
 
     if (empty($errors)) {
@@ -52,17 +52,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: cards.php?success=card_added');
             exit;
         } catch (PDOException $e) {
-            $errors[] = 'Erro ao adicionar cartao. Tenta novamente.';
+            $errors[] = t('Erro ao adicionar cartão. Tenta novamente.');
         }
     }
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Adicionar Cartao - Finora</title>
+  <title><?= te('Adicionar Cartão - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -131,10 +131,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-plus-circle"></i></div>
     <div style="flex:1">
-      <h2>Adicionar Cartao</h2>
-      <p>Regista um novo cartao de credito ou debito</p>
+      <h2><?= te('Adicionar Cartão') ?></h2>
+      <p><?= te('Regista um novo cartão de crédito ou débito') ?></p>
     </div>
-    <a href="cards.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <a href="cards.php" class="btn-s"><i class="bi bi-arrow-left"></i> <?= te('Voltar') ?></a>
   </div>
 
   <?php if (!empty($errors)): ?>
@@ -147,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="two-col">
 
     <div class="settings-group">
-      <p class="group-label">Pre-visualizacao</p>
+      <p class="group-label"><?= te('Pré-visualização') ?></p>
       <div class="card-preview-wrap">
         <div class="card-visual-lg" id="cardPreview" style="background:<?=$cardColors[$color]['gradient']?>">
             <!-- Watermark do banco -->
@@ -161,34 +161,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cv-number">•••• •••• •••• ••••</div>
           </div>
           <div>
-            <div class="cv-name" id="preview-name"><?=strtoupper(htmlspecialchars($name ?: 'NOME DO CARTAO'))?></div>
+            <div class="cv-name" id="preview-name"><?= htmlspecialchars(mb_strtoupper($name ?: t('NOME DO CARTÃO'))) ?></div>
           </div>
           <div class="cv-meta">
-            <span>Limite: <strong id="preview-limit"><?=fmt_money($limit)?></strong></span>
-            <span>Gasto: <strong id="preview-balance"><?=fmt_money($balance)?></strong></span>
+            <span><?= te('Limite:') ?> <strong id="preview-limit"><?=fmt_money($limit)?></strong></span>
+            <span><?= te('Gasto:') ?> <strong id="preview-balance"><?=fmt_money($balance)?></strong></span>
           </div>
         </div>
         <div style="margin-top:16px">
           <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-secondary);margin-bottom:4px">
-            <span>Utilizacao</span>
+            <span><?= te('Utilização') ?></span>
             <strong id="usage-pct" style="color:var(--text-primary)">0%</strong>
           </div>
           <div class="usage-track"><div class="usage-bar" id="usage-bar" style="width:0%"></div></div>
           <div class="usage-labels">
-            <span id="usage-spent"><?= fmt_money(0) ?> gasto</span>
-            <span id="usage-limit-lbl"><?= fmt_money(0) ?> limite</span>
+            <span id="usage-spent"><?= te('{amount} gasto', ['amount' => fmt_money(0)]) ?></span>
+            <span id="usage-limit-lbl"><?= te('{amount} limite', ['amount' => fmt_money(0)]) ?></span>
           </div>
         </div>
       </div>
     </div>
 
     <div class="settings-group">
-      <p class="group-label">Dados do cartao</p>
+      <p class="group-label"><?= te('Dados do cartão') ?></p>
       <div class="settings-card">
         <form method="post" class="m-form"><?= csrf_field() ?>
 
           <div class="form-section">
-            <label class="form-label">Banco</label>
+            <label class="form-label"><?= te('Banco') ?></label>
             <select name="bank" id="bankSelect" class="form-control" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
               <?php foreach($BANKS as $bk => $bd): ?>
                 <option value="<?=$bk?>"
@@ -196,19 +196,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   data-color="<?=htmlspecialchars($bd['color'] ?? '')?>"
                   data-label="<?=htmlspecialchars($bd['label'])?>"
                   <?=$bank===$bk?'selected':''?>>
-                  <?=htmlspecialchars($bd['name'])?>
+                  <?= te($bd['name']) ?>
                 </option>
               <?php endforeach; ?>
             </select>
-            <p class="form-hint">A cor do cartao é aplicada automaticamente</p>
+            <p class="form-hint"><?= te('A cor do cartão é aplicada automaticamente') ?></p>
           </div>
 
           <div class="form-section">
-            <label class="form-label">Nome do Cartao *</label>
+            <label class="form-label"><?= te('Nome do Cartão *') ?></label>
             <input type="text" name="name" id="cardName" class="form-control"
-                   placeholder="Ex: Cartão Principal, Poupança, Viagens..."
+                   placeholder="<?= te('Ex: Cartão Principal, Poupança, Viagens...') ?>"
                    value="<?=htmlspecialchars($name)?>" required>
-            <p class="form-hint">Da um nome descritivo ao teu cartao</p>
+            <p class="form-hint"><?= te('Dá um nome descritivo ao teu cartão') ?></p>
           </div>
 
           <div class="form-section">
@@ -219,37 +219,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <input type="radio" name="color" id="color_<?=$ck?>" value="<?=$ck?>"
                          <?=$color===$ck?'checked':''?> data-gradient="<?=$cd['gradient']?>">
                   <label class="color-swatch" for="color_<?=$ck?>"
-                         style="background:<?=$cd['gradient']?>" title="<?=$cd['name']?>"></label>
+                         style="background:<?=$cd['gradient']?>" title="<?= te($cd['name']) ?>"></label>
                 </div>
               <?php endforeach; ?>
             </div>
-            <p class="form-hint" style="margin-top:8px">Escolhe uma cor para identificar facilmente o cartao</p>
+            <p class="form-hint" style="margin-top:8px"><?= te('Escolhe uma cor para identificar facilmente o cartão') ?></p>
           </div>
 
           <div class="form-section">
             <div class="input-row">
               <div>
-                <label class="form-label">Limite (<?= currency_symbol() ?>) *</label>
+                <label class="form-label"><?= te('Limite ({symbol}) *', ['symbol' => currency_symbol()]) ?></label>
                 <input type="number" name="limit_amount" id="cardLimit" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($limit)?>" required>
-                <p class="form-hint">Limite maximo de gastos</p>
+                <p class="form-hint"><?= te('Limite máximo de gastos') ?></p>
               </div>
               <div>
-                <label class="form-label">Gasto Inicial (<?= currency_symbol() ?>)</label>
+                <label class="form-label"><?= te('Gasto Inicial ({symbol})', ['symbol' => currency_symbol()]) ?></label>
                 <input type="number" name="balance" id="cardBalance" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($balance)?>">
-                <p class="form-hint">Se ja tens gastos acumulados</p>
+                <p class="form-hint"><?= te('Se já tens gastos acumulados') ?></p>
               </div>
             </div>
           </div>
 
           <div class="form-actions">
             <button type="submit" class="btn-s btn-s-primary">
-              <i class="bi bi-plus-circle"></i> Adicionar Cartao
+              <i class="bi bi-plus-circle"></i> <?= te('Adicionar Cartão') ?>
             </button>
-            <a href="cards.php" class="btn-s">Cancelar</a>
+            <a href="cards.php" class="btn-s"><?= te('Cancelar') ?></a>
           </div>
 
         </form>
@@ -271,7 +271,7 @@ const cardColors = <?=json_encode(array_map(fn($c) => $c['gradient'], $cardColor
 const bankLogos = <?= json_encode(bankLogoUrls()) ?>;
 
 document.getElementById('cardName').addEventListener('input', function() {
-  document.getElementById('preview-name').textContent = (this.value || 'NOME DO CARTAO').toUpperCase();
+  document.getElementById('preview-name').textContent = (this.value || <?= tj('NOME DO CARTÃO') ?>).toUpperCase();
 });
 
 const bankSelect      = document.getElementById('bankSelect');
@@ -336,8 +336,8 @@ function updatePreview() {
   const bal = parseFloat(document.getElementById('cardBalance').value) || 0;
   document.getElementById('preview-limit').textContent = money(lim);
   document.getElementById('preview-balance').textContent = money(bal);
-  document.getElementById('usage-spent').textContent = money(bal) + ' gasto';
-  document.getElementById('usage-limit-lbl').textContent = money(lim) + ' limite';
+  document.getElementById('usage-spent').textContent = <?= tj('{amount} gasto') ?>.replace('{amount}', money(bal));
+  document.getElementById('usage-limit-lbl').textContent = <?= tj('{amount} limite') ?>.replace('{amount}', money(lim));
   const pct = lim > 0 ? Math.min((bal / lim) * 100, 100) : 0;
   const bar = document.getElementById('usage-bar');
   bar.style.width = pct + '%';
