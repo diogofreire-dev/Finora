@@ -36,8 +36,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $category = !empty($_POST['category']) ? trim($_POST['category']) : null;
     $card_id  = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
 
-    if (strlen($name) < 3) $errors[] = 'O nome deve ter pelo menos 3 caracteres.';
-    if ($amount <= 0)       $errors[] = 'O valor deve ser maior que zero.';
+    if (strlen($name) < 3) $errors[] = t('O nome deve ter pelo menos 3 caracteres.');
+    if ($amount <= 0)       $errors[] = t('O valor deve ser maior que zero.');
 
     if (empty($errors)) {
         try {
@@ -46,17 +46,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             header('Location: budgets.php?success=updated');
             exit;
         } catch (PDOException $e) {
-            $errors[] = 'Erro ao atualizar orçamento. Tenta novamente.';
+            $errors[] = t('Erro ao atualizar orçamento. Tenta novamente.');
         }
     }
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar Orçamento - Finora</title>
+  <title><?= te('Editar Orçamento - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -110,10 +110,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-pencil-square"></i></div>
     <div style="flex:1">
-      <h2>Editar Orçamento</h2>
+      <h2><?= te('Editar Orçamento') ?></h2>
       <p><?=htmlspecialchars($budget['name'])?></p>
     </div>
-    <a href="budgets.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <a href="budgets.php" class="btn-s"><i class="bi bi-arrow-left"></i> <?= te('Voltar') ?></a>
   </div>
 
   <?php if (!empty($errors)): ?>
@@ -124,57 +124,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="settings-group">
-    <p class="group-label">Detalhes do orçamento</p>
+    <p class="group-label"><?= te('Detalhes do orçamento') ?></p>
     <div class="settings-card">
       <form method="post" class="m-form"><?= csrf_field() ?>
 
         <!-- Nome -->
         <div class="form-section">
-          <label class="form-label">Nome *</label>
-          <input type="text" name="name" class="form-control" placeholder="Ex: Alimentação mensal, Lazer..." value="<?=htmlspecialchars($name)?>" required>
+          <label class="form-label"><?= te('Nome *') ?></label>
+          <input type="text" name="name" class="form-control" placeholder="<?= te('Ex: Alimentação mensal, Lazer...') ?>" value="<?=htmlspecialchars($name)?>" required>
         </div>
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor limite (<?= currency_symbol() ?>) *</label>
+          <label class="form-label" style="text-align:center;width:100%"><?= te('Valor limite ({symbol}) *', ['symbol' => currency_symbol()]) ?></label>
           <input type="number" name="amount" step="0.01" min="0.01" class="form-control amount-input" placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
 
         <!-- Período -->
         <div class="form-section">
-          <label class="form-label">Período</label>
+          <label class="form-label"><?= te('Período') ?></label>
           <div class="period-grid">
             <div class="period-option">
               <input type="radio" name="period" id="period_weekly" value="weekly" <?=$period==='weekly'?'checked':''?>>
-              <label class="period-label" for="period_weekly"><i class="bi bi-calendar-week"></i><span>Semanal</span></label>
+              <label class="period-label" for="period_weekly"><i class="bi bi-calendar-week"></i><span><?= te('Semanal') ?></span></label>
             </div>
             <div class="period-option">
               <input type="radio" name="period" id="period_monthly" value="monthly" <?=$period==='monthly'?'checked':''?>>
-              <label class="period-label" for="period_monthly"><i class="bi bi-calendar-month"></i><span>Mensal</span></label>
+              <label class="period-label" for="period_monthly"><i class="bi bi-calendar-month"></i><span><?= te('Mensal') ?></span></label>
             </div>
             <div class="period-option">
               <input type="radio" name="period" id="period_yearly" value="yearly" <?=$period==='yearly'?'checked':''?>>
-              <label class="period-label" for="period_yearly"><i class="bi bi-calendar3"></i><span>Anual</span></label>
+              <label class="period-label" for="period_yearly"><i class="bi bi-calendar3"></i><span><?= te('Anual') ?></span></label>
             </div>
           </div>
         </div>
 
         <!-- Categoria -->
         <div class="form-section">
-          <label class="form-label">Categoria <span class="form-label-sub">(opcional)</span></label>
+          <label class="form-label"><?= te('Categoria') ?> <span class="form-label-sub"><?= te('(opcional)') ?></span></label>
           <select name="category" class="form-select">
-            <option value="">Todas as categorias</option>
+            <option value=""><?= te('Todas as categorias') ?></option>
             <?php foreach($categories as $cat): ?>
-              <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?=htmlspecialchars($cat)?></option>
+              <option value="<?=htmlspecialchars($cat)?>" <?=$category===$cat?'selected':''?>><?= te($cat) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
 
         <!-- Cartão -->
         <div class="form-section">
-          <label class="form-label">Cartão <span class="form-label-sub">(opcional)</span></label>
+          <label class="form-label"><?= te('Cartão') ?> <span class="form-label-sub"><?= te('(opcional)') ?></span></label>
           <select name="card_id" class="form-select">
-            <option value="">Todos os cartões</option>
+            <option value=""><?= te('Todos os cartões') ?></option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>><?=htmlspecialchars($c['name'])?></option>
             <?php endforeach; ?>
@@ -183,8 +183,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Botões -->
         <div class="form-section" style="display:flex;gap:8px;justify-content:flex-end">
-          <a href="budgets.php" class="btn-s">Cancelar</a>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar Alterações</button>
+          <a href="budgets.php" class="btn-s"><?= te('Cancelar') ?></a>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Guardar Alterações') ?></button>
         </div>
 
       </form>

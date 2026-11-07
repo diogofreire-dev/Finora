@@ -15,11 +15,11 @@ $cards = $stmt->fetchAll();
 $categories = ['Compras', 'Alimentação', 'Transporte', 'Saúde', 'Entretenimento', 'Educação', 'Casa', 'Outros'];
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Exportar Relatório - Finora</title>
+  <title><?= te('Exportar Relatório - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -214,40 +214,40 @@ include __DIR__ . '/../components/sidebar.php';
 
   <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-      <h2><i class="bi bi-file-earmark-pdf text-danger"></i> Exportar Relatório</h2>
-      <p class="text-muted mb-0">Gera relatórios PDF das tuas transações</p>
+      <h2><i class="bi bi-file-earmark-pdf text-danger"></i> <?= te('Exportar Relatório') ?></h2>
+      <p class="text-muted mb-0"><?= te('Gera relatórios PDF das tuas transações') ?></p>
     </div>
   </div>
 
   <!-- Filtros -->
   <div class="filter-card">
-    <h5 class="mb-3"><i class="bi bi-funnel"></i> Filtros</h5>
+    <h5 class="mb-3"><i class="bi bi-funnel"></i> <?= te('Filtros') ?></h5>
     <form id="exportForm" method="get" action="../helpers/generate_report_pdf.php">
       <div class="row g-3">
         <div class="col-md-4">
           <label class="form-label small fw-semibold">
-            <i class="bi bi-calendar"></i> Mês
+            <i class="bi bi-calendar"></i> <?= te('Mês') ?>
           </label>
           <input type="month" name="month" class="form-control" value="<?=date('Y-m')?>">
-          <small class="text-muted">Deixa em branco para todos os meses</small>
+          <small class="text-muted"><?= te('Deixa em branco para todos os meses') ?></small>
         </div>
         <div class="col-md-4">
           <label class="form-label small fw-semibold">
-            <i class="bi bi-tag"></i> Categoria
+            <i class="bi bi-tag"></i> <?= te('Categoria') ?>
           </label>
           <select name="category" class="form-select">
-            <option value="">Todas as categorias</option>
+            <option value=""><?= te('Todas as categorias') ?></option>
             <?php foreach($categories as $cat): ?>
-              <option value="<?=htmlspecialchars($cat)?>"><?=htmlspecialchars($cat)?></option>
+              <option value="<?=htmlspecialchars($cat)?>"><?= te($cat) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
         <div class="col-md-4">
           <label class="form-label small fw-semibold">
-            <i class="bi bi-credit-card"></i> Cartão
+            <i class="bi bi-credit-card"></i> <?= te('Cartão') ?>
           </label>
           <select name="card_id" class="form-select">
-            <option value="">Todos os cartões</option>
+            <option value=""><?= te('Todos os cartões') ?></option>
             <?php foreach($cards as $card): ?>
               <option value="<?=$card['id']?>"><?=htmlspecialchars($card['name'])?></option>
             <?php endforeach; ?>
@@ -259,7 +259,7 @@ include __DIR__ . '/../components/sidebar.php';
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="include_cards" value="1" id="includeCards" checked>
             <label class="form-check-label" for="includeCards">
-              Incluir resumo de cartões
+              <?= te('Incluir resumo de cartões') ?>
             </label>
           </div>
         </div>
@@ -267,7 +267,7 @@ include __DIR__ . '/../components/sidebar.php';
           <div class="form-check">
             <input class="form-check-input" type="checkbox" name="include_stats" value="1" id="includeStats" checked>
             <label class="form-check-label" for="includeStats">
-              Incluir estatísticas por categoria
+              <?= te('Incluir estatísticas por categoria') ?>
             </label>
           </div>
         </div>
@@ -281,11 +281,11 @@ include __DIR__ . '/../components/sidebar.php';
       <div class="card">
         <div class="card-body export-option">
           <i class="bi bi-file-earmark-text export-icon text-primary"></i>
-          <h4 class="fw-bold mb-3">Relatório Completo</h4>
-          <p class="text-muted mb-4">Todas as transações com análise detalhada</p>
+          <h4 class="fw-bold mb-3"><?= te('Relatório Completo') ?></h4>
+          <p class="text-muted mb-4"><?= te('Todas as transações com análise detalhada') ?></p>
           <!-- Botão de exportação completa -->
           <button type="button" class="btn btn-primary px-4" onclick="exportReport('full')">
-            <i class="bi bi-download"></i> Exportar Completo
+            <i class="bi bi-download"></i> <?= te('Exportar Completo') ?>
           </button>
         </div>
       </div>
@@ -294,11 +294,11 @@ include __DIR__ . '/../components/sidebar.php';
       <div class="card">
         <div class="card-body export-option">
           <i class="bi bi-file-earmark-bar-graph export-icon text-success"></i>
-          <h4 class="fw-bold mb-3">Relatório Resumido</h4>
-          <p class="text-muted mb-4">Últimas 20 transações e resumo</p>
+          <h4 class="fw-bold mb-3"><?= te('Relatório Resumido') ?></h4>
+          <p class="text-muted mb-4"><?= te('Últimas 20 transações e resumo') ?></p>
           <!-- Botão de exportação resumida -->
           <button type="button" class="btn btn-outline-primary px-4" onclick="exportReport('summary')">
-            <i class="bi bi-download"></i> Exportar Resumido
+            <i class="bi bi-download"></i> <?= te('Exportar Resumido') ?>
           </button>
         </div>
       </div>
@@ -308,7 +308,7 @@ include __DIR__ . '/../components/sidebar.php';
   <!-- Info -->
   <div class="alert alert-info mt-4">
     <i class="bi bi-info-circle"></i>
-    <strong>Nota:</strong> O relatório será gerado em formato PDF e descarregado automaticamente.
+    <strong><?= te('Nota:') ?></strong> <?= te('O relatório será gerado em formato PDF e descarregado automaticamente.') ?>
   </div>
 </div>
 </div><!-- /page-content -->

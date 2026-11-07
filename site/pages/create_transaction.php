@@ -36,14 +36,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $card_id          = owned_card_id($pdo, (int) $uid, $_POST['card_id'] ?? null);
     $transaction_date = trim($_POST['transaction_date'] ?? '');
 
-    if ($amount <= 0)               { $errors[] = 'O valor deve ser maior que zero.'; }
-    if (strlen($description) < 3)   { $errors[] = 'A descrição deve ter pelo menos 3 caracteres.'; }
+    if ($amount <= 0)               { $errors[] = t('O valor deve ser maior que zero.'); }
+    if (strlen($description) < 3)   { $errors[] = t('A descrição deve ter pelo menos 3 caracteres.'); }
     if (empty($transaction_date)) {
-        $errors[] = 'A data da transação é obrigatória.';
+        $errors[] = t('A data da transação é obrigatória.');
     } else {
         $date = DateTime::createFromFormat('Y-m-d', $transaction_date);
-        if (!$date || $date->format('Y-m-d') !== $transaction_date) { $errors[] = 'Data inválida.'; }
-        elseif ($date > new DateTime()) { $errors[] = 'A data da transação não pode ser no futuro.'; }
+        if (!$date || $date->format('Y-m-d') !== $transaction_date) { $errors[] = t('Data inválida.'); }
+        elseif ($date > new DateTime()) { $errors[] = t('A data da transação não pode ser no futuro.'); }
     }
 
     if ($card_id) {
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt->execute([':id' => $card_id, ':uid' => $uid]);
         $card = $stmt->fetch();
         if ($card && $card['limit_amount'] > 0 && ($card['balance'] + $amount) > $card['limit_amount']) {
-            $errors[] = 'Esta transação excede o limite disponível do cartão.';
+            $errors[] = t('Esta transação excede o limite disponível do cartão.');
         }
     }
 
@@ -69,17 +69,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (PDOException $e) {
             $pdo->rollBack();
-            $errors[] = 'Erro ao criar transação. Tenta novamente.';
+            $errors[] = t('Erro ao criar transação. Tenta novamente.');
         }
     }
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nova Transação - Finora</title>
+  <title><?= te('Nova Transação - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -160,10 +160,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-plus-circle"></i></div>
     <div style="flex:1">
-      <h2>Nova Transação</h2>
-      <p>Regista uma nova despesa</p>
+      <h2><?= te('Nova Transação') ?></h2>
+      <p><?= te('Regista uma nova despesa') ?></p>
     </div>
-    <a href="transactions.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <a href="transactions.php" class="btn-s"><i class="bi bi-arrow-left"></i> <?= te('Voltar') ?></a>
   </div>
 
   <?php if (!empty($errors)): ?>
@@ -178,42 +178,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php if (empty($cards)): ?>
     <div style="border-radius:10px;padding:12px 16px;font-size:13px;margin-bottom:20px;display:flex;align-items:flex-start;gap:10px;border:1px solid rgba(var(--fn-accent-rgb),.3);background:rgba(var(--fn-accent-rgb),.08);color:var(--text-secondary)">
       <i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i>
-      <span>Ainda não tens cartões registados. <a href="add_card.php" style="color:var(--fn-accent);font-weight:600">Adiciona um cartão</a> ou continua sem cartão associado.</span>
+      <span><?= te('Ainda não tens cartões registados.') ?> <a href="add_card.php" style="color:var(--fn-accent);font-weight:600"><?= te('Adiciona um cartão') ?></a> <?= te('ou continua sem cartão associado.') ?></span>
     </div>
   <?php endif; ?>
 
   <div class="settings-group">
-    <p class="group-label">Detalhes da transação</p>
+    <p class="group-label"><?= te('Detalhes da transação') ?></p>
     <div class="settings-card">
       <form method="post" class="m-form"><?= csrf_field() ?>
 
         <!-- Data -->
         <div class="form-section">
-          <label class="form-label">Data da transação *</label>
+          <label class="form-label"><?= te('Data da transação *') ?></label>
           <input type="date" name="transaction_date" class="form-control"
                  value="<?=htmlspecialchars($transaction_date)?>"
                  max="<?=date('Y-m-d')?>" required>
-          <p class="form-hint">Quando é que esta despesa ocorreu realmente?</p>
+          <p class="form-hint"><?= te('Quando é que esta despesa ocorreu realmente?') ?></p>
         </div>
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor (<?= currency_symbol() ?>) *</label>
+          <label class="form-label" style="text-align:center;width:100%"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label>
           <input type="number" name="amount" step="0.01" min="0" class="form-control amount-input"
                  placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
 
         <!-- Descrição -->
         <div class="form-section">
-          <label class="form-label">Descrição *</label>
+          <label class="form-label"><?= te('Descrição *') ?></label>
           <input type="text" name="description" class="form-control"
-                 placeholder="Ex: Supermercado, Netflix, Gasolina..."
+                 placeholder="<?= te('Ex: Supermercado, Netflix, Gasolina...') ?>"
                  value="<?=htmlspecialchars($description)?>" required>
         </div>
 
         <!-- Categoria -->
         <div class="form-section">
-          <label class="form-label">Categoria</label>
+          <label class="form-label"><?= te('Categoria') ?></label>
           <div class="cat-grid">
             <?php foreach($categories as $cat): ?>
             <div class="cat-option">
@@ -221,7 +221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      <?=$category===$cat['name']?'checked':''?>>
               <label class="cat-label" for="cat_<?=$cat['name']?>">
                 <i class="bi bi-<?=$cat['icon']?>"></i>
-                <span><?=$cat['name']?></span>
+                <span><?= te($cat['name']) ?></span>
               </label>
             </div>
             <?php endforeach; ?>
@@ -230,22 +230,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Cartão -->
         <div class="form-section">
-          <label class="form-label">Cartão associado <span class="form-label-sub">(opcional)</span></label>
+          <label class="form-label"><?= te('Cartão associado') ?> <span class="form-label-sub"><?= te('(opcional)') ?></span></label>
           <select name="card_id" class="form-select" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
-            <option value="">Nenhum / Dinheiro</option>
+            <option value=""><?= te('Nenhum / Dinheiro') ?></option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=($card_id==$c['id'])?'selected':''?>>
-                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_money($c['limit_amount']-$c['balance'])?>
+                <?=htmlspecialchars($c['name'])?> — <?= te('Disponível: {amount}', ['amount' => fmt_money($c['limit_amount']-$c['balance'])]) ?>
               </option>
             <?php endforeach; ?>
           </select>
-          <p class="form-hint">Deixa vazio se foi pago em dinheiro.</p>
+          <p class="form-hint"><?= te('Deixa vazio se foi pago em dinheiro.') ?></p>
         </div>
 
         <!-- Botões -->
         <div class="form-section" style="display:flex;gap:8px;justify-content:flex-end">
-          <a href="transactions.php" class="btn-s">Cancelar</a>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Registar Transação</button>
+          <a href="transactions.php" class="btn-s"><?= te('Cancelar') ?></a>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Registar Transação') ?></button>
         </div>
 
       </form>
@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <?php if (!empty($cards)): ?>
   <div class="settings-group">
-    <p class="group-label">Os teus cartões</p>
+    <p class="group-label"><?= te('Os teus cartões') ?></p>
     <div class="settings-card" style="padding:16px 20px">
       <?php foreach($cards as $c):
         $available = $c['limit_amount'] - $c['balance'];
@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <span style="font-size:12px;color:var(--text-secondary)"><?=round($pct)?>%</span>
         </div>
         <div class="card-bar"><div class="card-bar-fill" style="width:<?=min($pct,100)?>%;background:<?=$barColor?>"></div></div>
-        <div style="font-size:12px;color:var(--text-secondary)">Disponível: <strong style="color:var(--text-primary)"><?=fmt_money($available)?></strong></div>
+        <div style="font-size:12px;color:var(--text-secondary)"><?= te('Disponível:') ?> <strong style="color:var(--text-primary)"><?=fmt_money($available)?></strong></div>
       </div>
       <?php endforeach; ?>
     </div>
@@ -275,19 +275,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="settings-group">
-    <p class="group-label">Dicas</p>
+    <p class="group-label"><?= te('Dicas') ?></p>
     <div class="settings-card" style="padding:4px 20px">
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-calendar-event" style="color:var(--fn-accent)"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Data da transação</div><div style="font-size:12px;color:var(--text-secondary)">Podes adicionar transações passadas escolhendo a data correta.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Data da transação') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('Podes adicionar transações passadas escolhendo a data correta.') ?></div></div>
       </div>
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-lightbulb" style="color:#f59e0b"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Organiza melhor</div><div style="font-size:12px;color:var(--text-secondary)">Usa categorias para analisar onde gastas mais dinheiro.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Organiza melhor') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('Usa categorias para analisar onde gastas mais dinheiro.') ?></div></div>
       </div>
       <div class="tip-row">
         <div class="tip-icon"><i class="bi bi-credit-card" style="color:#22c55e"></i></div>
-        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)">Associa ao cartão</div><div style="font-size:12px;color:var(--text-secondary)">O saldo do cartão é atualizado automaticamente.</div></div>
+        <div><div style="font-size:13px;font-weight:500;color:var(--text-primary)"><?= te('Associa ao cartão') ?></div><div style="font-size:12px;color:var(--text-secondary)"><?= te('O saldo do cartão é atualizado automaticamente.') ?></div></div>
       </div>
     </div>
   </div>

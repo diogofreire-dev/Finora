@@ -40,14 +40,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $old_amount       = $transaction['amount'];
     $old_card_id      = $transaction['card_id'];
 
-    if ($amount <= 0)               { $errors[] = 'O valor deve ser maior que zero.'; }
-    if (strlen($description) < 3)   { $errors[] = 'A descrição deve ter pelo menos 3 caracteres.'; }
+    if ($amount <= 0)               { $errors[] = t('O valor deve ser maior que zero.'); }
+    if (strlen($description) < 3)   { $errors[] = t('A descrição deve ter pelo menos 3 caracteres.'); }
     if (empty($transaction_date)) {
-        $errors[] = 'A data da transação é obrigatória.';
+        $errors[] = t('A data da transação é obrigatória.');
     } else {
         $date = DateTime::createFromFormat('Y-m-d', $transaction_date);
-        if (!$date || $date->format('Y-m-d') !== $transaction_date) { $errors[] = 'Data inválida.'; }
-        elseif ($date > new DateTime()) { $errors[] = 'A data da transação não pode ser no futuro.'; }
+        if (!$date || $date->format('Y-m-d') !== $transaction_date) { $errors[] = t('Data inválida.'); }
+        elseif ($date > new DateTime()) { $errors[] = t('A data da transação não pode ser no futuro.'); }
     }
 
     if ($card_id && ($card_id != $old_card_id || $amount != $old_amount)) {
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($card && $card['limit_amount'] > 0) {
             $cur = $card['balance'];
             if ($card_id == $old_card_id) { $cur -= $old_amount; }
-            if (($cur + $amount) > $card['limit_amount']) { $errors[] = 'Esta transação excede o limite disponível do cartão.'; }
+            if (($cur + $amount) > $card['limit_amount']) { $errors[] = t('Esta transação excede o limite disponível do cartão.'); }
         }
     }
 
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         } catch (PDOException $e) {
             $pdo->rollBack();
-            $errors[] = 'Erro ao atualizar transação. Tenta novamente.';
+            $errors[] = t('Erro ao atualizar transação. Tenta novamente.');
         }
     }
 } else {
@@ -98,11 +98,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Editar Transação - Finora</title>
+  <title><?= te('Editar Transação - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -180,10 +180,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <div class="page-header">
     <div class="page-header-icon"><i class="bi bi-pencil-square"></i></div>
     <div style="flex:1">
-      <h2>Editar Transação</h2>
-      <p>Atualiza os dados desta despesa</p>
+      <h2><?= te('Editar Transação') ?></h2>
+      <p><?= te('Atualiza os dados desta despesa') ?></p>
     </div>
-    <a href="transactions.php" class="btn-s"><i class="bi bi-arrow-left"></i> Voltar</a>
+    <a href="transactions.php" class="btn-s"><i class="bi bi-arrow-left"></i> <?= te('Voltar') ?></a>
   </div>
 
   <?php if (!empty($errors)): ?>
@@ -194,14 +194,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
 
   <div class="settings-group">
-    <p class="group-label">Editar detalhes</p>
+    <p class="group-label"><?= te('Editar detalhes') ?></p>
     <div class="settings-card">
 
       <!-- Notice -->
       <div class="info-notice">
         <i class="bi bi-info-circle" style="color:var(--fn-accent);flex-shrink:0;margin-top:2px"></i>
         <div style="font-size:13px;color:var(--text-secondary)">
-          Registo criado em <strong style="color:var(--text-primary)"><?=date('d/m/Y \à\s H:i', strtotime($transaction['created_at']))?></strong> — esta data não será alterada.
+          <?= te('Registo criado em') ?> <strong style="color:var(--text-primary)"><?= te('{date} às {time}', ['date' => date('d/m/Y', strtotime($transaction['created_at'])), 'time' => date('H:i', strtotime($transaction['created_at']))]) ?></strong> <?= te('— esta data não será alterada.') ?>
         </div>
       </div>
 
@@ -209,31 +209,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Data -->
         <div class="form-section">
-          <label class="form-label">Data da transação *</label>
+          <label class="form-label"><?= te('Data da transação *') ?></label>
           <input type="date" name="transaction_date" class="form-control"
                  value="<?=htmlspecialchars($transaction['transaction_date'])?>"
                  max="<?=date('Y-m-d')?>" required autofocus>
-          <p class="form-hint">Podes alterar a data em que a despesa realmente ocorreu.</p>
+          <p class="form-hint"><?= te('Podes alterar a data em que a despesa realmente ocorreu.') ?></p>
         </div>
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor (<?= currency_symbol() ?>) *</label>
+          <label class="form-label" style="text-align:center;width:100%"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label>
           <input type="number" name="amount" step="0.01" min="0" class="form-control amount-input"
                  placeholder="0.00" value="<?=htmlspecialchars($transaction['amount'])?>" required>
         </div>
 
         <!-- Descrição -->
         <div class="form-section">
-          <label class="form-label">Descrição *</label>
+          <label class="form-label"><?= te('Descrição *') ?></label>
           <input type="text" name="description" class="form-control"
-                 placeholder="Ex: Supermercado, Netflix, Gasolina..."
+                 placeholder="<?= te('Ex: Supermercado, Netflix, Gasolina...') ?>"
                  value="<?=htmlspecialchars($transaction['description'])?>" required>
         </div>
 
         <!-- Categoria -->
         <div class="form-section">
-          <label class="form-label">Categoria</label>
+          <label class="form-label"><?= te('Categoria') ?></label>
           <div class="cat-grid">
             <?php foreach($categories as $cat): ?>
             <div class="cat-option">
@@ -241,7 +241,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                      <?=$category===$cat['name']?'checked':''?>>
               <label class="cat-label" for="cat_<?=$cat['name']?>">
                 <i class="bi bi-<?=$cat['icon']?>"></i>
-                <span><?=$cat['name']?></span>
+                <span><?= te($cat['name']) ?></span>
               </label>
             </div>
             <?php endforeach; ?>
@@ -250,22 +250,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Cartão -->
         <div class="form-section">
-          <label class="form-label">Cartão associado <span class="form-label-sub">(opcional)</span></label>
+          <label class="form-label"><?= te('Cartão associado') ?> <span class="form-label-sub"><?= te('(opcional)') ?></span></label>
           <select name="card_id" class="form-select" style="background-color:var(--bg-primary);color:var(--text-primary);border-color:var(--border-color);">
-            <option value="" <?=!$card_id?'selected':''?>>Nenhum / Dinheiro</option>
+            <option value="" <?=!$card_id?'selected':''?>><?= te('Nenhum / Dinheiro') ?></option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>>
-                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_money($c['limit_amount']-$c['balance'])?>
+                <?=htmlspecialchars($c['name'])?> — <?= te('Disponível: {amount}', ['amount' => fmt_money($c['limit_amount']-$c['balance'])]) ?>
               </option>
             <?php endforeach; ?>
           </select>
-          <p class="form-hint">Se mudares o cartão ou o valor, os saldos serão ajustados automaticamente.</p>
+          <p class="form-hint"><?= te('Se mudares o cartão ou o valor, os saldos serão ajustados automaticamente.') ?></p>
         </div>
 
         <!-- Botões -->
         <div class="form-section" style="display:flex;gap:8px;justify-content:flex-end">
-          <a href="transactions.php" class="btn-s">Cancelar</a>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar Alterações</button>
+          <a href="transactions.php" class="btn-s"><?= te('Cancelar') ?></a>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Guardar Alterações') ?></button>
         </div>
 
       </form>
@@ -273,29 +273,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 
   <div class="settings-group">
-    <p class="group-label">Dados originais</p>
+    <p class="group-label"><?= te('Dados originais') ?></p>
     <div class="settings-card">
       <div class="orig-row">
-        <span class="orig-label">Data da transação</span>
+        <span class="orig-label"><?= te('Data da transação') ?></span>
         <span class="orig-value"><?=date('d/m/Y', strtotime($transaction['transaction_date']))?></span>
       </div>
       <div class="orig-row">
-        <span class="orig-label">Valor</span>
+        <span class="orig-label"><?= te('Valor') ?></span>
         <span class="orig-value" style="font-weight:700;color:#e74c3c"><?=fmt_money($transaction['amount'])?></span>
       </div>
       <div class="orig-row">
-        <span class="orig-label">Descrição</span>
+        <span class="orig-label"><?= te('Descrição') ?></span>
         <span class="orig-value"><?=htmlspecialchars($transaction['description'])?></span>
       </div>
       <?php if($transaction['category']): ?>
       <div class="orig-row">
-        <span class="orig-label">Categoria</span>
+        <span class="orig-label"><?= te('Categoria') ?></span>
         <span class="orig-value"><?=htmlspecialchars($transaction['category'])?></span>
       </div>
       <?php endif; ?>
       <div class="orig-row">
-        <span class="orig-label">Registo criado em</span>
-        <span class="orig-value"><?=date('d/m/Y \à\s H:i', strtotime($transaction['created_at']))?></span>
+        <span class="orig-label"><?= te('Registo criado em') ?></span>
+        <span class="orig-value"><?= te('{date} às {time}', ['date' => date('d/m/Y', strtotime($transaction['created_at'])), 'time' => date('H:i', strtotime($transaction['created_at']))]) ?></span>
       </div>
     </div>
   </div>

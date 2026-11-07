@@ -23,8 +23,7 @@ $stmt = $pdo->prepare("SELECT DISTINCT DATE_FORMAT(transaction_date, '%Y-%m') AS
                        WHERE user_id = :uid ORDER BY ym DESC LIMIT 36");
 $stmt->execute([':uid' => $uid]);
 $months = $stmt->fetchAll(PDO::FETCH_COLUMN);
-$monthNames = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
-$monthLabel = fn($ym) => ucfirst($monthNames[(int) substr($ym, 5, 2) - 1]) . ' ' . substr($ym, 0, 4);
+$monthLabel = fn($ym) => ucfirst(month_name((int) substr($ym, 5, 2))) . ' ' . substr($ym, 0, 4);
 
 $categories = array_values(array_filter(array_keys(CATEGORY_STYLES), fn($c) => $c !== 'Sem Categoria'));
 
@@ -33,14 +32,15 @@ $categories = array_values(array_filter(array_keys(CATEGORY_STYLES), fn($c) => $
 [$messageType, $message] = $_SESSION['flash_dados'] ?? ['', ''];
 unset($_SESSION['flash_dados']);
 
-$plural = fn($n, $one, $many) => $n == 1 ? "1 $one" : "$n $many";
+// $one e $many são frases com {n}: t('1 cartão') / t('{n} cartões')
+$plural = fn($n, $one, $many) => $n == 1 ? t($one) : t($many, ['n' => $n]);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dados - Finora</title>
+  <title><?= te('Dados - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -117,7 +117,7 @@ include __DIR__ . '/../components/sidebar.php';
 <div class="page-content">
 <div class="pg-wrap">
 
-  <div class="pg-head"><h1>Dados</h1></div>
+  <div class="pg-head"><h1><?= te('Dados') ?></h1></div>
 
   <?php if ($message): ?>
     <?php $icon = ['success' => 'check-circle', 'danger' => 'exclamation-circle'][$messageType] ?? 'info-circle'; ?>
@@ -128,31 +128,31 @@ include __DIR__ . '/../components/sidebar.php';
 
   <!-- EXPORTAR -->
   <section class="pg-card" aria-labelledby="sec-exp" style="--tone:var(--cat-2)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span><div><h2 id="sec-exp">Exportar</h2><p>Escolhe o período e o formato. Os filtros servem para os PDF e para o CSV.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span><div><h2 id="sec-exp"><?= te('Exportar') ?></h2><p><?= te('Escolhe o período e o formato. Os filtros servem para os PDF e para o CSV.') ?></p></div></header>
     <form class="dt-body" method="get" action="../helpers/export_csv.php" id="exportForm">
       <div class="dt-pad dt-filters">
         <div>
-          <label class="form-label" for="month">Mês</label>
+          <label class="form-label" for="month"><?= te('Mês') ?></label>
           <select class="form-select" id="month" name="month">
-            <option value="">Todos os meses</option>
+            <option value=""><?= te('Todos os meses') ?></option>
             <?php foreach ($months as $i => $ym): ?>
               <option value="<?= htmlspecialchars($ym) ?>" <?= $i === 0 ? 'selected' : '' ?>><?= $monthLabel($ym) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
         <div>
-          <label class="form-label" for="category">Categoria</label>
+          <label class="form-label" for="category"><?= te('Categoria') ?></label>
           <select class="form-select" id="category" name="category">
-            <option value="">Todas</option>
+            <option value=""><?= te('Todas') ?></option>
             <?php foreach ($categories as $cat): ?>
-              <option><?= htmlspecialchars($cat) ?></option>
+              <option value="<?= htmlspecialchars($cat) ?>"><?= te($cat) ?></option>
             <?php endforeach; ?>
           </select>
         </div>
         <div>
-          <label class="form-label" for="card_id">Cartão</label>
+          <label class="form-label" for="card_id"><?= te('Cartão') ?></label>
           <select class="form-select" id="card_id" name="card_id">
-            <option value="">Todos</option>
+            <option value=""><?= te('Todos') ?></option>
             <?php foreach ($cards as $c): ?>
               <option value="<?= (int) $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
             <?php endforeach; ?>
@@ -164,43 +164,43 @@ include __DIR__ . '/../components/sidebar.php';
 
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
-        <div class="txt"><b>Relatório completo (PDF)</b><span>Todas as transações, totais por categoria e resumo dos cartões.</span></div>
-        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="full"><i class="bi bi-download"></i> Exportar</button>
+        <div class="txt"><b><?= te('Relatório completo (PDF)') ?></b><span><?= te('Todas as transações, totais por categoria e resumo dos cartões.') ?></span></div>
+        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="full"><i class="bi bi-download"></i> <?= te('Exportar') ?></button>
       </div>
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
-        <div class="txt"><b>Resumo (PDF)</b><span>As últimas 20 transações e os totais. Bom para uma vista rápida.</span></div>
-        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="summary"><i class="bi bi-download"></i> Exportar</button>
+        <div class="txt"><b><?= te('Resumo (PDF)') ?></b><span><?= te('As últimas 20 transações e os totais. Bom para uma vista rápida.') ?></span></div>
+        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="summary"><i class="bi bi-download"></i> <?= te('Exportar') ?></button>
       </div>
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-6)" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>
-        <div class="txt"><b>Folha de cálculo (CSV)</b><span>Abre no Excel ou no Google Sheets. No Excel usa Dados → De Texto/CSV.</span></div>
-        <button type="submit" class="btn-s"><i class="bi bi-download"></i> Exportar</button>
+        <div class="txt"><b><?= te('Folha de cálculo (CSV)') ?></b><span><?= te('Abre no Excel ou no Google Sheets. No Excel usa Dados → De Texto/CSV.') ?></span></div>
+        <button type="submit" class="btn-s"><i class="bi bi-download"></i> <?= te('Exportar') ?></button>
       </div>
     </form>
   </section>
 
   <!-- BACKUP -->
   <section class="pg-card" aria-labelledby="sec-bak" style="--tone:var(--cat-3)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-bak">Cópia de segurança</h2><p>Um ficheiro com tudo, para guardares fora da Finora. Faz uma por mês.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-bak"><?= te('Cópia de segurança') ?></h2><p><?= te('Um ficheiro com tudo, para guardares fora da Finora. Faz uma por mês.') ?></p></div></header>
     <div class="dt-body">
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-cloud-download"></i></span>
         <div class="txt">
-          <b>Descarregar cópia (JSON)</b>
-          <span>Inclui <?= $plural($counts['tx'], 'transação', 'transações') ?>, <?= $plural($counts['cards'], 'cartão', 'cartões') ?> e <?= $plural($counts['budgets'], 'orçamento', 'orçamentos') ?>.</span>
+          <b><?= te('Descarregar cópia (JSON)') ?></b>
+          <span><?= te('Inclui {tx}, {cards} e {budgets}.', ['tx' => $plural($counts['tx'], '1 transação', '{n} transações'), 'cards' => $plural($counts['cards'], '1 cartão', '{n} cartões'), 'budgets' => $plural($counts['budgets'], '1 orçamento', '{n} orçamentos')]) ?></span>
         </div>
-        <a class="btn-s" href="../helpers/export_json.php"><i class="bi bi-download"></i> Descarregar</a>
+        <a class="btn-s" href="../helpers/export_json.php"><i class="bi bi-download"></i> <?= te('Descarregar') ?></a>
       </div>
       <form class="dt-row" action="../helpers/import_json.php" method="post" enctype="multipart/form-data">
         <?= csrf_field() ?>
         <span class="pg-ico sm" style="--tone:var(--cat-7)" aria-hidden="true"><i class="bi bi-arrow-counterclockwise"></i></span>
         <div class="txt">
-          <b>Restaurar uma cópia</b>
-          <span id="jsonName">Repõe as transações. As que já existem não são duplicadas.</span>
+          <b><?= te('Restaurar uma cópia') ?></b>
+          <span id="jsonName"><?= te('Repõe as transações. As que já existem não são duplicadas.') ?></span>
         </div>
         <label class="btn-s" style="margin:0">
-          <i class="bi bi-folder2-open"></i> Escolher ficheiro
+          <i class="bi bi-folder2-open"></i> <?= te('Escolher ficheiro') ?>
           <input type="file" name="json_file" accept=".json,application/json" hidden id="jsonFile">
         </label>
       </form>
@@ -209,24 +209,24 @@ include __DIR__ . '/../components/sidebar.php';
 
   <!-- IMPORTAR -->
   <section class="pg-card" aria-labelledby="sec-imp" style="--tone:var(--cat-1)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-in-down"></i></span><div><h2 id="sec-imp">Importar transações</h2><p>Traz movimentos do extrato do banco ou de outra app, num ficheiro CSV.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-box-arrow-in-down"></i></span><div><h2 id="sec-imp"><?= te('Importar transações') ?></h2><p><?= te('Traz movimentos do extrato do banco ou de outra app, num ficheiro CSV.') ?></p></div></header>
     <form class="dt-body dt-pad" action="../helpers/import_csv.php" method="post" enctype="multipart/form-data" id="csvForm">
       <?= csrf_field() ?>
       <label class="dt-drop" id="dropZone">
         <i class="bi bi-cloud-arrow-up" aria-hidden="true"></i>
-        <b id="csvName">Escolhe ou arrasta o ficheiro CSV</b>
-        <span>Até 2 MB e <?= IMPORT_MAX_ROWS ?> linhas</span>
+        <b id="csvName"><?= te('Escolhe ou arrasta o ficheiro CSV') ?></b>
+        <span><?= te('Até 2 MB e {n} linhas', ['n' => IMPORT_MAX_ROWS]) ?></span>
         <input type="file" name="csv_file" id="csvFile" accept=".csv,.txt,text/csv" required>
       </label>
 
       <div class="dt-acts">
-        <button type="submit" class="btn-s btn-s-primary" id="importBtn" disabled><i class="bi bi-upload"></i> Importar</button>
-        <label class="dt-check"><input type="checkbox" name="skip_duplicates" checked> Ignorar transações repetidas</label>
+        <button type="submit" class="btn-s btn-s-primary" id="importBtn" disabled><i class="bi bi-upload"></i> <?= te('Importar') ?></button>
+        <label class="dt-check"><input type="checkbox" name="skip_duplicates" checked> <?= te('Ignorar transações repetidas') ?></label>
       </div>
 
       <div style="margin-top:18px">
         <button type="button" class="dt-toggle" data-bs-toggle="collapse" data-bs-target="#csvFormat" aria-expanded="false" aria-controls="csvFormat">
-          <i class="bi bi-table"></i> Como deve ser o ficheiro
+          <i class="bi bi-table"></i> <?= te('Como deve ser o ficheiro') ?>
         </button>
         <div class="collapse" id="csvFormat">
           <div class="dt-scroll"><table class="dt-sample">
@@ -236,8 +236,8 @@ include __DIR__ . '/../components/sidebar.php';
               <tr><td>18/01/2026</td><td>Netflix</td><td>Entretenimento</td><td>12.99</td><td></td></tr>
             </tbody>
           </table></div>
-          <p class="dt-hint">Obrigatórias: <code>data</code>, <code>descricao</code> e <code>valor</code>. A categoria tem de ser uma das da Finora (senão fica "Outros") e o cartão tem de ter o mesmo nome que na Finora.
-            <button type="button" class="dt-toggle" id="templateBtn">Descarregar modelo</button></p>
+          <p class="dt-hint"><?= t('Obrigatórias: {a}, {b} e {c}.', ['a' => '<code>data</code>', 'b' => '<code>descricao</code>', 'c' => '<code>valor</code>']) ?> <?= te('A categoria tem de ser uma das da Finora (senão fica "Outros") e o cartão tem de ter o mesmo nome que na Finora.') ?>
+            <button type="button" class="dt-toggle" id="templateBtn"><?= te('Descarregar modelo') ?></button></p>
         </div>
       </div>
     </form>
@@ -271,7 +271,7 @@ zone.addEventListener('drop', e => {
 document.getElementById('jsonFile').addEventListener('change', function () {
   const f = this.files[0];
   if (!f) return;
-  if (confirm('Restaurar as transações de "' + f.name + '"?')) this.form.submit();
+  if (confirm(<?= tj('Restaurar as transações de "{file}"?') ?>.replace('{file}', f.name))) this.form.submit();
   else this.value = '';
 });
 

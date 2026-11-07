@@ -355,4 +355,5 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 <link rel="stylesheet" href="<?= $_sp ?>css/tutorial.css?v=3">
 <link rel="stylesheet" href="<?= $_sp ?>css/notifications.css?v=1">
 <script>window._tutPage = "<?= htmlspecialchars($_ap) ?>";</script>
-<script src="<?= $_sp ?>js/tutorial.js?v=20"></script>
+<?php if (is_file(__DIR__ . '/../js/lang/tutorial-' . current_lang() . '.js')): ?><script src="<?= $_sp ?>js/lang/tutorial-<?= current_lang() ?>.js?v=1"></script><?php endif; ?>
+<script src="<?= $_sp ?>js/tutorial.js?v=21"></script>

@@ -54,6 +54,7 @@ try {
             u.email,
             u.username,
             s.currency,
+            s.language,
             DATEDIFF(pr.due_date, CURDATE()) as days_until
         FROM payment_reminders pr
         JOIN users u ON u.id = pr.user_id
@@ -76,6 +77,8 @@ try {
     foreach ($reminders as $reminder) {
         try {
             $daysUntil = (int)$reminder['days_until'];
+            // Email e notificação na língua de cada utilizador (o cron corre sem sessão)
+            set_lang($reminder['language'] ?? null);
             $notifyMethod = $reminder['notify_method'] ?? 'email';
             
             // Dados para o template
@@ -118,8 +121,8 @@ try {
                     $notifQuery->execute([
                         ':uid' => $reminder['user_id'],
                         ':type' => 'payment_reminder',
-                        ':title' => 'Lembrete de Pagamento: ' . $reminder['name'],
-                        ':message' => 'O pagamento "' . $reminder['name'] . '" (' . fmt_money($reminder['amount'], 2, $reminderData['currency']) . ') vence em ' . $daysUntil . ' dias',
+                        ':title' => t('Lembrete de pagamento: {name}', ['name' => $reminder['name']]),
+                        ':message' => t('O pagamento "{name}" ({amount}) vence em {n} dias', ['name' => $reminder['name'], 'amount' => fmt_money($reminder['amount'], 2, $reminderData['currency']), 'n' => $daysUntil]),
                         ':data' => json_encode([
                             'reminder_id' => $reminder['id'],
                             'name' => $reminder['name'],

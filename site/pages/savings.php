@@ -18,7 +18,7 @@ $goalIds = array_map('intval', array_column($goals, 'id'));
 // ── Ações (PRG: depois de gravar, redireciona; recarregar não repete o movimento) ──
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    $flash  = ['danger', 'Não foi possível guardar. Tenta outra vez.'];
+    $flash  = ['danger', t('Não foi possível guardar. Tenta outra vez.')];
 
     if ($action === 'add') {
         $kind   = ($_POST['kind'] ?? 'in') === 'out' ? 'out' : 'in';
@@ -33,15 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $available = $goalId ? ($byGoal[$goalId] ?? 0) : array_sum($byGoal);
 
         if ($amount <= 0 || $amount > SAVINGS_MAX) {
-            $flash = ['danger', 'Escreve um valor entre ' . fmt_money(0.01) . ' e ' . fmt_money(1000000, 0) . '.'];
+            $flash = ['danger', t('Escreve um valor entre {min} e {max}.', ['min' => fmt_money(0.01), 'max' => fmt_money(1000000, 0)])];
         } elseif (!$d || $d->format('Y-m-d') !== $date || $date > $todayYmd || $date < '2000-01-01') {
-            $flash = ['danger', 'Escolhe uma data válida, até hoje.'];
+            $flash = ['danger', t('Escolhe uma data válida, até hoje.')];
         } elseif ($kind === 'out' && $amount > $available + 0.001) {
-            $flash = ['danger', 'Só tens ' . fmt_money(max($available, 0)) . ($goalId ? ' nessa meta.' : ' poupados.')];
+            $flash = ['danger', ($goalId ? t('Só tens {amount} nessa meta.', ['amount' => fmt_money(max($available, 0))]) : t('Só tens {amount} poupados.', ['amount' => fmt_money(max($available, 0))]))];
         } else {
             $pdo->prepare('INSERT INTO savings (user_id, goal_id, amount, note, saved_on) VALUES (:u, :g, :a, :n, :d)')
                 ->execute([':u' => $uid, ':g' => $goalId, ':a' => $kind === 'out' ? -$amount : $amount, ':n' => $note !== '' ? $note : null, ':d' => $date]);
-            $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_money($amount) . '.' : 'Boa! Puseste ' . fmt_money($amount) . ' de lado.'];
+            $flash = ['success', $kind === 'out' ? t('Registado: tiraste {amount}.', ['amount' => fmt_money($amount)]) : t('Boa! Puseste {amount} de lado.', ['amount' => fmt_money($amount)])];
             if ($kind === 'in') $_SESSION['savings_drop'] = true;   // moeda a cair no mealheiro
             if ($kind === 'in') {                                   // novo marco? avisa logo, não só no dia seguinte
                 require_once __DIR__ . '/../helpers/notifications.php';
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif ($action === 'delete') {
         $del = $pdo->prepare('DELETE FROM savings WHERE id = :id AND user_id = :u');
         $del->execute([':id' => (int) ($_POST['saving_id'] ?? 0), ':u' => $uid]);
-        $flash = $del->rowCount() ? ['success', 'Movimento apagado.'] : ['danger', 'Esse movimento já não existe.'];
+        $flash = $del->rowCount() ? ['success', t('Movimento apagado.')] : ['danger', t('Esse movimento já não existe.')];
     }
     $_SESSION['flash_savings'] = $flash;
     parse_str((string) ($_POST['back'] ?? ''), $back);       // volta com os mesmos filtros (validados outra vez)
@@ -122,11 +122,11 @@ $preGoal   = (int) ($_GET['goal'] ?? 0);
 $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Poupanças - Finora</title>
+  <title><?= te('Poupanças - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -242,64 +242,64 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 <main class="main-content">
 <div class="page-content">
 <div class="sv">
-  <h1>Poupanças</h1>
+  <h1><?= te('Poupanças') ?></h1>
 
   <?php if ($flashText): ?>
     <div class="s-alert s-alert-<?= $flashType ?>" role="status"><i class="bi bi-<?= $flashType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i><span><?= htmlspecialchars($flashText) ?></span></div>
   <?php endif; ?>
 
   <section class="sv-hero" aria-labelledby="svTotalLabel">
-    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_money($milestone, 0), 'lg', null, $coinDrop ? 'drop' : '') ?>
+    <?= piggy_html($fillPct, t('Mealheiro {pct}% cheio até ao próximo marco de {amount}', ['pct' => round($fillPct), 'amount' => fmt_money($milestone, 0)]), 'lg', null, $coinDrop ? 'drop' : '') ?>
     <div>
-      <p class="sv-label" id="svTotalLabel">Tens poupado</p>
+      <p class="sv-label" id="svTotalLabel"><?= te('Tens poupado') ?></p>
       <p class="sv-total"><?= fmt_money(max($total, 0)) ?></p>
       <p class="sv-milestone">
         <?php if ($total <= 0): ?>
-          O mealheiro está vazio. O primeiro marco é <strong><?= fmt_money($milestone, 0) ?></strong>.
+          <?= t('O mealheiro está vazio. O primeiro marco é {amount}.', ['amount' => '<strong>' . fmt_money($milestone, 0) . '</strong>']) ?>
         <?php else: ?>
-          Faltam <strong><?= fmt_money($milestone - $total) ?></strong> para o próximo marco: <?= fmt_money($milestone, 0) ?>.
+          <?= t('Faltam {amount} para o próximo marco: {next}.', ['amount' => '<strong>' . fmt_money($milestone - $total) . '</strong>', 'next' => fmt_money($milestone, 0)]) ?>
         <?php endif; ?>
       </p>
       <div class="sv-stats">
         <?php $net = (float) $month['put'] + (float) $month['took']; ?>
-        <div><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_money(abs($net)) ?></strong>este mês</div>
-        <div><strong><?= fmt_money($avgSix) ?></strong>média por mês (6 meses)</div>
-        <div><strong><?= fmt_money(max($byGoal[0] ?? 0, 0)) ?></strong>sem meta</div>
+        <div><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_money(abs($net)) ?></strong><?= te('este mês') ?></div>
+        <div><strong><?= fmt_money($avgSix) ?></strong><?= te('média por mês (6 meses)') ?></div>
+        <div><strong><?= fmt_money(max($byGoal[0] ?? 0, 0)) ?></strong><?= te('sem meta') ?></div>
       </div>
       <div class="sv-actions">
-        <button type="button" class="btn-s btn-s-primary" data-open="in"><i class="bi bi-plus-lg"></i> Pôr de lado</button>
-        <button type="button" class="btn-s" data-open="out" <?= $total <= 0 ? 'disabled' : '' ?>><i class="bi bi-dash-lg"></i> Tirar</button>
+        <button type="button" class="btn-s btn-s-primary" data-open="in"><i class="bi bi-plus-lg"></i> <?= te('Pôr de lado') ?></button>
+        <button type="button" class="btn-s" data-open="out" <?= $total <= 0 ? 'disabled' : '' ?>><i class="bi bi-dash-lg"></i> <?= te('Tirar') ?></button>
       </div>
     </div>
   </section>
 
   <div class="sv-grid">
     <section class="pg-card" style="--tone: var(--cat-3)" aria-labelledby="svMoves">
-      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves">Movimentos</h2><p><?= (int) $found['n'] ?> movimento<?= $found['n'] == 1 ? '' : 's' ?> · <?= ($found['total'] >= 0 ? '+' : '−') . fmt_money(abs($found['total'])) ?></p></div></header>
-      <form class="sv-filters" method="get" action="savings.php#svMoves" aria-label="Filtrar movimentos">
-        <label class="sv-filter"><span>Período</span>
+      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves"><?= te('Movimentos') ?></h2><p><?= $found['n'] == 1 ? te('1 movimento') : te('{n} movimentos', ['n' => (int) $found['n']]) ?> · <?= ($found['total'] >= 0 ? '+' : '−') . fmt_money(abs($found['total'])) ?></p></div></header>
+      <form class="sv-filters" method="get" action="savings.php#svMoves" aria-label="<?= te('Filtrar movimentos') ?>">
+        <label class="sv-filter"><span><?= te('Período') ?></span>
           <select name="p" class="form-select">
-            <?php foreach (['mes' => 'Este mês', '3m' => 'Últimos 3 meses', '12m' => 'Últimos 12 meses', 'tudo' => 'Tudo'] as $k => $l): ?>
-              <option value="<?= $k ?>" <?= $filters['p'] === $k ? 'selected' : '' ?>><?= $l ?></option>
+            <?php foreach (['mes' => t('Este mês'), '3m' => t('Últimos 3 meses'), '12m' => t('Últimos 12 meses'), 'tudo' => t('Tudo')] as $k => $l): ?>
+              <option value="<?= $k ?>" <?= $filters['p'] === $k ? 'selected' : '' ?>><?= htmlspecialchars($l) ?></option>
             <?php endforeach; ?>
           </select></label>
-        <label class="sv-filter"><span>Meta</span>
+        <label class="sv-filter"><span><?= te('Meta') ?></span>
           <select name="g" class="form-select">
-            <option value="todas">Todas</option>
-            <option value="sem" <?= $filters['g'] === 'sem' ? 'selected' : '' ?>>Sem meta</option>
+            <option value="todas"><?= te('Todas') ?></option>
+            <option value="sem" <?= $filters['g'] === 'sem' ? 'selected' : '' ?>><?= te('Sem meta') ?></option>
             <?php foreach ($goals as $g): ?><option value="<?= (int) $g['id'] ?>" <?= $filters['g'] === (string) $g['id'] ? 'selected' : '' ?>><?= htmlspecialchars($g['name']) ?></option><?php endforeach; ?>
           </select></label>
-        <div class="sv-seg" role="radiogroup" aria-label="Tipo">
-          <?php foreach (['todos' => 'Tudo', 'in' => 'Pus', 'out' => 'Tirei'] as $k => $l): ?>
-            <input type="radio" name="t" id="t_<?= $k ?>" value="<?= $k ?>" <?= $filters['t'] === $k ? 'checked' : '' ?>><label for="t_<?= $k ?>"><?= $l ?></label>
+        <div class="sv-seg" role="radiogroup" aria-label="<?= te('Tipo') ?>">
+          <?php foreach (['todos' => t('Tudo'), 'in' => t('Pus'), 'out' => t('Tirei')] as $k => $l): ?>
+            <input type="radio" name="t" id="t_<?= $k ?>" value="<?= $k ?>" <?= $filters['t'] === $k ? 'checked' : '' ?>><label for="t_<?= $k ?>"><?= htmlspecialchars($l) ?></label>
           <?php endforeach; ?>
         </div>
-        <noscript><button type="submit" class="btn-s">Filtrar</button></noscript>
+        <noscript><button type="submit" class="btn-s"><?= te('Filtrar') ?></button></noscript>
       </form>
       <?php if (!$moves && (int) $found['n'] === 0 && $filters === savings_filters([], $goalIds) && $total == 0): ?>
-        <div class="sv-empty">Ainda não há movimentos. Começa com "Pôr de lado", mesmo que sejam <?= fmt_money(5, 0) ?>.</div>
+        <div class="sv-empty"><?= te('Ainda não há movimentos. Começa com "Pôr de lado", mesmo que sejam {amount}.', ['amount' => fmt_money(5, 0)]) ?></div>
       <?php elseif (!$moves): ?>
-        <div class="sv-empty">Nenhum movimento com estes filtros. <a href="<?= $query(['p' => 'tudo', 'g' => 'todas', 't' => 'todos', 'n' => 1]) ?>">Ver todos</a></div>
+        <div class="sv-empty"><?= te('Nenhum movimento com estes filtros.') ?> <a href="<?= $query(['p' => 'tudo', 'g' => 'todas', 't' => 'todos', 'n' => 1]) ?>"><?= te('Ver todos') ?></a></div>
       <?php endif; ?>
       <?php foreach ($moves as $ym => $items): $sum = array_sum(array_column($items, 'amount')); ?>
         <div class="sv-month"><?= $monthName($ym) ?><span><?= ($sum >= 0 ? '+' : '−') . fmt_money(abs($sum)) ?></span></div>
@@ -308,43 +308,43 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
             <li>
               <span class="sv-ico <?= $out ? 'out' : '' ?>" aria-hidden="true"><i class="bi bi-<?= $out ? 'arrow-up-right' : 'arrow-down-left' ?>"></i></span>
               <div class="sv-what">
-                <b><?= htmlspecialchars($m['note'] ?? ($out ? 'Tirei das poupanças' : 'Pus de lado')) ?></b>
-                <small><?= date('j', $ts) ?> <?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?> · <?= $m['goal_name'] ? htmlspecialchars($m['goal_name']) : 'Sem meta' ?></small>
+                <b><?= htmlspecialchars($m['note'] ?? ($out ? t('Tirei das poupanças') : t('Pus de lado'))) ?></b>
+                <small><?= date('j', $ts) ?> <?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?> · <?= $m['goal_name'] ? htmlspecialchars($m['goal_name']) : te('Sem meta') ?></small>
               </div>
               <span class="sv-amt <?= $out ? 'out' : '' ?>"><?= ($out ? '−' : '+') . fmt_money(abs($m['amount'])) ?></span>
-              <form method="post" onsubmit="return confirm('Apagar este movimento?')">
+              <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este movimento?')) ?>)">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">
                 <input type="hidden" name="saving_id" value="<?= (int) $m['id'] ?>">
-                <button type="submit" class="sv-del" aria-label="Apagar movimento de <?= fmt_money(abs($m['amount'])) ?>"><i class="bi bi-trash3"></i></button>
+                <button type="submit" class="sv-del" aria-label="<?= te('Apagar movimento de {amount}', ['amount' => fmt_money(abs($m['amount']))]) ?>"><i class="bi bi-trash3"></i></button>
               </form>
             </li>
           <?php endforeach; ?>
         </ul>
       <?php endforeach; ?>
       <?php if ($shown < (int) $found['n']): ?>
-        <div class="sv-more"><a class="btn-s" href="<?= $query(['n' => $filters['n'] + 1]) ?>">Ver mais <span>(faltam <?= (int) $found['n'] - $shown ?>)</span></a></div>
+        <div class="sv-more"><a class="btn-s" href="<?= $query(['n' => $filters['n'] + 1]) ?>"><?= te('Ver mais') ?> <span><?= te('(faltam {n})', ['n' => (int) $found['n'] - $shown]) ?></span></a></div>
       <?php endif; ?>
     </section>
 
     <div>
       <section class="pg-card" style="--tone: var(--cat-4)" aria-labelledby="svGoals">
-        <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-flag"></i></span><div class="pg-grow"><h2 id="svGoals">Por meta</h2></div><a href="futuro.php" class="btn-s">Metas</a></header>
+        <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-flag"></i></span><div class="pg-grow"><h2 id="svGoals"><?= te('Por meta') ?></h2></div><a href="futuro.php" class="btn-s"><?= te('Metas') ?></a></header>
         <?php if (!$goals): ?>
-          <div class="sv-empty">Cria uma meta para separares as poupanças por objetivo.</div>
+          <div class="sv-empty"><?= te('Cria uma meta para separares as poupanças por objetivo.') ?></div>
         <?php endif; ?>
         <?php foreach ($goals as $g): $saved = max($byGoal[(int) $g['id']] ?? 0, 0); $p = $g['target_amount'] > 0 ? min(100, $saved / $g['target_amount'] * 100) : 0; ?>
           <a class="sv-goal" href="futuro.php#g<?= (int) $g['id'] ?>">
-            <div class="row1"><b><?= htmlspecialchars($g['name']) ?></b><span><?= fmt_money($saved, 0) ?> de <?= fmt_money($g['target_amount'], 0) ?></span></div>
+            <div class="row1"><b><?= htmlspecialchars($g['name']) ?></b><span><?= te('{amount} de {limit}', ['amount' => fmt_money($saved, 0), 'limit' => fmt_money($g['target_amount'], 0)]) ?></span></div>
             <div class="bar" role="img" aria-label="<?= round($p) ?>% da meta"><i style="width: <?= round($p, 1) ?>%"></i></div>
           </a>
         <?php endforeach; ?>
       </section>
 
       <section class="pg-card" style="--tone: var(--cat-1)" aria-labelledby="svYear">
-        <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bar-chart"></i></span><div><h2 id="svYear">Últimos 12 meses</h2><p>Quanto ficou no mealheiro em cada mês.</p></div></header>
-        <div class="sv-bars" role="img" aria-label="Poupança líquida por mês nos últimos 12 meses">
+        <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bar-chart"></i></span><div><h2 id="svYear"><?= te('Últimos 12 meses') ?></h2><p><?= te('Quanto ficou no mealheiro em cada mês.') ?></p></div></header>
+        <div class="sv-bars" role="img" aria-label="<?= te('Poupança líquida por mês nos últimos 12 meses') ?>">
           <?php $last = array_key_last($bars); foreach ($bars as $ym => $v): ?>
             <div class="col" title="<?= $monthName($ym) ?>: <?= fmt_money($v) ?>"><span class="b <?= $v < 0 ? 'neg' : '' ?> <?= $ym === $last ? 'now' : '' ?>" style="height: <?= round(abs($v) / $maxBar * 100, 1) ?>%"></span></div>
           <?php endforeach; ?>
@@ -359,39 +359,39 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 </div>
 
 <dialog class="sv-dialog" id="svDialog" aria-labelledby="svDialogTitle">
-  <h2 id="svDialogTitle">Pôr de lado</h2>
+  <h2 id="svDialogTitle"><?= te('Pôr de lado') ?></h2>
   <form method="post">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="add">
     <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">
-    <div class="sv-kind" role="radiogroup" aria-label="Tipo de movimento">
-      <input type="radio" name="kind" id="kindIn" value="in" checked><label for="kindIn"><i class="bi bi-arrow-down-left"></i> Pôr de lado</label>
-      <input type="radio" name="kind" id="kindOut" value="out"><label for="kindOut"><i class="bi bi-arrow-up-right"></i> Tirar</label>
+    <div class="sv-kind" role="radiogroup" aria-label="<?= te('Tipo de movimento') ?>">
+      <input type="radio" name="kind" id="kindIn" value="in" checked><label for="kindIn"><i class="bi bi-arrow-down-left"></i> <?= te('Pôr de lado') ?></label>
+      <input type="radio" name="kind" id="kindOut" value="out"><label for="kindOut"><i class="bi bi-arrow-up-right"></i> <?= te('Tirar') ?></label>
     </div>
     <div class="sv-field">
-      <label class="form-label" for="svAmount">Valor (<?= currency_symbol() ?>)</label>
+      <label class="form-label" for="svAmount"><?= te('Valor ({symbol})', ['symbol' => currency_symbol()]) ?></label>
       <input type="number" class="form-control sv-amount-input" id="svAmount" name="amount" step="0.01" min="0.01" max="1000000" inputmode="decimal" placeholder="0,00" required>
     </div>
     <div class="row2">
       <div class="sv-field">
-        <label class="form-label" for="svDate">Data</label>
+        <label class="form-label" for="svDate"><?= te('Data') ?></label>
         <input type="date" class="form-control" id="svDate" name="saved_on" value="<?= $todayYmd ?>" max="<?= $todayYmd ?>" required>
       </div>
       <div class="sv-field">
-        <label class="form-label" for="svGoal">Meta</label>
+        <label class="form-label" for="svGoal"><?= te('Meta') ?></label>
         <select class="form-select" id="svGoal" name="goal_id">
-          <option value="0">Sem meta</option>
+          <option value="0"><?= te('Sem meta') ?></option>
           <?php foreach ($goals as $g): ?><option value="<?= (int) $g['id'] ?>" <?= $preGoal === (int) $g['id'] ? 'selected' : '' ?>><?= htmlspecialchars($g['name']) ?></option><?php endforeach; ?>
         </select>
       </div>
     </div>
     <div class="sv-field">
-      <label class="form-label" for="svNote">Nota <span class="text-muted fw-normal">(opcional)</span></label>
-      <input type="text" class="form-control" id="svNote" name="note" maxlength="120" placeholder="Ex: sobrou do ordenado">
+      <label class="form-label" for="svNote"><?= te('Nota') ?> <span class="text-muted fw-normal"><?= te('(opcional)') ?></span></label>
+      <input type="text" class="form-control" id="svNote" name="note" maxlength="120" placeholder="<?= te('Ex: sobrou do ordenado') ?>">
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" data-close>Cancelar</button>
-      <button type="submit" class="btn-s btn-s-primary" id="svSubmit"><i class="bi bi-check2"></i> Guardar</button>
+      <button type="button" class="btn-s" data-close><?= te('Cancelar') ?></button>
+      <button type="submit" class="btn-s btn-s-primary" id="svSubmit"><i class="bi bi-check2"></i> <?= te('Guardar') ?></button>
     </div>
   </form>
 </dialog>
@@ -402,7 +402,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   const dlg = document.getElementById('svDialog'), title = document.getElementById('svDialogTitle');
   const setKind = (k) => {
     document.getElementById(k === 'out' ? 'kindOut' : 'kindIn').checked = true;
-    title.textContent = k === 'out' ? 'Tirar das poupanças' : 'Pôr de lado';
+    title.textContent = k === 'out' ? <?= tj('Tirar das poupanças') ?> : <?= tj('Pôr de lado') ?>;
   };
   document.querySelectorAll('[data-open]').forEach((b) => b.addEventListener('click', () => {
     setKind(b.dataset.open); dlg.showModal(); document.getElementById('svAmount').focus();

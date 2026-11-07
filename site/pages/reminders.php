@@ -42,9 +42,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $next_due = $f['rec'] === 'once' ? $f['due'] : reminder_next_date($f['due'], $f['rec']);
                 $stmt = $pdo->prepare("INSERT INTO payment_reminders (user_id, name, amount, category, card_id, due_date, anchor_day, recurrence, notify_days_before, notify_method, next_due_date) VALUES (:uid, :name, :amount, :category, :card_id, :due_date, :anchor, :recurrence, :notify, :notify_method, :next_due)");
                 $stmt->execute([':uid'=>$uid,':name'=>$f['name'],':amount'=>$f['amount'],':category'=>$f['cat'],':card_id'=>$card_id,':due_date'=>$f['due'],':anchor'=>(int) substr($f['due'], 8, 2),':recurrence'=>$f['rec'],':notify'=>$f['notify'],':notify_method'=>$f['nm'],':next_due'=>$next_due]);
-                $message = 'Lembrete criado com sucesso!'; $messageType = 'success';
-            } catch (PDOException $e) { $message = 'Erro ao criar lembrete.'; $messageType = 'danger'; }
-        } else { $message = 'Confirma o nome (3+ letras), o valor e a data.'; $messageType = 'danger'; }
+                $message = t('Lembrete criado com sucesso!'); $messageType = 'success';
+            } catch (PDOException $e) { $message = t('Erro ao criar lembrete.'); $messageType = 'danger'; }
+        } else { $message = t('Confirma o nome (3+ letras), o valor e a data.'); $messageType = 'danger'; }
     } elseif ($action === 'mark_paid') {
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
         // A data do pagamento tem de ser real e não pode ser no futuro
@@ -78,9 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("UPDATE payment_reminders SET last_paid_date=:pdate, due_date=:next_due, next_due_date=:next_due_date, paid=0 WHERE id=:id");
                     $stmt->execute([':pdate'=>$paid_date,':next_due'=>$next,':next_due_date'=>$next,':id'=>$reminder_id]);
                 }
-                $pdo->commit(); $message = 'Pagamento registado com sucesso!'; $messageType = 'success';
+                $pdo->commit(); $message = t('Pagamento registado com sucesso!'); $messageType = 'success';
             }
-        } catch (PDOException $e) { $pdo->rollBack(); $message = 'Erro ao registar pagamento.'; $messageType = 'danger'; }
+        } catch (PDOException $e) { $pdo->rollBack(); $message = t('Erro ao registar pagamento.'); $messageType = 'danger'; }
     } elseif ($action === 'edit') {
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
         $f = reminder_fields($_POST, $categories);
@@ -90,19 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $next_due = $f['rec'] === 'once' ? $f['due'] : reminder_next_date($f['due'], $f['rec']);
                 $stmt = $pdo->prepare("UPDATE payment_reminders SET name=:name, amount=:amount, category=:category, card_id=:card_id, due_date=:due_date, anchor_day=:anchor, recurrence=:recurrence, notify_days_before=:notify, notify_method=:notify_method, next_due_date=:next_due WHERE id=:id AND user_id=:uid");
                 $stmt->execute([':id'=>$reminder_id,':uid'=>$uid,':name'=>$f['name'],':amount'=>$f['amount'],':category'=>$f['cat'],':card_id'=>$card_id,':due_date'=>$f['due'],':anchor'=>(int) substr($f['due'], 8, 2),':recurrence'=>$f['rec'],':notify'=>$f['notify'],':notify_method'=>$f['nm'],':next_due'=>$next_due]);
-                $message = 'Lembrete atualizado com sucesso!'; $messageType = 'success';
-            } catch (PDOException $e) { $message = 'Erro ao atualizar lembrete.'; $messageType = 'danger'; }
-        } else { $message = 'Confirma o nome (3+ letras), o valor e a data.'; $messageType = 'danger'; }
+                $message = t('Lembrete atualizado com sucesso!'); $messageType = 'success';
+            } catch (PDOException $e) { $message = t('Erro ao atualizar lembrete.'); $messageType = 'danger'; }
+        } else { $message = t('Confirma o nome (3+ letras), o valor e a data.'); $messageType = 'danger'; }
     } elseif ($action === 'toggle') {
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
-        try { $stmt = $pdo->prepare("UPDATE payment_reminders SET active = NOT active WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = 'Estado alterado!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro.'; $messageType = 'danger'; }
+        try { $stmt = $pdo->prepare("UPDATE payment_reminders SET active = NOT active WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = t('Estado alterado!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro.'); $messageType = 'danger'; }
     } elseif ($action === 'delete') {
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
-        try { $stmt = $pdo->prepare("DELETE FROM payment_reminders WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = 'Lembrete removido!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro.'; $messageType = 'danger'; }
+        try { $stmt = $pdo->prepare("DELETE FROM payment_reminders WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = t('Lembrete removido!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro.'); $messageType = 'danger'; }
     } elseif ($action === 'unmark_paid') {
         // Permite reverter pagamento de um lembrete "once" para ativo novamente
         $reminder_id = intval($_POST['reminder_id'] ?? 0);
-        try { $stmt = $pdo->prepare("UPDATE payment_reminders SET paid=0, active=1 WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = 'Pagamento revertido!'; $messageType = 'success'; } catch (PDOException $e) { $message = 'Erro.'; $messageType = 'danger'; }
+        try { $stmt = $pdo->prepare("UPDATE payment_reminders SET paid=0, active=1 WHERE id=:id AND user_id=:uid"); $stmt->execute([':id'=>$reminder_id,':uid'=>$uid]); $message = t('Pagamento revertido!'); $messageType = 'success'; } catch (PDOException $e) { $message = t('Erro.'); $messageType = 'danger'; }
     }
 }
 
@@ -220,28 +220,28 @@ $futureReminders    = array_filter($reminders, fn($r) => $r['status'] === 'futur
 $paidReminders      = array_filter($reminders, fn($r) => $r['status'] === 'paid');
 $inactiveReminders  = array_filter($reminders, fn($r) => $r['status'] === 'inactive');
 
-$recurrenceLabels = ['once'=>'Única vez','weekly'=>'Semanal','monthly'=>'Mensal','yearly'=>'Anual'];
+$recurrenceLabels = ['once' => t('Única vez'), 'weekly' => t('Semanal'), 'monthly' => t('Mensal'), 'yearly' => t('Anual')];
 // Linha de um lembrete por pagar (atrasado, próximo ou futuro)
 function reminder_due_text(array $r): string {
     $days = (int) floor((strtotime($r['due_date']) - strtotime(date('Y-m-d'))) / 86400);
-    if ($days < 0)  return 'Em atraso há ' . abs($days) . ' dia' . (abs($days) > 1 ? 's' : '');
-    if ($days === 0) return 'Vence hoje';
-    if ($days === 1) return 'Vence amanhã';
-    return 'Vence em ' . $days . ' dias';
+    if ($days < 0)  return abs($days) > 1 ? t('Em atraso há {n} dias', ['n' => abs($days)]) : t('Em atraso há 1 dia');
+    if ($days === 0) return t('Vence hoje');
+    if ($days === 1) return t('Vence amanhã');
+    return t('Vence em {n} dias', ['n' => $days]);
 }
 $groups = [
-    ['key' => 'overdue',  'title' => 'Em atraso',         'items' => $overdueReminders],
-    ['key' => 'upcoming', 'title' => 'Próximos 7 dias',   'items' => $upcomingReminders],
+    ['key' => 'overdue',  'title' => t('Em atraso'),         'items' => $overdueReminders],
+    ['key' => 'upcoming', 'title' => t('Próximos 7 dias'),   'items' => $upcomingReminders],
     ['key' => 'future',   'title' => 'Mais tarde',        'items' => $futureReminders],
 ];
 $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lembretes - Finora</title>
+  <title><?= te('Lembretes - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -410,15 +410,15 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 <div class="lm">
 
   <div class="lm-head">
-    <h1>Lembretes</h1>
-    <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> Novo lembrete</button>
+    <h1><?= te('Lembretes') ?></h1>
+    <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> <?= te('Novo lembrete') ?></button>
   </div>
 
   <?php if (!empty($reminders)): ?>
     <p class="lm-summary">
-      A pagar até ao fim do mês: <strong><?= fmt_money($total_month) ?></strong> ·
-      já pago este mês: <strong><?= fmt_money($paid_month_total) ?></strong>
-      <?php if ($overdue_count): ?> · <span class="late"><?= $overdue_count ?> em atraso</span><?php endif; ?>
+      <?= te('A pagar até ao fim do mês:') ?> <strong><?= fmt_money($total_month) ?></strong> ·
+      <?= te('já pago este mês:') ?> <strong><?= fmt_money($paid_month_total) ?></strong>
+      <?php if ($overdue_count): ?> · <span class="late"><?= $overdue_count ?> <?= te('em atraso') ?></span><?php endif; ?>
     </p>
   <?php else: ?>
     <p class="lm-summary">&nbsp;</p>
@@ -434,37 +434,37 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   <?php if (empty($reminders)): ?>
     <div class="lm-empty">
       <img class="lm-empty-3d" src="../assets/3d/calendar.webp" width="160" height="160" alt="">
-      <h2>Ainda não tens lembretes</h2>
-      <p>Regista a renda, a luz, as subscrições e outros pagamentos. A Finora avisa-te antes de cada um vencer.</p>
-      <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> Criar o primeiro lembrete</button>
+      <h2><?= te('Ainda não tens lembretes') ?></h2>
+      <p><?= te('Regista a renda, a luz, as subscrições e outros pagamentos. A Finora avisa-te antes de cada um vencer.') ?></p>
+      <button type="button" class="btn-s btn-s-primary" data-bs-toggle="modal" data-bs-target="#newReminderModal"><i class="bi bi-plus-lg"></i> <?= te('Criar o primeiro lembrete') ?></button>
     </div>
   <?php else: ?>
 
     <?php
-      $monthLabel = ucfirst(month_name_pt((int) $calFrom->format('n'))) . ' ' . $calFrom->format('Y');
-      $dayLabel = function (string $d) use ($weekdays): string {
-          $t = new DateTimeImmutable($d);
-          return ucfirst($weekdays[(int) $t->format('N') - 1]) . ', ' . $t->format('j') . ' de ' . month_name_pt((int) $t->format('n'));
+      $monthLabel = ucfirst(fmt_month_year($calFrom->getTimestamp()));
+      $dayLabel = function (string $d): string {
+          $ts = strtotime($d);
+          return ucfirst(weekday_name((int) date('w', $ts))) . ', ' . fmt_date_long($ts);
       };
-      $stateLabel = ['overdue' => 'Em atraso', 'today' => 'Vence hoje', 'due' => 'Por pagar', 'paid' => 'Pago'];
+      $stateLabel = ['overdue' => t('Em atraso'), 'today' => t('Vence hoje'), 'due' => t('Por pagar'), 'paid' => t('Pago')];
     ?>
     <section class="pg-card lc" id="calendario" style="--tone: var(--cat-5)" aria-labelledby="lcTitle">
       <header class="pg-card-head">
         <span class="pg-ico" aria-hidden="true"><i class="bi bi-calendar3"></i></span>
         <div class="pg-grow">
           <h2 id="lcTitle"><?= $monthLabel ?></h2>
-          <p>Por pagar <strong><?= fmt_money($calDue) ?></strong><?php if ($calPaid > 0): ?> · já pago <strong><?= fmt_money($calPaid) ?></strong><?php endif; ?></p>
+          <p><?= te('Por pagar') ?> <strong><?= fmt_money($calDue) ?></strong><?php if ($calPaid > 0): ?> · <?= te('já pago') ?> <strong><?= fmt_money($calPaid) ?></strong><?php endif; ?></p>
         </div>
-        <nav class="lc-nav" aria-label="Mudar de mês">
-          <a class="lc-arrow" href="?m=<?= $calPrev ?>#calendario" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></a>
-          <a class="lc-today" href="reminders.php#calendario">Hoje</a>
-          <a class="lc-arrow" href="?m=<?= $calNext ?>#calendario" aria-label="Mês seguinte"><i class="bi bi-chevron-right"></i></a>
+        <nav class="lc-nav" aria-label="<?= te('Mudar de mês') ?>">
+          <a class="lc-arrow" href="?m=<?= $calPrev ?>#calendario" aria-label="<?= te('Mês anterior') ?>"><i class="bi bi-chevron-left"></i></a>
+          <a class="lc-today" href="reminders.php#calendario"><?= te('Hoje') ?></a>
+          <a class="lc-arrow" href="?m=<?= $calNext ?>#calendario" aria-label="<?= te('Mês seguinte') ?>"><i class="bi bi-chevron-right"></i></a>
         </nav>
       </header>
 
       <div class="lc-body">
         <div class="lc-grid">
-          <?php foreach (['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'] as $w): ?><span class="lc-wd" aria-hidden="true"><?= $w ?></span><?php endforeach; ?>
+          <?php foreach ([1, 2, 3, 4, 5, 6, 0] as $w): ?><span class="lc-wd" aria-hidden="true"><?= htmlspecialchars(mb_substr(ucfirst(weekday_name($w)), 0, 3)) ?></span><?php endforeach; ?>
           <?php for ($i = 1; $i < (int) $calFrom->format('N'); $i++): ?><span class="lc-blank"></span><?php endfor; ?>
           <?php for ($d = $calFrom; $d <= $calTo; $d = $d->modify('+1 day')):
             $ymd   = $d->format('Y-m-d');
@@ -502,11 +502,11 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                       <span class="lc-bar" style="--c: <?= category_color($it['category'] ?? 'Outros') ?>"></span>
                       <div class="pg-grow">
                         <div class="lc-name"><?= htmlspecialchars($it['name']) ?></div>
-                        <div class="lc-meta"><?= $stateLabel[$it['state']] ?><?= $it['category'] ? ' · ' . htmlspecialchars($it['category']) : '' ?><?= $it['card'] ? ' · ' . htmlspecialchars($it['card']) : '' ?></div>
+                        <div class="lc-meta"><?= $stateLabel[$it['state']] ?><?= $it['category'] ? ' · ' . te($it['category']) : '' ?><?= $it['card'] ? ' · ' . htmlspecialchars($it['card']) : '' ?></div>
                       </div>
                       <span class="lc-amt"><?= fmt_money($it['amount']) ?></span>
                       <?php if ($it['canPay']): ?>
-                        <button type="button" class="btn-s btn-s-success lc-pay" onclick="openMarkPaidModal(<?= $it['id'] ?>)"><i class="bi bi-check2"></i> Pago</button>
+                        <button type="button" class="btn-s btn-s-success lc-pay" onclick="openMarkPaidModal(<?= $it['id'] ?>)"><i class="bi bi-check2"></i> <?= te('Pago') ?></button>
                       <?php endif; ?>
                     </li>
                   <?php endforeach; ?>
@@ -514,11 +514,11 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
               <?php else: ?>
                 <div class="lc-free">
                   <img src="../assets/3d/calendar.webp" width="120" height="120" alt="" loading="lazy">
-                  <p>Nada para pagar neste dia.</p>
+                  <p><?= te('Nada para pagar neste dia.') ?></p>
                 </div>
               <?php endif; ?>
               <?php if ($ymd >= $todayYmd): ?>
-                <button type="button" class="btn-s lc-add" data-new-on="<?= $ymd ?>"><i class="bi bi-plus-lg"></i> Novo lembrete neste dia</button>
+                <button type="button" class="btn-s lc-add" data-new-on="<?= $ymd ?>"><i class="bi bi-plus-lg"></i> <?= te('Novo lembrete neste dia') ?></button>
               <?php endif; ?>
             </section>
           <?php endfor; ?>
@@ -527,43 +527,43 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
     </section>
 
     <?php if (!$hasPending): ?>
-      <div class="lm-caught-up">Não tens pagamentos pendentes. Está tudo em dia.</div>
+      <div class="lm-caught-up"><?= te('Não tens pagamentos pendentes. Está tudo em dia.') ?></div>
     <?php endif; ?>
 
     <?php foreach ($groups as $g): if (!$g['items']) continue; ?>
       <section class="lm-group <?= $g['key'] ?>" aria-labelledby="g-<?= $g['key'] ?>">
         <div class="lm-group-head">
-          <h2 id="g-<?= $g['key'] ?>"><?= $g['title'] ?></h2>
+          <h2 id="g-<?= $g['key'] ?>"><?= htmlspecialchars($g['title']) ?></h2>
           <span><?= fmt_money(array_sum(array_column($g['items'], 'amount'))) ?></span>
         </div>
         <ul class="lm-list">
           <?php foreach ($g['items'] as $r): $ts = strtotime($r['due_date']); ?>
             <li class="lm-item">
-              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?></small></span>
               <div class="lm-main">
                 <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
                 <div class="lm-meta">
                   <span class="due"><?= reminder_due_text($r) ?></span>·
                   <span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?></span>
-                  <?php if ($r['category']): ?>·<span><span class="dot" style="background:<?= category_color($r['category']) ?>"></span> <?= htmlspecialchars($r['category']) ?></span><?php endif; ?>
+                  <?php if ($r['category']): ?>·<span><span class="dot" style="background:<?= category_color($r['category']) ?>"></span> <?= te($r['category']) ?></span><?php endif; ?>
                   <?php if ($r['card_name']): ?>·<span><?= htmlspecialchars($r['card_name']) ?></span><?php endif; ?>
                 </div>
               </div>
               <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
-                <button type="button" class="btn-s btn-s-success lm-pay" onclick="openMarkPaidModal(<?= (int) $r['id'] ?>)"><i class="bi bi-check2"></i> Marcar como pago</button>
-                <button type="button" class="ico" onclick="openEditModal(<?= htmlspecialchars(json_encode($r)) ?>)" aria-label="Editar <?= htmlspecialchars($r['name']) ?>" title="Editar"><i class="bi bi-pencil"></i></button>
+                <button type="button" class="btn-s btn-s-success lm-pay" onclick="openMarkPaidModal(<?= (int) $r['id'] ?>)"><i class="bi bi-check2"></i> <?= te('Marcar como pago') ?></button>
+                <button type="button" class="ico" onclick="openEditModal(<?= htmlspecialchars(json_encode($r)) ?>)" aria-label="<?= te('Editar {name}', ['name' => $r['name']]) ?>" title="<?= te('Editar') ?>"><i class="bi bi-pencil"></i></button>
                 <form method="post">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="toggle">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="ico" aria-label="Pausar <?= htmlspecialchars($r['name']) ?>" title="Pausar"><i class="bi bi-pause-circle"></i></button>
+                  <button type="submit" class="ico" aria-label="<?= te('Pausar {name}', ['name' => $r['name']]) ?>" title="<?= te('Pausar') ?>"><i class="bi bi-pause-circle"></i></button>
                 </form>
-                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                  <button type="submit" class="ico del" aria-label="<?= te('Apagar {name}', ['name' => $r['name']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
                 </form>
               </div>
             </li>
@@ -574,28 +574,28 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 
     <?php if ($paidReminders): ?>
       <details class="lm-more">
-        <summary>Pagos <span><?= count($paidReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
+        <summary><?= te('Pagos') ?> <span><?= count($paidReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
         <ul class="lm-list">
           <?php foreach ($paidReminders as $r): $ts = strtotime($r['last_paid_date'] ?? $r['due_date']); ?>
             <li class="lm-item">
-              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?></small></span>
               <div class="lm-main">
                 <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
-                <div class="lm-meta"><span>Pago a <?= date('j', $ts) ?> de <?= month_name_pt((int) date('n', $ts)) ?></span></div>
+                <div class="lm-meta"><span><?= te('Pago a {date}', ['date' => fmt_date_long($ts)]) ?></span></div>
               </div>
               <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
-                <form method="post" onsubmit="return confirm('Voltar a marcar este pagamento como pendente?')">
+                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Voltar a marcar este pagamento como pendente?')) ?>)">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="unmark_paid">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="ico" aria-label="Voltar a pendente" title="Voltar a pendente"><i class="bi bi-arrow-counterclockwise"></i></button>
+                  <button type="submit" class="ico" aria-label="<?= te('Voltar a pendente') ?>" title="<?= te('Voltar a pendente') ?>"><i class="bi bi-arrow-counterclockwise"></i></button>
                 </form>
-                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                  <button type="submit" class="ico del" aria-label="<?= te('Apagar {name}', ['name' => $r['name']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
                 </form>
               </div>
             </li>
@@ -606,14 +606,14 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 
     <?php if ($inactiveReminders): ?>
       <details class="lm-more">
-        <summary>Em pausa <span><?= count($inactiveReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
+        <summary><?= te('Em pausa') ?> <span><?= count($inactiveReminders) ?> <i class="bi bi-chevron-down"></i></span></summary>
         <ul class="lm-list">
           <?php foreach ($inactiveReminders as $r): $ts = strtotime($r['due_date']); ?>
             <li class="lm-item">
-              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <span class="lm-date"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?></small></span>
               <div class="lm-main">
                 <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
-                <div class="lm-meta"><span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?> · sem avisos enquanto estiver em pausa</span></div>
+                <div class="lm-meta"><span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?> <?= te('· sem avisos enquanto estiver em pausa') ?></span></div>
               </div>
               <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
@@ -621,13 +621,13 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="toggle">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="btn-s lm-pay"><i class="bi bi-play-circle"></i> Retomar</button>
+                  <button type="submit" class="btn-s lm-pay"><i class="bi bi-play-circle"></i> <?= te('Retomar') ?></button>
                 </form>
-                <form method="post" onsubmit="return confirm('Apagar este lembrete? Não é possível desfazer.')">
+                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
-                  <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($r['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                  <button type="submit" class="ico del" aria-label="<?= te('Apagar {name}', ['name' => $r['name']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
                 </form>
               </div>
             </li>
@@ -645,28 +645,28 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Novo Lembrete</h5>
+        <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i><?= te('Novo Lembrete') ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form method="post" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="create">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome do Pagamento *</label><input type="text" name="name" class="form-control" placeholder="ex: Netflix, Renda, Conta da Luz" required></div>
+          <div><label class="form-label"><?= te('Nome do Pagamento *') ?></label><input type="text" name="name" class="form-control" placeholder="<?= te('ex: Netflix, Renda, Conta da Luz') ?>" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
-            <div><label class="form-label">Data de Vencimento *</label><input type="date" name="due_date" class="form-control" min="<?=date('Y-m-d')?>" required></div>
+            <div><label class="form-label"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
+            <div><label class="form-label"><?= te('Data de Vencimento *') ?></label><input type="date" name="due_date" class="form-control" min="<?=date('Y-m-d')?>" required></div>
           </div>
-          <div><label class="form-label">Recorrência</label><select name="recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly" selected>Mensal</option><option value="yearly">Anual</option></select></div>
-          <div><label class="form-label">Categoria</label><select name="category" class="form-select"><option value="">Sem categoria</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão</label><select name="card_id" class="form-select"><option value="">Dinheiro / A definir</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
+          <div><label class="form-label"><?= te('Recorrência') ?></label><select name="recurrence" class="form-select"><option value="once"><?= te('Única vez') ?></option><option value="weekly"><?= te('Semanal') ?></option><option value="monthly" selected><?= te('Mensal') ?></option><option value="yearly"><?= te('Anual') ?></option></select></div>
+          <div><label class="form-label"><?= te('Categoria') ?></label><select name="category" class="form-select"><option value=""><?= te('Sem categoria') ?></option><?php foreach($categories as $cat): ?><option value="<?= htmlspecialchars($cat) ?>"><?= te($cat) ?></option><?php endforeach; ?></select></div>
+          <div><label class="form-label"><?= te('Cartão') ?></label><select name="card_id" class="form-select"><option value=""><?= te('Dinheiro / A definir') ?></option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Notificar</label><select name="notify_days_before" class="form-select"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="3" selected>3 dias antes</option><option value="7">7 dias antes</option></select></div>
-            <div><label class="form-label">Método</label><select name="notify_method" class="form-select"><option value="email" selected>Email</option><option value="site">Notificação</option><option value="both">Ambos</option></select></div>
+            <div><label class="form-label"><?= te('Notificar') ?></label><select name="notify_days_before" class="form-select"><option value="0"><?= te('No dia') ?></option><option value="1"><?= te('1 dia antes') ?></option><option value="3" selected><?= te('3 dias antes') ?></option><option value="7"><?= te('7 dias antes') ?></option></select></div>
+            <div><label class="form-label"><?= te('Método') ?></label><select name="notify_method" class="form-select"><option value="email" selected><?= te('Email') ?></option><option value="site"><?= te('Notificação') ?></option><option value="both"><?= te('Ambos') ?></option></select></div>
           </div>
         </div>
         <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Criar Lembrete</button>
+          <button type="button" class="btn-s" data-bs-dismiss="modal"><?= te('Cancelar') ?></button>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Criar Lembrete') ?></button>
         </div>
       </form>
     </div>
@@ -678,23 +678,23 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Marcar Como Pago</h5>
+        <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i><?= te('Marcar Como Pago') ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form method="post" id="markPaidForm" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="mark_paid">
         <input type="hidden" name="reminder_id" id="mark_paid_reminder_id">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div class="s-alert s-alert-info"><i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i><span>Ao marcar como pago, podes criar automaticamente uma transação no sistema.</span></div>
-          <div><label class="form-label">Data do Pagamento</label><input type="date" name="paid_date" class="form-control" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>" required></div>
+          <div class="s-alert s-alert-info"><i class="bi bi-info-circle" style="flex-shrink:0;margin-top:1px"></i><span><?= te('Ao marcar como pago, podes criar automaticamente uma transação no sistema.') ?></span></div>
+          <div><label class="form-label"><?= te('Data do Pagamento') ?></label><input type="date" name="paid_date" class="form-control" value="<?=date('Y-m-d')?>" max="<?=date('Y-m-d')?>" required></div>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input class="form-check-input" type="checkbox" name="create_transaction" checked style="margin:0">
-            Criar transação e atualizar saldo do cartão
+            <?= te('Criar transação e atualizar saldo do cartão') ?>
           </label>
         </div>
         <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-success"><i class="bi bi-check-circle"></i> Confirmar Pagamento</button>
+          <button type="button" class="btn-s" data-bs-dismiss="modal"><?= te('Cancelar') ?></button>
+          <button type="submit" class="btn-s btn-s-success"><i class="bi bi-check-circle"></i> <?= te('Confirmar Pagamento') ?></button>
         </div>
       </form>
     </div>
@@ -706,29 +706,29 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar Lembrete</h5>
+        <h5 class="modal-title"><i class="bi bi-pencil me-2"></i><?= te('Editar Lembrete') ?></h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <form method="post" class="m-form"><?= csrf_field() ?>
         <input type="hidden" name="action" value="edit">
         <input type="hidden" name="reminder_id" id="edit_reminder_id">
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
-          <div><label class="form-label">Nome *</label><input type="text" name="name" id="edit_name" class="form-control" required></div>
+          <div><label class="form-label"><?= te('Nome *') ?></label><input type="text" name="name" id="edit_name" class="form-control" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
-            <div><label class="form-label">Data *</label><input type="date" name="due_date" id="edit_due_date" class="form-control" required></div>
+            <div><label class="form-label"><?= te('Valor ({symbol}) *', ['symbol' => currency_symbol()]) ?></label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
+            <div><label class="form-label"><?= te('Data *') ?></label><input type="date" name="due_date" id="edit_due_date" class="form-control" required></div>
           </div>
-          <div><label class="form-label">Recorrência</label><select name="recurrence" id="edit_recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div>
-          <div><label class="form-label">Categoria</label><select name="category" id="edit_category" class="form-select"><option value="">Sem categoria</option><?php foreach($categories as $cat): ?><option><?=htmlspecialchars($cat)?></option><?php endforeach; ?></select></div>
-          <div><label class="form-label">Cartão</label><select name="card_id" id="edit_card_id" class="form-select"><option value="">Dinheiro / A definir</option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
+          <div><label class="form-label"><?= te('Recorrência') ?></label><select name="recurrence" id="edit_recurrence" class="form-select"><option value="once"><?= te('Única vez') ?></option><option value="weekly"><?= te('Semanal') ?></option><option value="monthly"><?= te('Mensal') ?></option><option value="yearly"><?= te('Anual') ?></option></select></div>
+          <div><label class="form-label"><?= te('Categoria') ?></label><select name="category" id="edit_category" class="form-select"><option value=""><?= te('Sem categoria') ?></option><?php foreach($categories as $cat): ?><option value="<?= htmlspecialchars($cat) ?>"><?= te($cat) ?></option><?php endforeach; ?></select></div>
+          <div><label class="form-label"><?= te('Cartão') ?></label><select name="card_id" id="edit_card_id" class="form-select"><option value=""><?= te('Dinheiro / A definir') ?></option><?php foreach($cards as $c): ?><option value="<?=$c['id']?>"><?=htmlspecialchars($c['name'])?></option><?php endforeach; ?></select></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Notificar</label><select name="notify_days_before" id="edit_notify_days" class="form-select"><option value="0">No dia</option><option value="1">1 dia antes</option><option value="3">3 dias antes</option><option value="7">7 dias antes</option></select></div>
-            <div><label class="form-label">Método</label><select name="notify_method" id="edit_notify_method" class="form-select"><option value="email">Email</option><option value="site">Notificação</option><option value="both">Ambos</option></select></div>
+            <div><label class="form-label"><?= te('Notificar') ?></label><select name="notify_days_before" id="edit_notify_days" class="form-select"><option value="0"><?= te('No dia') ?></option><option value="1"><?= te('1 dia antes') ?></option><option value="3"><?= te('3 dias antes') ?></option><option value="7"><?= te('7 dias antes') ?></option></select></div>
+            <div><label class="form-label"><?= te('Método') ?></label><select name="notify_method" id="edit_notify_method" class="form-select"><option value="email"><?= te('Email') ?></option><option value="site"><?= te('Notificação') ?></option><option value="both"><?= te('Ambos') ?></option></select></div>
           </div>
         </div>
         <div class="modal-footer" style="display:flex;gap:8px;justify-content:flex-end">
-          <button type="button" class="btn-s" data-bs-dismiss="modal">Cancelar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> Guardar</button>
+          <button type="button" class="btn-s" data-bs-dismiss="modal"><?= te('Cancelar') ?></button>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-circle"></i> <?= te('Guardar') ?></button>
         </div>
       </form>
     </div>

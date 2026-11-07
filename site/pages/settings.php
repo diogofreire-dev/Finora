@@ -34,7 +34,7 @@ function check_current_password(PDO $pdo, int $uid, string $password): ?string {
     $pdo->prepare("UPDATE users SET login_locked_until = NOW() + INTERVAL " . SETTINGS_LOCK_MINUTES . " MINUTE, failed_login_attempts = 0
                    WHERE id = :uid AND failed_login_attempts >= :max")
         ->execute([':uid' => $uid, ':max' => SETTINGS_MAX_ATTEMPTS]);
-    return 'A palavra-passe atual está errada.';
+    return t('A palavra-passe atual está errada.');
 }
 
 $stmt = $pdo->prepare("SELECT * FROM user_settings WHERE user_id = :uid");
@@ -71,7 +71,7 @@ $canChangeEmail    = $daysUntilEmailChange === 0;
 // ── Ações (POST → guarda mensagem → redirect → GET) ─────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
-    $flash  = ['danger', 'Ação desconhecida.'];
+    $flash  = ['danger', t('Ação desconhecida.')];
     $open   = null; // formulário a reabrir quando há erro
 
     try {
@@ -106,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'update_notifications') {
             $on = isset($_POST['notifications']) ? 1 : 0;
             $pdo->prepare("UPDATE user_settings SET notifications = :n WHERE user_id = :uid")->execute([':n' => $on, ':uid' => $uid]);
-            $flash = ['success', $on ? 'Notificações ligadas.' : 'Notificações desligadas.'];
+            $flash = ['success', $on ? t('Notificações ligadas.') : t('Notificações desligadas.')];
             $open  = 'notificacoes';
         }
 
@@ -115,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $prefs = ['budget_email' => isset($_POST['budget_email'])];
             foreach (array_keys(NOTIF_TYPES) as $t) $prefs[$t] = isset($_POST['t'][$t]);
             $pdo->prepare("UPDATE user_settings SET notif_prefs = :p WHERE user_id = :uid")->execute([':p' => json_encode($prefs), ':uid' => $uid]);
-            $flash = ['success', 'Preferências das notificações guardadas.'];
+            $flash = ['success', t('Preferências das notificações guardadas.')];
             $open  = 'notificacoes';
         }
 
@@ -123,12 +123,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newUsername = trim($_POST['new_username'] ?? '');
             $len = mb_strlen($newUsername);
             if ($len < 3 || $len > 50) {
-                $flash = ['danger', 'O nome tem de ter entre 3 e 50 caracteres.'];
+                $flash = ['danger', t('O nome tem de ter entre 3 e 50 caracteres.')];
                 $open  = 'formUsername';
             } else {
                 $pdo->prepare("UPDATE users SET username = :u WHERE id = :uid")->execute([':u' => $newUsername, ':uid' => $uid]);
                 $_SESSION['username'] = $newUsername;
-                $flash = ['success', 'Nome atualizado.'];
+                $flash = ['success', t('Nome atualizado.')];
             }
         }
 
@@ -136,13 +136,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $newPassword = $_POST['new_password'] ?? '';
             $errors = [];
             if (!$canChangePassword) {
-                $errors[] = "Só podes voltar a mudar a palavra-passe daqui a $daysUntilPasswordChange dia(s).";
+                $errors[] = t('Só podes voltar a mudar a palavra-passe daqui a {n} dia(s).', ['n' => $daysUntilPasswordChange]);
             } elseif ($err = check_current_password($pdo, $uid, $_POST['current_password'] ?? '')) {
                 $errors[] = $err;
             } else {
                 if ($msg = password_problem_message($newPassword)) $errors[] = $msg;
-                if ($newPassword !== ($_POST['confirm_password'] ?? '')) $errors[] = 'As duas palavras-passe novas não são iguais.';
-                if ($newPassword === ($_POST['current_password'] ?? '')) $errors[] = 'A nova palavra-passe tem de ser diferente da atual.';
+                if ($newPassword !== ($_POST['confirm_password'] ?? '')) $errors[] = t('As duas palavras-passe novas não são iguais.');
+                if ($newPassword === ($_POST['current_password'] ?? '')) $errors[] = t('A nova palavra-passe tem de ser diferente da atual.');
             }
             if ($errors) {
                 $flash = ['danger', implode("\n", $errors)];
@@ -153,23 +153,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Novo ID de sessão: um ID antigo que alguém tenha copiado deixa de servir
                 session_regenerate_id(true);
                 try { (new EmailService())->sendPasswordChangedNotification($user['email'], $user['username']); } catch (Exception $e) {}
-                $flash = ['success', 'Palavra-passe alterada. Enviámos um aviso para o teu email.'];
+                $flash = ['success', t('Palavra-passe alterada. Enviámos um aviso para o teu email.')];
             }
         }
 
         elseif ($action === 'change_email') {
             $newEmail = strtolower(trim($_POST['new_email'] ?? ''));
             $errors = [];
-            if (!$canChangeEmail)  $errors[] = "Só podes voltar a mudar o email daqui a $daysUntilEmailChange dia(s).";
-            elseif ($hasPendingEmail) $errors[] = 'Já tens uma alteração de email à espera de confirmação.';
+            if (!$canChangeEmail)  $errors[] = t('Só podes voltar a mudar o email daqui a {n} dia(s).', ['n' => $daysUntilEmailChange]);
+            elseif ($hasPendingEmail) $errors[] = t('Já tens uma alteração de email à espera de confirmação.');
             elseif ($err = check_current_password($pdo, $uid, $_POST['current_password_email'] ?? '')) $errors[] = $err;
             else {
-                if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) $errors[] = 'Esse email não é válido.';
-                elseif ($newEmail === strtolower($user['email'])) $errors[] = 'Esse já é o teu email.';
+                if (!filter_var($newEmail, FILTER_VALIDATE_EMAIL)) $errors[] = t('Esse email não é válido.');
+                elseif ($newEmail === strtolower($user['email'])) $errors[] = t('Esse já é o teu email.');
                 else {
                     $st = $pdo->prepare("SELECT 1 FROM users WHERE email = :e AND id != :uid");
                     $st->execute([':e' => $newEmail, ':uid' => $uid]);
-                    if ($st->fetch()) $errors[] = 'Esse email já pertence a outra conta.';
+                    if ($st->fetch()) $errors[] = t('Esse email já pertence a outra conta.');
                 }
             }
             if (!$errors) {
@@ -178,11 +178,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $pdo->prepare("UPDATE users SET pending_email = :e, pending_email_token = :t, pending_email_expires = NOW() + INTERVAL 1 HOUR WHERE id = :uid")
                     ->execute([':e' => $newEmail, ':t' => hash('sha256', $token), ':uid' => $uid]);
                 if ((new EmailService())->sendEmailChangeVerification($newEmail, $user['username'], $token)) {
-                    $flash = ['success', "Enviámos um link de confirmação para $newEmail. Abre-o na próxima hora."];
+                    $flash = ['success', t('Enviámos um link de confirmação para {email}. Abre-o na próxima hora.', ['email' => $newEmail])];
                 } else {
                     $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid")
                         ->execute([':uid' => $uid]);
-                    $errors[] = 'Não foi possível enviar o email de confirmação. Tenta outra vez.';
+                    $errors[] = t('Não foi possível enviar o email de confirmação. Tenta outra vez.');
                 }
             }
             if ($errors) {
@@ -194,12 +194,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'cancel_email_change') {
             $pdo->prepare("UPDATE users SET pending_email = NULL, pending_email_token = NULL, pending_email_expires = NULL WHERE id = :uid")
                 ->execute([':uid' => $uid]);
-            $flash = ['info', 'Alteração de email cancelada.'];
+            $flash = ['info', t('Alteração de email cancelada.')];
         }
 
         elseif ($action === 'unlink_google') {
             $pdo->prepare("UPDATE users SET google_id = NULL WHERE id = :uid")->execute([':uid' => $uid]);
-            $flash = ['success', 'Conta Google desligada. Passas a entrar com email e palavra-passe.'];
+            $flash = ['success', t('Conta Google desligada. Passas a entrar com email e palavra-passe.')];
         }
 
         elseif ($action === 'upload_avatar') {
@@ -207,10 +207,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors = [];
             $readers = [];
             if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
-                $errors[] = 'Não recebemos a imagem. Tenta outra vez.';
+                $errors[] = t('Não recebemos a imagem. Tenta outra vez.');
             } elseif (!extension_loaded('gd')) {
                 error_log('[settings] Upload de avatar sem a extensão GD');
-                $errors[] = 'O servidor não consegue processar imagens neste momento.';
+                $errors[] = t('O servidor não consegue processar imagens neste momento.');
             } else {
                 // Só aceitamos os formatos que a GD deste servidor consegue ler (o XAMPP não lê WebP)
                 $readers = ['image/jpeg' => 'imagecreatefromjpeg', 'image/png' => 'imagecreatefrompng',
@@ -220,11 +220,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $mime = finfo_file($finfo, $file['tmp_name']);
                 finfo_close($finfo);
                 $names = implode(', ', array_map(fn($m) => strtoupper(substr($m, 6)), array_keys($readers)));
-                if (!isset($readers[$mime])) $errors[] = "Formato não suportado. Usa $names.";
-                if ($file['size'] > 3 * 1024 * 1024) $errors[] = 'A imagem não pode ter mais de 3 MB.';
+                if (!isset($readers[$mime])) $errors[] = t('Formato não suportado. Usa {formats}.', ['formats' => $names]);
+                if ($file['size'] > 3 * 1024 * 1024) $errors[] = t('A imagem não pode ter mais de 3 MB.');
                 if (!is_dir($avatarDir) || !is_writable($avatarDir)) {
                     error_log("[settings] Pasta de avatares sem permissão de escrita: $avatarDir");
-                    $errors[] = 'Não foi possível guardar a imagem. Tenta mais tarde.';
+                    $errors[] = t('Não foi possível guardar a imagem. Tenta mais tarde.');
                 }
             }
             if ($errors) {
@@ -247,10 +247,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($saved) {
                     $pdo->prepare("UPDATE users SET avatar_path = :av WHERE id = :uid")
                         ->execute([':av' => 'assets/avatars/' . $uid . '.jpg', ':uid' => $uid]);
-                    $flash = ['success', 'Foto de perfil atualizada.'];
+                    $flash = ['success', t('Foto de perfil atualizada.')];
                 } else {
                     error_log('[settings] Falha ao ler ou gravar o avatar do utilizador ' . $uid);
-                    $flash = ['danger', 'Não foi possível processar a imagem. Experimenta outra.'];
+                    $flash = ['danger', t('Não foi possível processar a imagem. Experimenta outra.')];
                 }
             }
         }
@@ -258,7 +258,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         elseif ($action === 'remove_avatar') {
             foreach (glob($avatarDir . $uid . '.*') ?: [] as $oldPath) @unlink($oldPath);
             $pdo->prepare("UPDATE users SET avatar_path = NULL WHERE id = :uid")->execute([':uid' => $uid]);
-            $flash = ['info', 'Foto de perfil removida.'];
+            $flash = ['info', t('Foto de perfil removida.')];
         }
 
         elseif ($action === 'delete_account') {
@@ -268,9 +268,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $confirm = (string) ($_POST['confirm_delete'] ?? '');
             $err = null;
             if (empty($_POST['understand'])) {
-                $err = 'Marca a caixa a confirmar que percebes que não dá para voltar atrás.';
+                $err = t('Marca a caixa a confirmar que percebes que não dá para voltar atrás.');
             } elseif ($user['google_id']) {
-                if (mb_strtolower(trim($confirm)) !== mb_strtolower($user['email'])) $err = 'O email não corresponde ao da tua conta.';
+                if (mb_strtolower(trim($confirm)) !== mb_strtolower($user['email'])) $err = t('O email não corresponde ao da tua conta.');
             } else {
                 $err = check_current_password($pdo, $uid, $confirm);
             }
@@ -296,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } catch (Exception $e) {
         error_log('[settings] ' . $e->getMessage());
-        $flash = ['danger', 'Não foi possível guardar. Tenta outra vez.'];
+        $flash = ['danger', t('Não foi possível guardar. Tenta outra vez.')];
     }
 
     $_SESSION['flash_settings'] = [$flash, $open];
@@ -320,7 +320,7 @@ $since        = strtotime($user['created_at']);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Definições - Finora</title>
+  <title><?= te('Definições - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -442,7 +442,7 @@ include __DIR__ . '/../components/sidebar.php';
 <div class="page-content">
 <div class="pg-wrap">
 
-  <div class="pg-head"><h1>Definições</h1></div>
+  <div class="pg-head"><h1><?= te('Definições') ?></h1></div>
 
   <?php if ($message && $openForm !== 'apagar-conta'): ?>
     <?php $icon = ['success' => 'check-circle', 'danger' => 'exclamation-circle'][$messageType] ?? 'info-circle'; ?>
@@ -453,11 +453,11 @@ include __DIR__ . '/../components/sidebar.php';
 
   <!-- PERFIL -->
   <section class="pg-card st-card" aria-labelledby="sec-perfil" style="--tone:var(--cat-1)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-person"></i></span><div><h2 id="sec-perfil">Perfil</h2><p>O nome e a foto que aparecem no topo da Finora.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-person"></i></span><div><h2 id="sec-perfil"><?= te('Perfil') ?></h2><p><?= te('O nome e a foto que aparecem no topo da Finora.') ?></p></div></header>
       <div class="st-profile">
         <div class="st-avatar">
           <?php if ($avatarUrl): ?>
-            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="A tua foto de perfil">
+            <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= te('A tua foto de perfil') ?>">
           <?php else: ?>
             <span class="letter" aria-hidden="true"><?= htmlspecialchars($initial) ?></span>
           <?php endif; ?>
@@ -474,10 +474,10 @@ include __DIR__ . '/../components/sidebar.php';
             <label for="avatarInput" class="btn-s" style="margin:0"><i class="bi bi-camera"></i> <?= $avatarUrl ? 'Mudar foto' : 'Adicionar foto' ?></label>
           </form>
           <?php if ($avatarUrl): ?>
-            <form method="post" onsubmit="return confirm('Remover a foto de perfil?')">
+            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Remover a foto de perfil?')) ?>)">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="remove_avatar">
-              <button type="submit" class="btn-s btn-s-danger" aria-label="Remover foto de perfil"><i class="bi bi-trash3"></i></button>
+              <button type="submit" class="btn-s btn-s-danger" aria-label="<?= te('Remover foto de perfil') ?>"><i class="bi bi-trash3"></i></button>
             </form>
           <?php endif; ?>
         </div>
@@ -486,22 +486,22 @@ include __DIR__ . '/../components/sidebar.php';
       <div class="st-row">
         <span class="pg-ico sm" style="--tone:var(--cat-5)" aria-hidden="true"><i class="bi bi-person-badge"></i></span>
         <div class="pg-grow">
-          <p class="st-label">Nome</p>
+          <p class="st-label"><?= te('Nome') ?></p>
           <p class="st-sub"><?= htmlspecialchars($user['username']) ?></p>
         </div>
-        <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername" aria-label="Alterar nome" aria-expanded="<?= $openForm === 'formUsername' ? 'true' : 'false' ?>" aria-controls="formUsername">
-          <i class="bi bi-pencil"></i> Alterar
+        <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername" aria-label="<?= te('Alterar nome') ?>" aria-expanded="<?= $openForm === 'formUsername' ? 'true' : 'false' ?>" aria-controls="formUsername">
+          <i class="bi bi-pencil"></i> <?= te('Alterar') ?>
         </button>
       </div>
       <div class="collapse st-form <?= $openForm === 'formUsername' ? 'show' : '' ?>" id="formUsername">
         <form method="post">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="change_username">
-          <label class="form-label" for="new_username">Novo nome</label>
+          <label class="form-label" for="new_username"><?= te('Novo nome') ?></label>
           <input type="text" id="new_username" name="new_username" class="form-control mb-3" value="<?= htmlspecialchars($user['username']) ?>" minlength="3" maxlength="50" required autocomplete="name">
           <div class="acts">
-            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername">Cancelar</button>
-            <button type="submit" class="btn-s btn-s-primary">Guardar nome</button>
+            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formUsername"><?= te('Cancelar') ?></button>
+            <button type="submit" class="btn-s btn-s-primary"><?= te('Guardar nome') ?></button>
           </div>
         </form>
       </div>
@@ -509,40 +509,40 @@ include __DIR__ . '/../components/sidebar.php';
 
   <!-- SEGURANÇA -->
   <section class="pg-card st-card" aria-labelledby="sec-seg" style="--tone:var(--cat-3)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-lock"></i></span><div><h2 id="sec-seg">Acesso à conta</h2><p>A palavra-passe e o email só podem mudar uma vez a cada 30 dias.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-lock"></i></span><div><h2 id="sec-seg"><?= te('Acesso à conta') ?></h2><p><?= te('A palavra-passe e o email só podem mudar uma vez a cada 30 dias.') ?></p></div></header>
       <div class="st-row">
         <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-key"></i></span>
         <div class="pg-grow">
           <p class="st-label">Palavra-passe
             <?php if (!$canChangePassword): ?><span class="st-tag locked"><i class="bi bi-lock"></i> Daqui a <?= $daysUntilPasswordChange ?> dia(s)</span><?php endif; ?>
           </p>
-          <p class="st-sub">Última alteração: <?= $user['last_password_change'] ? $fmtDate($user['last_password_change']) : 'nunca' ?></p>
+          <p class="st-sub"><?= te('Última alteração:') ?> <?= $user['last_password_change'] ? $fmtDate($user['last_password_change']) : te('nunca') ?></p>
         </div>
-        <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formPassword" aria-label="Alterar palavra-passe" aria-expanded="<?= $openForm === 'formPassword' ? 'true' : 'false' ?>" aria-controls="formPassword" <?= $canChangePassword ? '' : 'disabled' ?>>
-          <i class="bi bi-key"></i> Alterar
+        <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formPassword" aria-label="<?= te('Alterar palavra-passe') ?>" aria-expanded="<?= $openForm === 'formPassword' ? 'true' : 'false' ?>" aria-controls="formPassword" <?= $canChangePassword ? '' : 'disabled' ?>>
+          <i class="bi bi-key"></i> <?= te('Alterar') ?>
         </button>
       </div>
       <div class="collapse st-form <?= $openForm === 'formPassword' ? 'show' : '' ?>" id="formPassword">
         <form method="post">
           <?= csrf_field() ?>
           <input type="hidden" name="action" value="change_password">
-          <label class="form-label" for="current_password">Palavra-passe atual</label>
+          <label class="form-label" for="current_password"><?= te('Palavra-passe atual') ?></label>
           <input type="password" id="current_password" name="current_password" class="form-control mb-3" required autocomplete="current-password">
           <div class="grid2 mb-3">
             <div>
-              <label class="form-label" for="new_password">Nova palavra-passe</label>
+              <label class="form-label" for="new_password"><?= te('Nova palavra-passe') ?></label>
               <input type="password" id="new_password" name="new_password" class="form-control" required minlength="8" autocomplete="new-password" aria-describedby="pwHint">
               <div class="pw-meter" id="pwMeter" data-score="0" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
             </div>
             <div>
-              <label class="form-label" for="confirm_password">Repetir a nova</label>
+              <label class="form-label" for="confirm_password"><?= te('Repetir a nova') ?></label>
               <input type="password" id="confirm_password" name="confirm_password" class="form-control" required autocomplete="new-password">
             </div>
           </div>
-          <p class="hint" id="pwHint">8 caracteres ou mais, com maiúsculas, minúsculas, números e símbolos.</p>
+          <p class="hint" id="pwHint"><?= te('8 caracteres ou mais, com maiúsculas, minúsculas, números e símbolos.') ?></p>
           <div class="acts">
-            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formPassword">Cancelar</button>
-            <button type="submit" class="btn-s btn-s-primary">Mudar palavra-passe</button>
+            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formPassword"><?= te('Cancelar') ?></button>
+            <button type="submit" class="btn-s btn-s-primary"><?= te('Mudar palavra-passe') ?></button>
           </div>
         </form>
       </div>
@@ -551,7 +551,7 @@ include __DIR__ . '/../components/sidebar.php';
         <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-envelope"></i></span>
         <div class="pg-grow">
           <p class="st-label">Email
-            <?php if ($hasPendingEmail): ?><span class="st-tag wait"><i class="bi bi-clock-history"></i> À espera de confirmação</span>
+            <?php if ($hasPendingEmail): ?><span class="st-tag wait"><i class="bi bi-clock-history"></i> <?= te('À espera de confirmação') ?></span>
             <?php elseif (!$canChangeEmail): ?><span class="st-tag locked"><i class="bi bi-lock"></i> Daqui a <?= $daysUntilEmailChange ?> dia(s)</span><?php endif; ?>
           </p>
           <p class="st-sub"><?= htmlspecialchars($user['email']) ?><?php if ($hasPendingEmail): ?> → <b><?= htmlspecialchars($user['pending_email']) ?></b><?php endif; ?></p>
@@ -560,11 +560,11 @@ include __DIR__ . '/../components/sidebar.php';
           <form method="post" style="margin:0">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="cancel_email_change">
-            <button type="submit" class="btn-s">Cancelar pedido</button>
+            <button type="submit" class="btn-s"><?= te('Cancelar pedido') ?></button>
           </form>
         <?php else: ?>
-          <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail" aria-label="Alterar email" aria-expanded="<?= $openForm === 'formEmail' ? 'true' : 'false' ?>" aria-controls="formEmail" <?= $canChangeEmail ? '' : 'disabled' ?>>
-            <i class="bi bi-envelope"></i> Alterar
+          <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail" aria-label="<?= te('Alterar email') ?>" aria-expanded="<?= $openForm === 'formEmail' ? 'true' : 'false' ?>" aria-controls="formEmail" <?= $canChangeEmail ? '' : 'disabled' ?>>
+            <i class="bi bi-envelope"></i> <?= te('Alterar') ?>
           </button>
         <?php endif; ?>
       </div>
@@ -575,18 +575,18 @@ include __DIR__ . '/../components/sidebar.php';
           <input type="hidden" name="action" value="change_email">
           <div class="grid2 mb-2">
             <div>
-              <label class="form-label" for="new_email">Novo email</label>
+              <label class="form-label" for="new_email"><?= te('Novo email') ?></label>
               <input type="email" id="new_email" name="new_email" class="form-control" required autocomplete="email">
             </div>
             <div>
-              <label class="form-label" for="current_password_email">Palavra-passe atual</label>
+              <label class="form-label" for="current_password_email"><?= te('Palavra-passe atual') ?></label>
               <input type="password" id="current_password_email" name="current_password_email" class="form-control" required autocomplete="current-password">
             </div>
           </div>
-          <p class="hint mb-3">Enviamos um link para o novo email. A mudança só acontece quando o abrires.</p>
+          <p class="hint mb-3"><?= te('Enviamos um link para o novo email. A mudança só acontece quando o abrires.') ?></p>
           <div class="acts">
-            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail">Cancelar</button>
-            <button type="submit" class="btn-s btn-s-primary">Enviar link</button>
+            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formEmail"><?= te('Cancelar') ?></button>
+            <button type="submit" class="btn-s btn-s-primary"><?= te('Enviar link') ?></button>
           </div>
         </form>
       </div>
@@ -599,32 +599,32 @@ include __DIR__ . '/../components/sidebar.php';
           </span>
           <div>
             <p class="st-label">Google
-              <?php if ($user['google_id']): ?><span class="st-tag ok"><i class="bi bi-check-circle"></i> Ligada</span><?php endif; ?>
+              <?php if ($user['google_id']): ?><span class="st-tag ok"><i class="bi bi-check-circle"></i> <?= te('Ligada') ?></span><?php endif; ?>
             </p>
-            <p class="st-sub"><?= $user['google_id'] ? 'Podes entrar com a tua conta Google.' : 'Liga-a para entrares sem escrever a palavra-passe.' ?></p>
+            <p class="st-sub"><?= $user['google_id'] ? te('Podes entrar com a tua conta Google.') : te('Liga-a para entrares sem escrever a palavra-passe.') ?></p>
           </div>
         </div>
         <?php if ($user['google_id']): ?>
-          <form method="post" style="margin:0" onsubmit="return confirm('Desligar a conta Google? Passas a entrar só com email e palavra-passe.')">
+          <form method="post" style="margin:0" onsubmit="return confirm(<?= htmlspecialchars(tj('Desligar a conta Google? Passas a entrar só com email e palavra-passe.')) ?>)">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="unlink_google">
-            <button type="submit" class="btn-s btn-s-danger">Desligar</button>
+            <button type="submit" class="btn-s btn-s-danger"><?= te('Desligar') ?></button>
           </form>
         <?php else: ?>
-          <a href="../auth/google_redirect.php?link=1" class="btn-s"><i class="bi bi-link-45deg"></i> Ligar</a>
+          <a href="../auth/google_redirect.php?link=1" class="btn-s"><i class="bi bi-link-45deg"></i> <?= te('Ligar') ?></a>
         <?php endif; ?>
       </div>
   </section>
 
   <!-- APARÊNCIA -->
   <section class="pg-card st-card" aria-labelledby="sec-apar" style="--tone:var(--cat-7)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-palette"></i></span><div><h2 id="sec-apar"><?= te('Aparência, língua e moeda') ?></h2><p>Fica guardado assim que escolhes.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-palette"></i></span><div><h2 id="sec-apar"><?= te('Aparência, língua e moeda') ?></h2><p><?= te('Fica guardado assim que escolhes.') ?></p></div></header>
       <form method="post" id="themeForm">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_theme">
         <fieldset class="st-themes">
-          <legend class="visually-hidden">Tema</legend>
-          <?php foreach (['light' => ['Claro', 'sun'], 'dark' => ['Escuro', 'moon-stars']] as $val => [$label, $ico]): ?>
+          <legend class="visually-hidden"><?= te('Tema') ?></legend>
+          <?php foreach (['light' => [t('Claro'), 'sun'], 'dark' => [t('Escuro'), 'moon-stars']] as $val => [$label, $ico]): ?>
             <label class="st-theme">
               <input type="radio" name="theme" value="<?= $val ?>" <?= $currentTheme === $val ? 'checked' : '' ?>>
               <span class="mini <?= $val ?>" aria-hidden="true">
@@ -648,7 +648,7 @@ include __DIR__ . '/../components/sidebar.php';
             </label>
           <?php endforeach; ?>
         </fieldset>
-        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary">Guardar tema</button></div></noscript>
+        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary"><?= te('Guardar tema') ?></button></div></noscript>
       </form>
       <form method="post" id="languageForm" class="st-row">
         <?= csrf_field() ?>
@@ -656,7 +656,7 @@ include __DIR__ . '/../components/sidebar.php';
         <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-translate"></i></span>
         <div class="pg-grow">
           <label class="st-label" for="language"><?= te('Língua') ?></label>
-          <p class="st-sub" id="languageHelp"><?= te('Algumas páginas ainda só existem em português.') ?></p>
+          <p class="st-sub" id="languageHelp"><?= te('Os nomes que escreves (cartões, transações, metas) ficam como os escreveste.') ?></p>
         </div>
         <select class="form-select st-currency" id="language" name="language" aria-describedby="languageHelp">
           <?php foreach (LANGS as $code => [$name]): ?>
@@ -678,24 +678,24 @@ include __DIR__ . '/../components/sidebar.php';
             <option value="<?= $code ?>" <?= user_currency() === $code ? 'selected' : '' ?>><?= htmlspecialchars(t($name) . " ($sym)") ?></option>
           <?php endforeach; ?>
         </select>
-        <noscript><button type="submit" class="btn-s">Guardar</button></noscript>
+        <noscript><button type="submit" class="btn-s"><?= te('Guardar') ?></button></noscript>
       </form>
 
   </section>
 
   <?php $np = notif_prefs($pdo, (int) $uid); ?>
   <section class="pg-card" id="notificacoes" style="--tone: var(--cat-4)" aria-labelledby="sec-notif">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bell"></i></span><div><h2 id="sec-notif">Notificações</h2><p>O que aparece no sino do cabeçalho. A Finora verifica uma vez por dia.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bell"></i></span><div><h2 id="sec-notif"><?= te('Notificações') ?></h2><p><?= te('O que aparece no sino do cabeçalho. A Finora verifica uma vez por dia.') ?></p></div></header>
       <form method="post" id="notifForm" class="st-row">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_notifications">
         <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-bell"></i></span>
         <div class="pg-grow">
-          <label class="st-label" for="notifications">Notificações</label>
-          <p class="st-sub" id="notifHelp">Desliga para deixares de receber todos os avisos (no sino e por email).</p>
+          <label class="st-label" for="notifications"><?= te('Notificações') ?></label>
+          <p class="st-sub" id="notifHelp"><?= te('Desliga para deixares de receber todos os avisos (no sino e por email).') ?></p>
         </div>
         <input type="checkbox" role="switch" class="st-switch" id="notifications" name="notifications" aria-describedby="notifHelp" <?= !empty($settings['notifications']) ? 'checked' : '' ?>>
-        <noscript><button type="submit" class="btn-s">Guardar</button></noscript>
+        <noscript><button type="submit" class="btn-s"><?= te('Guardar') ?></button></noscript>
       </form>
       <?php if (!empty($settings['notifications'])): ?>
       <form method="post" id="notifPrefsForm" class="st-prefs">
@@ -704,47 +704,47 @@ include __DIR__ . '/../components/sidebar.php';
         <?php foreach (NOTIF_TYPES as $t => [$tLabel, $tIcon, $tTone]): ?>
           <label class="st-pref">
             <span class="app-notif-ico tone-<?= $tTone ?>" aria-hidden="true"><i class="bi bi-<?= $tIcon ?>"></i></span>
-            <span class="pg-grow"><?= htmlspecialchars($tLabel) ?></span>
+            <span class="pg-grow"><?= te($tLabel) ?></span>
             <input type="checkbox" role="switch" class="st-switch" name="t[<?= $t ?>]" <?= $np[$t] ? 'checked' : '' ?>>
           </label>
         <?php endforeach; ?>
         <label class="st-pref">
           <span class="app-notif-ico tone-cat-1" aria-hidden="true"><i class="bi bi-envelope"></i></span>
-          <span class="pg-grow">Também por email: alertas de orçamento<small>Os lembretes de pagamento têm o seu próprio "Método" em cada lembrete.</small></span>
+          <span class="pg-grow"><?= te('Também por email: alertas de orçamento') ?><small><?= te('Os lembretes de pagamento têm o seu próprio "Método" em cada lembrete.') ?></small></span>
           <input type="checkbox" role="switch" class="st-switch" name="budget_email" <?= $np['budget_email'] ? 'checked' : '' ?>>
         </label>
-        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary">Guardar preferências</button></div></noscript>
+        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary"><?= te('Guardar preferências') ?></button></div></noscript>
       </form>
       <?php endif; ?>
   </section>
 
   <!-- OS TEUS DADOS (RGPD: exportar, saber o que guardamos, apagar) -->
   <section class="pg-card st-card" id="os-teus-dados" aria-labelledby="sec-dados" style="--tone:var(--cat-8)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-dados">Os teus dados</h2><p>Leva os teus dados contigo ou apaga a conta de vez.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-dados"><?= te('Os teus dados') ?></h2><p><?= te('Leva os teus dados contigo ou apaga a conta de vez.') ?></p></div></header>
       <div class="st-row">
         <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span>
         <div class="pg-grow">
-          <p class="st-label">Exportar</p>
-          <p class="st-sub">Transações em CSV ou relatório em PDF.</p>
+          <p class="st-label"><?= te('Exportar') ?></p>
+          <p class="st-sub"><?= te('Transações em CSV ou relatório em PDF.') ?></p>
         </div>
-        <a class="btn-s" href="dados.php"><i class="bi bi-download"></i> Exportar</a>
+        <a class="btn-s" href="dados.php"><i class="bi bi-download"></i> <?= te('Exportar') ?></a>
       </div>
       <div class="st-row">
         <span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-file-earmark-lock"></i></span>
         <div class="pg-grow">
-          <p class="st-label">Privacidade</p>
-          <p class="st-sub">O que guardamos, com quem partilhamos e durante quanto tempo.</p>
+          <p class="st-label"><?= te('Privacidade') ?></p>
+          <p class="st-sub"><?= te('O que guardamos, com quem partilhamos e durante quanto tempo.') ?></p>
         </div>
         <a class="btn-s" href="../privacidade.php">Ler</a>
       </div>
       <div class="st-row" id="apagar-conta">
         <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-trash3"></i></span>
         <div class="pg-grow">
-          <p class="st-label">Apagar conta</p>
-          <p class="st-sub">Apaga a conta e tudo o que registaste. Não dá para voltar atrás.</p>
+          <p class="st-label"><?= te('Apagar conta') ?></p>
+          <p class="st-sub"><?= te('Apaga a conta e tudo o que registaste. Não dá para voltar atrás.') ?></p>
         </div>
         <button type="button" class="btn-s btn-s-danger" data-bs-toggle="collapse" data-bs-target="#formDelete" aria-expanded="<?= $openForm === 'apagar-conta' ? 'true' : 'false' ?>" aria-controls="formDelete">
-          <i class="bi bi-trash3"></i> Apagar
+          <i class="bi bi-trash3"></i> <?= te('Apagar') ?>
         </button>
       </div>
       <div class="collapse st-form <?= $openForm === 'apagar-conta' ? 'show' : '' ?>" id="formDelete">
@@ -754,24 +754,24 @@ include __DIR__ . '/../components/sidebar.php';
           <?php if ($message && $openForm === 'apagar-conta'): ?>
             <div class="st-flash danger" role="alert"><i class="bi bi-exclamation-circle"></i><span><?= htmlspecialchars($message) ?></span></div>
           <?php endif; ?>
-          <p class="st-sub mb-3">Vão ser apagados os teus cartões, transações, orçamentos, lembretes, poupanças, metas, investimentos e notificações. Se quiseres uma cópia, <a href="dados.php">exporta primeiro</a>.</p>
+          <p class="st-sub mb-3"><?= te('Vão ser apagados os teus cartões, transações, orçamentos, lembretes, poupanças, metas, investimentos e notificações. Se quiseres uma cópia,') ?> <a href="dados.php"><?= te('exporta primeiro') ?></a>.</p>
           <?php if ($user['google_id']): ?>
-            <label class="form-label" for="confirm_delete">Escreve o teu email para confirmar</label>
+            <label class="form-label" for="confirm_delete"><?= te('Escreve o teu email para confirmar') ?></label>
             <input type="email" id="confirm_delete" name="confirm_delete" class="form-control mb-3" required autocomplete="off" placeholder="<?= htmlspecialchars($user['email']) ?>">
           <?php else: ?>
-            <label class="form-label" for="confirm_delete">Palavra-passe</label>
+            <label class="form-label" for="confirm_delete"><?= te('Palavra-passe') ?></label>
             <input type="password" id="confirm_delete" name="confirm_delete" class="form-control mb-3" required autocomplete="current-password">
           <?php endif; ?>
-          <label class="st-check mb-3"><input type="checkbox" name="understand" value="1" required> Percebo que a conta e os dados são apagados para sempre.</label>
+          <label class="st-check mb-3"><input type="checkbox" name="understand" value="1" required> <?= te('Percebo que a conta e os dados são apagados para sempre.') ?></label>
           <div class="acts">
-            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formDelete">Cancelar</button>
-            <button type="submit" class="btn-s btn-s-danger"><i class="bi bi-trash3"></i> Apagar a minha conta</button>
+            <button type="button" class="btn-s" data-bs-toggle="collapse" data-bs-target="#formDelete"><?= te('Cancelar') ?></button>
+            <button type="submit" class="btn-s btn-s-danger"><i class="bi bi-trash3"></i> <?= te('Apagar a minha conta') ?></button>
           </div>
         </form>
       </div>
   </section>
 
-  <p class="st-foot"><a href="../privacidade.php">Privacidade</a> · Membro desde <?= date('j', $since) . ' ' . $months[(int) date('n', $since) - 1] . ' ' . date('Y', $since) ?> · Finora 2.0.0</p>
+  <p class="st-foot"><a href="../privacidade.php"><?= te('Privacidade') ?></a> · <?= te('Membro desde {date}', ['date' => fmt_date_long($since, true)]) ?> · Finora 2.0.0</p>
 
 </div>
 </div>

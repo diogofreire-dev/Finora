@@ -35,9 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay')
     $d = DateTime::createFromFormat('!Y-m-d', $paidOn);
     $flash = null;
     if (!$cardId || $amount <= 0) {
-        $flash = ['danger', 'Indica um valor maior que zero.'];
+        $flash = ['danger', t('Indica um valor maior que zero.')];
     } elseif (!$d || $d->format('Y-m-d') !== $paidOn || $paidOn > $today) {
-        $flash = ['danger', 'A data do pagamento não é válida.'];
+        $flash = ['danger', t('A data do pagamento não é válida.')];
     } else {
         try {
             $pdo->beginTransaction();
@@ -48,15 +48,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay')
                 $pdo->prepare("INSERT INTO card_payments (user_id, card_id, amount, paid_on) VALUES (:uid, :id, :a, :d)")
                     ->execute([':uid' => $uid, ':id' => $cardId, ':a' => $amount, ':d' => $paidOn]);
                 $pdo->commit();
-                $flash = ['success', 'Pagamento de ' . fmt_money($amount) . ' registado.'];
+                $flash = ['success', t('Pagamento de {amount} registado.', ['amount' => fmt_money($amount)])];
             } else {
                 $pdo->rollBack();
-                $flash = ['danger', 'O valor é maior do que o que está em uso no cartão.'];
+                $flash = ['danger', t('O valor é maior do que o que está em uso no cartão.')];
             }
         } catch (PDOException $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
             error_log('[cards] pagar extrato: ' . $e->getMessage());
-            $flash = ['danger', 'Não foi possível registar o pagamento.'];
+            $flash = ['danger', t('Não foi possível registar o pagamento.')];
         }
     }
     $_SESSION['flash_cards'] = $flash;
@@ -73,10 +73,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST[
     try {
         $stmt = $pdo->prepare("UPDATE cards SET active = NOT active WHERE id = :id AND user_id = :uid");
         $stmt->execute([':id' => $cardId, ':uid' => $uid]);
-        $message = 'Estado do cartão alterado com sucesso!';
+        $message = t('Estado do cartão alterado com sucesso!');
         $messageType = 'success';
     } catch (PDOException $e) {
-        $message = 'Erro ao executar a ação.';
+        $message = t('Erro ao executar a ação.');
         $messageType = 'danger';
     }
 }
@@ -138,11 +138,11 @@ foreach ($limitedCards as $c) {
         if ($firstOver) {
             $diff = (new DateTime())->diff(new DateTime($firstOver));
             $daysSince = $diff->days;
-            if ($daysSince === 0)      $since = 'desde hoje';
-            elseif ($daysSince === 1)  $since = 'há 1 dia';
-            elseif ($daysSince < 7)    $since = "há {$daysSince} dias";
-            elseif ($daysSince < 30)   { $weeks = floor($daysSince/7); $since = "há {$weeks} semana".($weeks>1?'s':''); }
-            else                       { $months = floor($daysSince/30); $since = "há {$months} mês".($months>1?' meses':''); }
+            if ($daysSince === 0)      $since = t('desde hoje');
+            elseif ($daysSince === 1)  $since = t('há 1 dia');
+            elseif ($daysSince < 7)    $since = t('há {n} dias', ['n' => $daysSince]);
+            elseif ($daysSince < 30)   { $weeks = floor($daysSince/7); $since = $weeks > 1 ? t('há {n} semanas', ['n' => $weeks]) : t('há 1 semana'); }
+            else                       { $months = floor($daysSince/30); $since = $months > 1 ? t('há {n} meses', ['n' => $months]) : t('há 1 mês'); }
         }
         $overdraftCards[] = array_merge($c, [
             'available' => $available,
@@ -179,11 +179,11 @@ $walletCards = array_map(fn($c) => [
 ], array_slice(array_values($activeCards), 0, WALLET_MAX_CARDS));
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cartões - Finora</title>
+  <title><?= te('Cartões - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -311,18 +311,18 @@ $walletCards = array_map(fn($c) => [
 <div class="cd">
 
   <div class="cd-head">
-    <h1>Cartões</h1>
-    <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Adicionar cartão</a>
+    <h1><?= te('Cartões') ?></h1>
+    <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Adicionar cartão') ?></a>
   </div>
 
   <?php if ($activeCount > 0): ?>
     <p class="cd-summary">
       <?php if ($activeTotalLimit > 0): ?>
-        Tens <strong><?= fmt_money(max($activeAvailable, 0)) ?> disponíveis</strong> de <?= fmt_money($activeTotalLimit) ?>
         <?php $nLimited = count($limitedCards); ?>
-        <?= $nLimited === 1 ? 'no teu cartão com limite' : "nos {$nLimited} cartões com limite" ?>.
+        <?= t($nLimited === 1 ? 'Tens {amount} de {limit} no teu cartão com limite.' : 'Tens {amount} de {limit} nos {n} cartões com limite.',
+              ['amount' => '<strong>' . te('{amount} disponíveis', ['amount' => fmt_money(max($activeAvailable, 0))]) . '</strong>', 'limit' => fmt_money($activeTotalLimit), 'n' => $nLimited]) ?>
       <?php else: ?>
-        <?= $activeCount ?> cartão<?= $activeCount === 1 ? '' : 'ões' ?> ativo<?= $activeCount === 1 ? '' : 's' ?>, sem limite definido.
+        <?= $activeCount === 1 ? te('1 cartão ativo, sem limite definido.') : te('{n} cartões ativos, sem limite definido.', ['n' => $activeCount]) ?>
       <?php endif; ?>
     </p>
     <?php if ($activeTotalLimit > 0): ?>
@@ -342,18 +342,18 @@ $walletCards = array_map(fn($c) => [
   <?php if (!empty($overdraftCards)): ?>
   <section class="cd-alert" aria-labelledby="cdAlertTitle">
     <h2 id="cdAlertTitle"><i class="bi bi-exclamation-triangle-fill"></i>
-      <?= count($overdraftCards) === 1 ? 'Um cartão passou o limite' : count($overdraftCards) . ' cartões passaram o limite' ?></h2>
+      <?= count($overdraftCards) === 1 ? te('Um cartão passou o limite') : te('{n} cartões passaram o limite', ['n' => count($overdraftCards)]) ?></h2>
     <ul>
       <?php foreach ($overdraftCards as $oc): ?>
         <li>
           <div>
             <div class="nm"><?= htmlspecialchars($oc['name']) ?></div>
             <div class="mt">
-              Excedido em <?= fmt_money(abs($oc['available'])) ?> · <?= fmt_money($oc['balance']) ?> de <?= fmt_money($oc['limit_amount']) ?>
+              <?= te('Excedido em {amount}', ['amount' => fmt_money(abs($oc['available']))]) ?> · <?= te('{amount} de {limit}', ['amount' => fmt_money($oc['balance']), 'limit' => fmt_money($oc['limit_amount'])]) ?>
               <?= $oc['since_label'] ? ' · ' . htmlspecialchars($oc['since_label']) : '' ?>
             </div>
           </div>
-          <a href="edit_card.php?id=<?= $oc['id'] ?>" class="btn-s">Rever cartão</a>
+          <a href="edit_card.php?id=<?= $oc['id'] ?>" class="btn-s"><?= te('Rever cartão') ?></a>
         </li>
       <?php endforeach; ?>
     </ul>
@@ -370,8 +370,8 @@ $walletCards = array_map(fn($c) => [
     const WEEK = 7 * 24 * 60 * 60 * 1000;
     const eur  = <?= money_js() ?>;
     const notify = () => {
-      overdrafts.forEach(o => new Notification('Finora — cartão acima do limite', {
-        body: `${o.name}: excedido em ${eur(o.excess)} há ${o.days} dias`, icon: '/favicon.ico'
+      overdrafts.forEach(o => new Notification(<?= tj('Finora — cartão acima do limite') ?>, {
+        body: <?= tj('{name}: excedido em {amount} há {n} dias') ?>.replace('{name}', o.name).replace('{amount}', eur(o.excess)).replace('{n}', o.days), icon: '/favicon.ico'
       }));
       try { localStorage.setItem(KEY, now); } catch (e) {}
     };
@@ -386,9 +386,9 @@ $walletCards = array_map(fn($c) => [
   <?php if (empty($allCards)): ?>
     <div class="cd-empty">
       <div class="cd-empty-art" aria-hidden="true"></div>
-      <h2>Ainda não tens cartões</h2>
-      <p>Adiciona os teus cartões para veres o limite, quanto já gastaste e quanto ainda tens disponível em cada um.</p>
-      <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Adicionar o primeiro cartão</a>
+      <h2><?= te('Ainda não tens cartões') ?></h2>
+      <p><?= te('Adiciona os teus cartões para veres o limite, quanto já gastaste e quanto ainda tens disponível em cada um.') ?></p>
+      <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Adicionar o primeiro cartão') ?></a>
     </div>
   <?php else: ?>
 
@@ -396,7 +396,7 @@ $walletCards = array_map(fn($c) => [
     <!-- Carteira 3D (só aparece se o browser tiver WebGL; a lista em baixo tem a mesma informação) -->
     <section class="cd-wallet" id="walletStage" aria-hidden="true">
       <canvas id="walletCanvas"></canvas>
-      <p class="cd-wallet-hint"><i class="bi bi-hand-index"></i> Toca num cartão para o veres em baixo</p>
+      <p class="cd-wallet-hint"><i class="bi bi-hand-index"></i> <?= te('Toca num cartão para o veres em baixo') ?></p>
     </section>
     <?php // JSON_HEX_TAG: um nome de cartão com "</script>" não consegue fechar este bloco ?>
     <script type="application/json" id="walletData"><?= json_encode($walletCards, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
@@ -421,44 +421,44 @@ $walletCards = array_map(fn($c) => [
             <div class="num" aria-hidden="true">•••• •••• •••• ••••</div>
             <div class="bottom">
               <span class="name"><?= htmlspecialchars($c['name']) ?></span>
-              <?php if ($state === 'over'): ?><span class="flag">Limite excedido</span><?php endif; ?>
+              <?php if ($state === 'over'): ?><span class="flag"><?= te('Limite excedido') ?></span><?php endif; ?>
             </div>
           </div>
 
           <div class="cd-body">
             <?php if ($limit > 0): ?>
-              <div class="cd-avail-label"><?= $available < 0 ? 'Acima do limite' : 'Disponível' ?></div>
+              <div class="cd-avail-label"><?= $available < 0 ? te('Acima do limite') : te('Disponível') ?></div>
               <div class="cd-avail <?= $available < 0 ? 'over' : '' ?>"><?= fmt_money(abs($available)) ?></div>
               <div class="cd-meter"><span class="<?= $state ?>" style="width:<?= min(round($pct, 1), 100) ?>%"></span></div>
               <div class="cd-line">
-                <span><?= fmt_money($c['balance']) ?> usados de <?= fmt_money($limit) ?></span>
+                <span><?= fmt_money($c['balance']) ?> <?= te('usados de') ?> <?= fmt_money($limit) ?></span>
                 <span><?= round($pct) ?>%</span>
               </div>
             <?php else: ?>
-              <div class="cd-avail-label">Usado</div>
+              <div class="cd-avail-label"><?= te('Usado') ?></div>
               <div class="cd-avail"><?= fmt_money($c['balance']) ?></div>
-              <div class="cd-line" style="margin-top:8px"><span>Sem limite definido</span></div>
+              <div class="cd-line" style="margin-top:8px"><span><?= te('Sem limite definido') ?></span></div>
             <?php endif; ?>
             <div class="cd-line" style="margin-top:6px">
-              <span><?= (int) $c['transaction_count'] ?> transaç<?= $c['transaction_count'] == 1 ? 'ão' : 'ões' ?></span>
-              <span>desde <?= mb_substr(month_name_pt((int) date('n', strtotime($c['created_at']))), 0, 3) ?>. <?= date('Y', strtotime($c['created_at'])) ?></span>
+              <span><?= $c['transaction_count'] == 1 ? te('1 transação') : te('{n} transações', ['n' => (int) $c['transaction_count']]) ?></span>
+              <span><?= te('desde {date}', ['date' => mb_substr(month_name((int) date('n', strtotime($c['created_at']))), 0, 3) . '. ' . date('Y', strtotime($c['created_at']))]) ?></span>
             </div>
             <?php if ($lp = $lastPay[(int) $c['id']] ?? null): ?>
-              <div class="cd-line cd-paid"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Pago <?= fmt_money($lp['amount']) ?> a <?= (int) date('j', strtotime($lp['paid_on'])) ?> <?= mb_substr(month_name_pt((int) date('n', strtotime($lp['paid_on']))), 0, 3) ?>.</span></div>
+              <div class="cd-line cd-paid"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> <?= te('Pago {amount} a {date}.', ['amount' => fmt_money($lp['amount']), 'date' => (int) date('j', strtotime($lp['paid_on'])) . ' ' . mb_substr(month_name((int) date('n', strtotime($lp['paid_on']))), 0, 3)]) ?></span></div>
             <?php endif; ?>
           </div>
 
           <div class="cd-actions">
             <?php if ($c['balance'] > 0): ?>
-              <button type="button" class="btn-s btn-s-primary" data-pay="<?= (int) $c['id'] ?>" data-name="<?= htmlspecialchars($c['name']) ?>" data-balance="<?= number_format((float) $c['balance'], 2, '.', '') ?>"><i class="bi bi-cash-coin"></i> Pagar extrato</button>
+              <button type="button" class="btn-s btn-s-primary" data-pay="<?= (int) $c['id'] ?>" data-name="<?= htmlspecialchars($c['name']) ?>" data-balance="<?= number_format((float) $c['balance'], 2, '.', '') ?>"><i class="bi bi-cash-coin"></i> <?= te('Pagar extrato') ?></button>
             <?php endif; ?>
-            <a href="transactions.php?card_id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-list-ul"></i> Ver transações</a>
-            <a href="edit_card.php?id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-pencil"></i> Editar</a>
+            <a href="transactions.php?card_id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-list-ul"></i> <?= te('Ver transações') ?></a>
+            <a href="edit_card.php?id=<?= $c['id'] ?>" class="btn-s"><i class="bi bi-pencil"></i> <?= te('Editar') ?></a>
             <form method="post">
               <?= csrf_field() ?>
               <input type="hidden" name="card_id" value="<?= $c['id'] ?>">
               <input type="hidden" name="action" value="toggle">
-              <button type="submit" class="btn-s" title="Esconde o cartão da análise e das transações"><i class="bi bi-pause-circle"></i> Desativar</button>
+              <button type="submit" class="btn-s" title="<?= te('Esconde o cartão da análise e das transações') ?>"><i class="bi bi-pause-circle"></i> <?= te('Desativar') ?></button>
             </form>
           </div>
         </article>
@@ -467,21 +467,21 @@ $walletCards = array_map(fn($c) => [
     <?php endif; ?>
 
     <?php if (!empty($inactiveCards)): ?>
-      <h2 class="cd-section-title">Cartões inativos <small>· não contam na análise nem nas transações</small></h2>
+      <h2 class="cd-section-title"><?= te('Cartões inativos') ?> <small><?= te('· não contam na análise nem nas transações') ?></small></h2>
       <ul class="cd-inactive">
         <?php foreach ($inactiveCards as $c): ?>
           <li>
             <span class="mini" style="background:<?= card_gradient($c, $BANKS, $cardColors) ?>"></span>
             <div class="main">
               <div class="nm"><?= htmlspecialchars($c['name']) ?></div>
-              <div class="mt"><?= fmt_money($c['balance']) ?> de <?= fmt_money($c['limit_amount']) ?> · <?= (int) $c['transaction_count'] ?> transações</div>
+              <div class="mt"><?= te('{amount} de {limit}', ['amount' => fmt_money($c['balance']), 'limit' => fmt_money($c['limit_amount'])]) ?> · <?= te('{n} transações', ['n' => (int) $c['transaction_count']]) ?></div>
             </div>
             <a href="edit_card.php?id=<?= $c['id'] ?>" class="btn-s" aria-label="Editar <?= htmlspecialchars($c['name']) ?>"><i class="bi bi-pencil"></i></a>
             <form method="post">
               <?= csrf_field() ?>
               <input type="hidden" name="card_id" value="<?= $c['id'] ?>">
               <input type="hidden" name="action" value="toggle">
-              <button type="submit" class="btn-s"><i class="bi bi-play-circle"></i> Reativar</button>
+              <button type="submit" class="btn-s"><i class="bi bi-play-circle"></i> <?= te('Reativar') ?></button>
             </form>
           </li>
         <?php endforeach; ?>
@@ -499,23 +499,23 @@ $walletCards = array_map(fn($c) => [
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="pay">
     <input type="hidden" name="card_id" id="payCard">
-    <h2 id="payTitle">Pagar extrato</h2>
+    <h2 id="payTitle"><?= te('Pagar extrato') ?></h2>
     <p class="sub" id="paySub"></p>
     <div class="row2">
       <div>
-        <label class="form-label" for="payAmount">Valor pago (<?= currency_symbol() ?>)</label>
+        <label class="form-label" for="payAmount"><?= te('Valor pago ({symbol})', ['symbol' => currency_symbol()]) ?></label>
         <input type="number" class="form-control" id="payAmount" name="amount" step="0.01" min="0.01" required inputmode="decimal">
-        <div class="quick"><button type="button" data-frac="1">Tudo</button><button type="button" data-frac="0.5">Metade</button></div>
+        <div class="quick"><button type="button" data-frac="1"><?= te('Tudo') ?></button><button type="button" data-frac="0.5"><?= te('Metade') ?></button></div>
       </div>
       <div>
-        <label class="form-label" for="payDate">Data</label>
+        <label class="form-label" for="payDate"><?= te('Data') ?></label>
         <input type="date" class="form-control" id="payDate" name="paid_on" required value="<?= $today ?>" max="<?= $today ?>">
       </div>
     </div>
-    <p class="note">O pagamento repõe o disponível do cartão. Não conta como gasto na análise, porque as compras já lá estão.</p>
+    <p class="note"><?= te('O pagamento repõe o disponível do cartão. Não conta como gasto na análise, porque as compras já lá estão.') ?></p>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()">Cancelar</button>
-      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> Registar pagamento</button>
+      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Registar pagamento') ?></button>
     </div>
   </form>
 </dialog>
@@ -528,7 +528,7 @@ $walletCards = array_map(fn($c) => [
     bal = parseFloat(b.dataset.balance);
     document.getElementById('payCard').value = b.dataset.pay;
     document.getElementById('payTitle').textContent = 'Pagar extrato · ' + b.dataset.name;
-    document.getElementById('paySub').textContent = 'Em uso neste cartão: ' + eur(bal);
+    document.getElementById('paySub').textContent = <?= tj('Em uso neste cartão: {amount}') ?>.replace('{amount}', eur(bal));
     amt.max = bal.toFixed(2); amt.value = bal.toFixed(2);
     dlg.showModal(); amt.select();
   }));

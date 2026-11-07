@@ -49,6 +49,14 @@ function fmt_money($value, int $decimals = 2, ?string $code = null): string {
     return number_format((float) $value, $d, ',', "\u{202F}") . "\u{00A0}" . $symbol;
 }
 
+// Preço de um título (bolsa, investimentos): 4 casas abaixo de 1, e símbolos que não estão em CURRENCIES
+function fmt_price_in(float $v, string $cur = 'EUR'): string {
+    $sym = ['EUR' => '€', 'USD' => 'US$', 'GBP' => '£', 'CHF' => 'CHF'][$cur] ?? $cur;
+    $d   = $v < 1 ? 4 : 2;
+    if (current_lang() === 'en') return $sym . (ctype_alpha($sym) ? "\u{00A0}" : '') . number_format($v, $d, '.', ',');
+    return number_format($v, $d, ',', "\u{202F}") . "\u{00A0}" . $sym;
+}
+
 // Números sem moeda (percentagens, contagens) com o separador decimal da língua
 function fmt_num($value, int $decimals = 0): string {
     return current_lang() === 'en'
@@ -86,6 +94,27 @@ function month_name(int $month): string {
     ];
     return $names[current_lang()][($month - 1) % 12];
 }
+// Dia da semana (0 = domingo, como o date('w')) na língua da conta
+function weekday_name(int $w): string {
+    static $names = [
+        'pt-PT' => ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'],
+        'en'    => ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+    ];
+    return $names[current_lang()][$w % 7];
+}
+
+// "3 de novembro" / "3 November" (com $year: "3 de novembro de 2026" / "3 November 2026")
+function fmt_date_long(int $ts, bool $year = false): string {
+    $d = date('j', $ts); $m = month_name((int) date('n', $ts)); $y = date('Y', $ts);
+    if (current_lang() === 'en') return "$d $m" . ($year ? " $y" : '');
+    return "$d de $m" . ($year ? " de $y" : '');
+}
+
+// "novembro 2026" / "November 2026"
+function fmt_month_year(int $ts): string {
+    return month_name((int) date('n', $ts)) . ' ' . date('Y', $ts);
+}
+
 // Nome antigo, ainda usado nas páginas que não foram traduzidas
 function month_name_pt(int $month): string {
     return month_name($month);

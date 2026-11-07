@@ -17,7 +17,9 @@ const IMPORT_MAX_AMOUNT = 1000000;         // a coluna é DECIMAL(10,2)
 function import_category($raw): string {
     $raw = is_string($raw) ? trim($raw) : '';
     foreach (array_keys(CATEGORY_STYLES) as $known) {
-        if ($known !== 'Sem Categoria' && mb_strtolower($known) === mb_strtolower($raw)) return $known;
+        if ($known === 'Sem Categoria') continue;
+        // Aceita o nome em português (como fica guardado) ou na língua da conta ("Food" → "Alimentação")
+        if (mb_strtolower($known) === mb_strtolower($raw) || mb_strtolower(t($known)) === mb_strtolower($raw)) return $known;
     }
     return 'Outros';
 }
@@ -52,13 +54,13 @@ function import_amount($raw): ?float {
 // Valida uma linha. Devolve [linha pronta a inserir, null] ou [null, motivo do erro].
 function import_row(array $r, array $cardMap): array {
     $date = import_date($r['date'] ?? null);
-    if (!$date) return [null, 'data inválida'];
+    if (!$date) return [null, t('data inválida')];
 
     $amount = import_amount($r['amount'] ?? null);
-    if ($amount === null) return [null, 'valor inválido'];
+    if ($amount === null) return [null, t('valor inválido')];
 
     $desc = is_string($r['description'] ?? null) ? trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', $r['description'])) : '';
-    if ($desc === '') return [null, 'descrição em falta'];
+    if ($desc === '') return [null, t('descrição em falta')];
     $desc = mb_substr($desc, 0, 255);
 
     $card = is_string($r['card'] ?? null) ? mb_strtolower(trim($r['card'])) : '';
@@ -117,17 +119,17 @@ function import_finish(string $type, string $text): never {
 // Verificações comuns ao ficheiro enviado. Devolve o conteúdo ou termina com erro.
 function import_read_upload(?array $file, array $extensions): string {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST' || !$file || ($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_NO_FILE) {
-        import_finish('danger', 'Escolhe um ficheiro para importar.');
+        import_finish('danger', t('Escolhe um ficheiro para importar.'));
     }
     if ($file['error'] === UPLOAD_ERR_INI_SIZE || $file['error'] === UPLOAD_ERR_FORM_SIZE || $file['size'] > IMPORT_MAX_BYTES) {
-        import_finish('danger', 'O ficheiro tem mais de 2 MB. Divide-o em partes mais pequenas.');
+        import_finish('danger', t('O ficheiro tem mais de 2 MB. Divide-o em partes mais pequenas.'));
     }
     if ($file['error'] !== UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name'])) {
-        import_finish('danger', 'Não foi possível receber o ficheiro. Tenta outra vez.');
+        import_finish('danger', t('Não foi possível receber o ficheiro. Tenta outra vez.'));
     }
     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
     if (!in_array($ext, $extensions, true)) {
-        import_finish('danger', 'Formato errado. Usa um ficheiro .' . implode(' ou .', $extensions) . '.');
+        import_finish('danger', t('Formato errado. Usa um ficheiro {ext}.', ['ext' => '.' . implode(' / .', $extensions)]));
     }
     $content = file_get_contents($file['tmp_name']);
     if (!mb_check_encoding($content, 'UTF-8')) {
@@ -138,10 +140,10 @@ function import_read_upload(?array $file, array $extensions): string {
 
 // Resume o resultado numa frase
 function import_summary(int $imported, int $skipped, array $errors): array {
-    $parts = [$imported === 1 ? '1 transação importada' : "$imported transações importadas"];
-    if ($skipped) $parts[] = $skipped === 1 ? '1 repetida ignorada' : "$skipped repetidas ignoradas";
+    $parts = [$imported === 1 ? t('1 transação importada') : t('{n} transações importadas', ['n' => $imported])];
+    if ($skipped) $parts[] = $skipped === 1 ? t('1 repetida ignorada') : t('{n} repetidas ignoradas', ['n' => $skipped]);
     if ($errors) {
-        $parts[] = count($errors) . ' linha(s) com erro (' . implode('; ', array_slice($errors, 0, 3)) . (count($errors) > 3 ? '; …' : '') . ')';
+        $parts[] = t('{n} linha(s) com erro ({list})', ['n' => count($errors), 'list' => implode('; ', array_slice($errors, 0, 3)) . (count($errors) > 3 ? '; …' : '')]);
     }
     return [$errors && !$imported ? 'danger' : ($errors ? 'info' : 'success'), implode(', ', $parts) . '.'];
 }

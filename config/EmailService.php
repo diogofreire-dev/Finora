@@ -47,33 +47,32 @@ class EmailService {
     // ── Envio público ────────────────────────────────────────────────────
 
     public function sendVerificationEmail($email, $username, $code) {
-        try { return $this->sendMail($email, 'Código de verificação — Finora', $this->tplVerification($username, $code)); }
+        try { return $this->sendMail($email, $this->L('Código de verificação — Finora'), $this->tplVerification($username, $code)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendWelcomeEmail($email, $username) {
-        try { return $this->sendMail($email, 'Bem-vindo ao Finora!', $this->tplWelcome($username)); }
+        try { return $this->sendMail($email, $this->L('Bem-vindo à Finora!'), $this->tplWelcome($username)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendPasswordResetEmail($email, $username, $token) {
         try {
             $link = $this->baseUrl . '/auth/reset_password.php?token=' . urlencode($token);
-            return $this->sendMail($email, 'Recuperar palavra-passe — Finora', $this->tplPasswordReset($username, $link));
+            return $this->sendMail($email, $this->L('Recuperar palavra-passe — Finora'), $this->tplPasswordReset($username, $link));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendPaymentReminder($email, $username, $reminderData) {
         try {
-            $subject = "Lembrete: {$reminderData['name']} vence em {$reminderData['days_until']} dias";
+            $subject = t('Lembrete: {name} vence em {n} dias', ['name' => $reminderData['name'], 'n' => $reminderData['days_until']]);
             return $this->sendMail($email, $subject, $this->tplPaymentReminder($username, $reminderData));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendBudgetAlert($email, $username, $budgetData) {
         try {
-            $type    = $budgetData['percentage'] >= 100 ? 'excedido' : 'em alerta';
-            $subject = "Orçamento {$type}: {$budgetData['name']} ({$budgetData['percentage']}%)";
+            $subject = t($budgetData['percentage'] >= 100 ? 'Orçamento excedido: {name} ({pct}%)' : 'Orçamento em alerta: {name} ({pct}%)', ['name' => $budgetData['name'], 'pct' => $budgetData['percentage']]);
             return $this->sendMail($email, $subject, $this->tplBudgetAlert($username, $budgetData));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
@@ -81,26 +80,42 @@ class EmailService {
     public function sendEmailChangeVerification($newEmail, $username, $token) {
         try {
             $link = $this->baseUrl . '/auth/verify_email_change.php?token=' . urlencode($token);
-            return $this->sendMail($newEmail, 'Confirma a alteração de email — Finora', $this->tplEmailChange($username, $newEmail, $link));
+            return $this->sendMail($newEmail, t('Confirma a alteração de email — Finora'), $this->tplEmailChange($username, $newEmail, $link));
         } catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendPasswordChangedNotification($email, $username) {
-        try { return $this->sendMail($email, 'Palavra-passe alterada — Finora', $this->tplPasswordChanged($username)); }
+        try { return $this->sendMail($email, t('Palavra-passe alterada — Finora'), $this->tplPasswordChanged($username)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
 
     public function sendAccountDeletedNotification($email, $username) {
-        try { return $this->sendMail($email, 'Conta apagada — Finora', $this->tplAccountDeleted($username)); }
+        try { return $this->sendMail($email, t('Conta apagada — Finora'), $this->tplAccountDeleted($username)); }
         catch (Exception $e) { error_log($e->getMessage()); return false; }
     }
+
+    // ── Texto na língua de quem recebe ─────────────────────────────────
+    // t() já escapado para o HTML do email. Os nomes (utilizador, lembrete, orçamento) vêm da base de dados
+    // e são escritos por quem usa a app, por isso também passam por htmlspecialchars antes de entrar no HTML.
+    private function L(string $s, array $v = []): string {
+        return htmlspecialchars(t($s, $v), ENT_QUOTES, 'UTF-8');
+    }
+    private function e($s): string {
+        return htmlspecialchars((string) $s, ENT_QUOTES, 'UTF-8');
+    }
+    // "Olá, <nome>!" com o nome a azul
+    private function hi(string $username, string $end = '!'): string {
+        $name = '<span style="color:#3498db">' . $this->e($username) . '</span>';
+        return $end === '!' ? t('Olá, {name}!', ['name' => $name]) : t('Olá, {name}.', ['name' => $name]);
+    }
+    private function lang(): string { return html_lang(); }
 
     // ── Base HTML ────────────────────────────────────────────────────────
 
     private function base(string $preheader, string $body): string {
         return <<<HTML
 <!DOCTYPE html>
-<html lang="pt-PT">
+<html lang="{$this->lang()}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -136,9 +151,9 @@ class EmailService {
         <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:28px 32px;text-align:center;border-radius:0 0 16px 16px">
           <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:6px">Finora</div>
           <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.7">
-            Gestor de finanças pessoais<br>
-            Este email foi enviado automaticamente — não respondas.<br>
-            &copy; 2025 Finora. Todos os direitos reservados.
+            {$this->L('Gestor de finanças pessoais')}<br>
+            {$this->L('Este email foi enviado automaticamente — não respondas.')}<br>
+            {$this->L('© 2025 Finora. Todos os direitos reservados.')}
           </div>
         </td></tr>
 
@@ -151,6 +166,7 @@ HTML;
     }
 
     private function header(string $emoji, string $title, string $subtitle = ''): string {
+        $title = $this->L($title); $subtitle = $subtitle !== '' ? $this->L($subtitle) : '';
         $sub = $subtitle ? "<div style='font-size:14px;color:rgba(255,255,255,0.7);margin-top:6px'>{$subtitle}</div>" : '';
         return <<<HTML
         <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:40px 32px;text-align:center;border-radius:16px 16px 0 0">
@@ -172,8 +188,8 @@ HTML;
         $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares o Finora');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Obrigado por te registares. Para ativares a tua conta, usa o código de verificação abaixo:</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Obrigado por te registares. Para ativares a tua conta, usa o código de verificação abaixo:')}</p>
 
           <!-- Código -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:8px 0 28px">
@@ -182,14 +198,14 @@ HTML;
 
           <!-- Info box -->
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Código temporário</div>
-            <div style="font-size:13px;color:#b45309">Este código é válido durante <strong>15 minutos</strong>. Não o partilhes com ninguém.</div>
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">{$this->L('⏱ Código temporário')}</div>
+            <div style="font-size:13px;color:#b45309">{$this->L('Este código é válido durante 15 minutos. Não o partilhes com ninguém.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se não criaste uma conta no Finora, podes ignorar este email com segurança.</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Se não criaste uma conta no Finora, podes ignorar este email com segurança.')}</p>
         </td></tr>
 HTML;
-        return $this->base("O teu código de verificação Finora é {$code}", $body);
+        return $this->base($this->L('O teu código de verificação Finora é {code}', ['code' => $code]), $body);
     }
 
     private function tplWelcome(string $username): string {
@@ -197,73 +213,73 @@ HTML;
         $h = $this->header('🎉', 'Bem-vindo ao Finora!', 'A tua conta está verificada e pronta a usar');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">A tua conta foi verificada com sucesso. Podes começar agora a gerir os teus cartões, transações e orçamentos.</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A tua conta foi verificada com sucesso. Podes começar agora a gerir os teus cartões, transações e orçamentos.')}</p>
 
           <!-- Feature list -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px">
             <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
                 <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">💳</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">Adiciona os teus <strong style="color:#2c3e50">cartões e contas</strong></td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Adiciona os teus cartões e contas')}</td>
               </tr></table>
             </td></tr>
             <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
                 <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">📊</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">Regista <strong style="color:#2c3e50">transações</strong> e analisa os teus gastos</td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Regista transações e analisa os teus gastos')}</td>
               </tr></table>
             </td></tr>
             <tr><td style="padding:10px 0">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
                 <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">🔔</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">Define <strong style="color:#2c3e50">orçamentos e lembretes</strong> de pagamento</td>
+                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Define orçamentos e lembretes de pagamento')}</td>
               </tr></table>
             </td></tr>
           </table>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">Ir para o meu Finora →</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">{$this->L('Ir para o meu Finora →')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
-        return $this->base("Bem-vindo ao Finora, {$username}! A tua conta está ativa.", $body);
+        return $this->base($this->L('Bem-vindo à Finora, {name}! A tua conta está ativa.', ['name' => $username]), $body);
     }
 
     private function tplPasswordReset(string $username, string $resetLink): string {
         $h = $this->header('🔑', 'Recuperar palavra-passe', 'Recebemos um pedido para redefinir a tua palavra-passe');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para redefinir a palavra-passe da tua conta Finora. Clica no botão abaixo para definires uma nova:</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Recebemos um pedido para redefinir a palavra-passe da tua conta Finora. Clica no botão abaixo para definires uma nova:')}</p>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px"><tr><td align="center">
-            <a href="{$resetLink}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">Definir nova palavra-passe</a>
+            <a href="{$resetLink}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Definir nova palavra-passe')}</a>
           </td></tr></table>
 
           <!-- Info boxes -->
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Link temporário</div>
-            <div style="font-size:13px;color:#b45309">Este link é válido durante <strong>1 hora</strong> e só pode ser usado uma vez.</div>
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">{$this->L('⏱ Link temporário')}</div>
+            <div style="font-size:13px;color:#b45309">{$this->L('Este link é válido durante 1 hora e só pode ser usado uma vez.')}</div>
           </td></tr></table>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
-            <div style="font-size:13px;color:#b91c1c">Se não pediste esta recuperação, ignora este email. A tua palavra-passe não será alterada.</div>
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">{$this->L('🚫 Não foste tu?')}</div>
+            <div style="font-size:13px;color:#b91c1c">{$this->L('Se não pediste esta recuperação, ignora este email. A tua palavra-passe não será alterada.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Se o botão não funcionar, copia e cola este link no teu browser:<br><span style="color:#3498db;word-break:break-all">{$resetLink}</span></p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Se o botão não funcionar, copia e cola este link no teu browser:')}<br><span style="color:#3498db;word-break:break-all">{$resetLink}</span></p>
         </td></tr>
 HTML;
-        return $this->base("Pedido de recuperação de palavra-passe Finora", $body);
+        return $this->base($this->L('Pedido de recuperação de palavra-passe Finora'), $body);
     }
 
     private function tplPaymentReminder(string $username, array $r): string {
         $isToday   = $r['days_until'] == 0;
         $isOverdue = $r['days_until'] < 0;
-        $urgency   = $isOverdue ? '🔴 Pagamento em atraso' : ($isToday ? '🟠 Vence hoje' : "🔔 Vence em {$r['days_until']} dias");
+        $urgency   = $isOverdue ? '🔴 ' . $this->L('Pagamento em atraso') : ($isToday ? '🟠 ' . $this->L('Vence hoje') : '🔔 ' . $this->L('Vence em {n} dias', ['n' => $r['days_until']]));
         $emoji     = $isOverdue ? '⚠️' : '🔔';
         $subtitle  = $isOverdue ? 'Tens um pagamento em atraso' : 'Tens um pagamento a vencer em breve';
         $boxBg     = $isOverdue ? '#fdf2f2' : ($isToday ? '#fef9e7' : '#f0f9ff');
@@ -275,23 +291,24 @@ HTML;
 
         // Valor em número e a moeda da conta (o cron corre sem sessão, por isso a moeda vem nos dados)
         $amount    = fmt_money($r['amount'], 2, $r['currency'] ?? 'EUR');
-        $dueDate   = date('d/m/Y', strtotime($r['due_date']));
+        // O cron já manda a data como dd/mm/aaaa; o strtotime() leria "05/11" como 11 de maio
+        $dueDate   = preg_match('#^\d{2}/\d{2}/\d{4}$#', (string) $r['due_date']) ? $r['due_date'] : date('d/m/Y', strtotime($r['due_date']));
 
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">Tens um pagamento que requer a tua atenção:</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Tens um pagamento que requer a tua atenção:')}</p>
 
           <!-- Payment card -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
             <div style="font-size:11px;font-weight:600;color:{$boxColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">{$urgency}</div>
-            <div style="font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px">{$r['name']}</div>
+            <div style="font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px">{$this->e($r['name'])}</div>
             <div style="font-size:28px;font-weight:800;color:#3498db;margin-bottom:12px">{$amount}</div>
             <table cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="font-size:13px;color:#5d6778;padding-right:24px">📅 <strong>Data:</strong> {$dueDate}</td>
+              <td style="font-size:13px;color:#5d6778;padding-right:24px">📅 <strong>{$this->L('Data:')}</strong> {$dueDate}</td>
 HTML;
         if (!empty($r['category'])) {
-            $body .= "<td style='font-size:13px;color:#5d6778'>🏷 <strong>Categoria:</strong> {$r['category']}</td>";
+            $body .= "<td style='font-size:13px;color:#5d6778'>🏷 <strong>" . $this->L('Categoria:') . '</strong> ' . $this->L($r['category']) . '</td>';
         }
         $body .= <<<HTML
             </tr></table>
@@ -299,18 +316,18 @@ HTML;
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">Ver lembretes</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver lembretes')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
-        return $this->base("Lembrete de pagamento: {$r['name']} — {$amount}", $body);
+        return $this->base($this->L('Lembrete de pagamento: {name} — {amount}', ['name' => $r['name'], 'amount' => $amount]), $body);
     }
 
     private function tplBudgetAlert(string $username, array $b): string {
         $exceeded = $b['percentage'] >= 100;
         $emoji    = $exceeded ? '🚨' : '⚡';
-        $title    = $exceeded ? 'Orçamento Excedido!' : 'Alerta de Orçamento';
-        $subtitle = $exceeded ? 'Ultrapassaste o limite definido' : "Já usaste {$b['percentage']}% do teu orçamento";
+        $title    = $exceeded ? 'Orçamento excedido!' : 'Alerta de orçamento';
+        $subtitle = $exceeded ? 'Ultrapassaste o limite definido' : t('Já usaste {pct}% do teu orçamento', ['pct' => $b['percentage']]);
 
         $pct     = min((int)$b['percentage'], 100);
         $barColor = $exceeded ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#3498db');
@@ -325,12 +342,12 @@ HTML;
         $h = $this->header($emoji, $title, $subtitle);
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">O teu orçamento <strong style="color:#2c3e50">{$b['name']}</strong> atingiu <strong style="color:{$barColor}">{$b['percentage']}%</strong> do limite definido.</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('O teu orçamento «{name}» atingiu {pct}% do limite definido.', ['name' => $b['name'], 'pct' => $b['percentage']])}</p>
 
           <!-- Budget card -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
-            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:{$boxColor};margin-bottom:12px">{$b['name']}</div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.8px;color:{$boxColor};margin-bottom:12px">{$this->e($b['name'])}</div>
 
             <!-- Barra de progresso -->
             <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:4px;margin-bottom:14px">
@@ -338,90 +355,89 @@ HTML;
             </div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="font-size:14px;color:#5d6778">💸 Gasto: <strong style="color:{$barColor}">{$spent}</strong></td>
-              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 Limite: <strong style="color:#2c3e50">{$limit}</strong></td>
+              <td style="font-size:14px;color:#5d6778">💸 {$this->L('Gasto:')} <strong style="color:{$barColor}">{$spent}</strong></td>
+              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 {$this->L('Limite:')} <strong style="color:#2c3e50">{$limit}</strong></td>
             </tr></table>
           </td></tr></table>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">Ver orçamentos</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver orçamentos')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
-        return $this->base("Alerta de orçamento: {$b['name']} a {$b['percentage']}%", $body);
+        return $this->base($this->L('Alerta de orçamento: {name} a {pct}%', ['name' => $b['name'], 'pct' => $b['percentage']]), $body);
     }
 
     private function tplEmailChange(string $username, string $newEmail, string $link): string {
         $h = $this->header('📧', 'Confirmar novo email', 'Verifica que és tu antes de alterarmos o email');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#5d6778;line-height:1.7">Recebemos um pedido para alterar o email da tua conta para:</p>
-          <div style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:16px;font-weight:600;color:#1e40af;text-align:center">{$newEmail}</div>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">Clica no botão abaixo para confirmares a alteração:</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Recebemos um pedido para alterar o email da tua conta para:')}</p>
+          <div style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:16px;font-weight:600;color:#1e40af;text-align:center">{$this->e($newEmail)}</div>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Clica no botão abaixo para confirmares a alteração:')}</p>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px"><tr><td align="center">
-            <a href="{$link}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">Confirmar novo email</a>
+            <a href="{$link}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Confirmar novo email')}</a>
           </td></tr></table>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">⏱ Link temporário</div>
-            <div style="font-size:13px;color:#b45309">Este link é válido durante <strong>1 hora</strong>.</div>
+            <div style="font-size:13px;font-weight:600;color:#92400e;margin-bottom:3px">{$this->L('⏱ Link temporário')}</div>
+            <div style="font-size:13px;color:#b45309">{$this->L('Este link é válido durante 1 hora.')}</div>
           </td></tr></table>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:24px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
-            <div style="font-size:13px;color:#b91c1c">Se não pediste esta alteração, o teu email atual continua ativo. Não precisas de fazer nada.</div>
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">{$this->L('🚫 Não foste tu?')}</div>
+            <div style="font-size:13px;color:#b91c1c">{$this->L('Se não pediste esta alteração, o teu email atual continua ativo. Não precisas de fazer nada.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af">Se o botão não funcionar: <span style="color:#3498db;word-break:break-all">{$link}</span></p>
+          <p style="margin:0;font-size:12px;color:#9ca3af">{$this->L('Se o botão não funcionar:')} <span style="color:#3498db;word-break:break-all">{$link}</span></p>
         </td></tr>
 HTML;
-        return $this->base("Confirma o teu novo email no Finora", $body);
+        return $this->base($this->L('Confirma o teu novo email na Finora'), $body);
     }
 
     private function tplPasswordChanged(string $username): string {
         $h = $this->header('🔒', 'Palavra-passe alterada', 'A tua palavra-passe foi atualizada com sucesso');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$username}</span>!</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A palavra-passe da tua conta Finora foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A palavra-passe da tua conta Finora foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.')}</p>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:3px">✅ Alteração confirmada</div>
-            <div style="font-size:13px;color:#15803d">A tua nova palavra-passe está ativa imediatamente.</div>
+            <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:3px">{$this->L('✅ Alteração confirmada')}</div>
+            <div style="font-size:13px;color:#15803d">{$this->L('A tua nova palavra-passe está ativa imediatamente.')}</div>
           </td></tr></table>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:28px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
-            <div style="font-size:13px;color:#b91c1c">Se não alteraste a palavra-passe, a tua conta pode ter sido comprometida. Usa a opção <em>Esqueci a palavra-passe</em> imediatamente e contacta o suporte.</div>
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">{$this->L('🚫 Não foste tu?')}</div>
+            <div style="font-size:13px;color:#b91c1c">{$this->L('Se não alteraste a palavra-passe, a tua conta pode ter sido comprometida. Usa a opção «Esqueci a palavra-passe» imediatamente e contacta o suporte.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Este email é um aviso de segurança automático.</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Este email é um aviso de segurança automático.')}</p>
         </td></tr>
 HTML;
-        return $this->base("A tua palavra-passe Finora foi alterada", $body);
+        return $this->base($this->L('A tua palavra-passe da Finora foi alterada'), $body);
     }
 
     private function tplAccountDeleted(string $username): string {
-        $name = htmlspecialchars($username, ENT_QUOTES, 'UTF-8');
         $h = $this->header('👋', 'Conta apagada', 'A tua conta e todos os dados foram apagados');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">Olá, <span style="color:#3498db">{$name}</span>.</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">A tua conta Finora foi apagada, com todos os cartões, transações, orçamentos, lembretes, poupanças e metas. Não guardámos cópia.</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username, '.')}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A tua conta Finora foi apagada, com todos os cartões, transações, orçamentos, lembretes, poupanças e metas. Não guardámos cópia.')}</p>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:28px"><tr><td style="padding:14px 18px">
-            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">🚫 Não foste tu?</div>
-            <div style="font-size:13px;color:#b91c1c">Alguém com acesso à tua sessão apagou a conta. Muda a palavra-passe do teu email e de outras contas onde usavas a mesma.</div>
+            <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">{$this->L('🚫 Não foste tu?')}</div>
+            <div style="font-size:13px;color:#b91c1c">{$this->L('Alguém com acesso à tua sessão apagou a conta. Muda a palavra-passe do teu email e de outras contas onde usavas a mesma.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">Este é o último email que recebes da Finora.</p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Este é o último email que recebes da Finora.')}</p>
         </td></tr>
 HTML;
-        return $this->base("A tua conta Finora foi apagada", $body);
+        return $this->base($this->L('A tua conta Finora foi apagada'), $body);
     }
 }
 ?>

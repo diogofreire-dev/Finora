@@ -11,10 +11,10 @@ $content = import_read_upload($_FILES['json_file'] ?? null, ['json']);
 // Profundidade limitada: um backup da Finora tem 3 níveis; JSON muito aninhado é recusado
 $backup = json_decode($content, true, 8);
 if (!is_array($backup) || !in_array($backup['app'] ?? '', ['Finora', 'FreeCard'], true) || !is_array($backup['transactions'] ?? null)) {
-    import_finish('danger', 'Este ficheiro não é um backup da Finora.');
+    import_finish('danger', t('Este ficheiro não é um backup da Finora.'));
 }
 if (count($backup['transactions']) > IMPORT_MAX_ROWS) {
-    import_finish('danger', 'O backup tem mais de ' . IMPORT_MAX_ROWS . ' transações.');
+    import_finish('danger', t('O backup tem mais de {n} transações.', ['n' => IMPORT_MAX_ROWS]));
 }
 
 $cardMap = import_card_map($pdo, $uid);
@@ -34,7 +34,7 @@ try {
     [$imported, $skipped] = import_save($pdo, $uid, $rows, true);
 } catch (Throwable $e) {
     error_log('[import_json] ' . $e->getMessage());
-    import_finish('danger', 'O restauro falhou e nada foi gravado. Tenta outra vez.');
+    import_finish('danger', t('O restauro falhou e nada foi gravado. Tenta outra vez.'));
 }
 
 import_finish(...import_summary($imported, $skipped, $errors));

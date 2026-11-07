@@ -1,7 +1,7 @@
 <?php
 $BANKS = [
   '' => [
-    'name'     => '— Selecionar banco —',
+    'name'     => '— Selecionar banco —',   // traduzido ao mostrar (te)
     'gradient' => null,
     'color'    => null,
     'label'    => '',

@@ -102,7 +102,7 @@
       </form>
     </div>
 
-    <form method="post" class="d-inline" onsubmit="return confirm('Tens a certeza? O histórico será mantido.');"><?= csrf_field() ?>
+    <form method="post" class="d-inline" onsubmit="return confirm(<?= htmlspecialchars(tj('Tens a certeza? O histórico será mantido.')) ?>);"><?= csrf_field() ?>
       <input type="hidden" name="action" value="delete">
       <input type="hidden" name="reminder_id" value="<?=$r['id']?>">
       <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
