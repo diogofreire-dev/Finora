@@ -48,37 +48,37 @@ $trendPct = $trend['previous'] > 0 ? ($trend['recent'] - $trend['previous']) / $
 // Só conta como traço se passar o limiar, e cada um traz a prova (números reais).
 $clamp = fn($v) => max(0, min(100, (int) round($v)));
 $scale = fn($value, $from, $to) => $clamp(($value - $from) / ($to - $from) * 100);
-$pctF  = fn($v) => number_format($v, 0, ',', ' ') . '%';
+$pctF  = fn($v) => fmt_num($v, 0) . '%';
 
 $traits = [];
 if ($totalTx >= PERSONA_MIN_TX && $total > 0) {
     $weekendShare = $s['weekend'] / $total;
     if ($weekendShare > 0.45) {
-        $traits['fds'] = [$scale($weekendShare, 0.45, 0.75), $pctF($weekendShare * 100) . ' dos gastos ao sábado e domingo (o normal seria cerca de ' . $pctF(WEEKEND_NORMAL * 100) . ').'];
+        $traits['fds'] = [$scale($weekendShare, 0.45, 0.75), t('{pct} dos gastos ao sábado e domingo (o normal seria cerca de {normal}).', ['pct' => $pctF($weekendShare * 100), 'normal' => $pctF(WEEKEND_NORMAL * 100)])];
     }
 
     $fun = 0; foreach ($catData as $c) if ($c['category'] === 'Entretenimento') $fun = $c['total'] / $total;
     if ($fun > 0.25) {
-        $traits['experiencias'] = [$scale($fun, 0.25, 0.55), $pctF($fun * 100) . ' do dinheiro foi para Entretenimento.'];
+        $traits['experiencias'] = [$scale($fun, 0.25, 0.55), t('{pct} do dinheiro foi para Entretenimento.', ['pct' => $pctF($fun * 100)])];
     }
 
     $smallShare = $s['small'] / $totalTx;
     if ($totalTx >= 20 && $smallShare > 0.6) {
-        $traits['pequenos'] = [$scale($smallShare, 0.6, 0.9), $s['small'] . ' das ' . $totalTx . ' compras foram abaixo de ' . fmt_money(15, 0) . '.'];
+        $traits['pequenos'] = [$scale($smallShare, 0.6, 0.9), t('{n} das {total} compras foram abaixo de {amount}.', ['n' => $s['small'], 'total' => $totalTx, 'amount' => fmt_money(15, 0)])];
     }
 
     $perMonth = $totalTx / (PERSONA_DAYS / 30);
     if ($perMonth <= 6 && $avg > 60) {
-        $traits['minimalista'] = [$scale($avg, 60, 200), 'Cerca de ' . (int) round($perMonth) . ' compras por mês, de ' . fmt_money($avg) . ' em média.'];
+        $traits['minimalista'] = [$scale($avg, 60, 200), t('Cerca de {n} compras por mês, de {amount} em média.', ['n' => (int) round($perMonth), 'amount' => fmt_money($avg)])];
     }
 
     $topShare = $catData ? $catData[0]['total'] / $total : 0;
     if ($topShare > 0.55) {
-        $traits['concentrado'] = [$scale($topShare, 0.55, 0.85), $pctF($topShare * 100) . ' dos gastos numa só categoria: ' . $catData[0]['category'] . '.'];
+        $traits['concentrado'] = [$scale($topShare, 0.55, 0.85), t('{pct} dos gastos numa só categoria: {category}.', ['pct' => $pctF($topShare * 100), 'category' => t($catData[0]['category'])])];
     }
 
     if (count($catData) >= 6 && $avg > 0 && $sd / $avg > 1) {
-        $traits['variado'] = [$scale($sd / $avg, 1, 2), count($catData) . ' categorias diferentes e valores muito variados (de poucos euros a centenas).'];
+        $traits['variado'] = [$scale($sd / $avg, 1, 2), t('{n} categorias diferentes e valores muito variados (de valores pequenos a centenas).', ['n' => count($catData)])];
     }
 }
 uasort($traits, fn($a, $b) => $b[0] <=> $a[0]);
@@ -86,30 +86,30 @@ $key = $totalTx < PERSONA_MIN_TX ? 'novo' : ($traits ? array_key_first($traits) 
 
 // Tons da paleta validada (os mesmos do dashboard) e ícones Bootstrap
 $defs = [
-    'fds' => ['O Impulsivo de Fim de Semana', 7, 'calendar-heart',
-        'Os teus fins de semana pesam mais na carteira do que o resto da semana: saídas, refeições ou compras por impulso entre sábado e domingo.',
-        ['Define um valor para o fim de semana na sexta-feira. Quando acabar, acabou.', 'Antes de sair, decide quanto vais gastar, não só o que vais fazer.', 'Usa a regra das 24 horas: se te apetecer comprar algo ao sábado, decide no domingo.']],
-    'experiencias' => ['O Colecionador de Experiências', 2, 'ticket-perforated',
-        'Para ti o dinheiro serve para viver: concertos, saídas, subscrições. Não é mau, mas cada experiência parece justificar-se sozinha e a soma surpreende.',
-        ['Cria um orçamento de Entretenimento na Finora. Dentro dele, gasta sem culpa.', 'No fim do mês, marca quais experiências valeram mesmo a pena. Repete essas.', 'Revê as subscrições: quantas usaste este mês?']],
-    'pequenos' => ['O Mestre dos Pequenos Gastos', 5, 'cup-hot',
-        'Fazes muitas compras pequenas. Cada uma parece inofensiva, mas juntas fazem um valor que se nota no fim do mês.',
-        ['Junta as compras: uma ida ao supermercado por semana em vez de várias.', 'Experimenta uma semana por mês sem compras pequenas e vê a diferença.', 'Repara quando acontecem: tédio, pressa, cansaço?']],
-    'minimalista' => ['O Minimalista Decidido', 3, 'bullseye',
-        'Poucas compras, mas pensadas. Gastas pouco no dia a dia; o teu risco é uma compra grande que não estava planeada.',
-        ['Para compras acima de ' . fmt_money(100, 0) . ', espera 72 horas antes de decidir.', 'Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.', 'Revê as últimas compras grandes: quais repetias?']],
-    'concentrado' => ['O Especialista de Uma Categoria', 8, 'pie-chart',
-        'Mais de metade do teu dinheiro vai para uma única categoria. Pode ser normal (a renda, por exemplo) ou um ponto cego.',
-        ['Pergunta-te se essa categoria reflete as tuas prioridades ou só um hábito.', 'Põe um orçamento nessa categoria durante um mês e vê como te sentes.', 'Procura alternativas mais baratas só para essa categoria: é onde o impacto é maior.']],
-    'variado' => ['O Explorador Imprevisível', 4, 'shuffle',
-        'Os teus gastos mudam muito: muitas categorias e valores muito diferentes. Pode ser uma vida cheia ou falta de plano.',
-        ['Começa com três grupos: necessidades, lazer e o resto.', 'Uma vez por mês, revê os gastos e marca o que foi planeado e o que aconteceu.', 'Os orçamentos da Finora ajudam a pôr limites às categorias que mais variam.']],
-    'equilibrado' => ['O Equilibrado Consciente', 1, 'yin-yang',
-        'Os teus gastos não mostram nenhum padrão extremo: estão bem distribuídos pelas categorias e pela semana.',
-        ['Define uma meta concreta: mesmo quem é equilibrado ganha com uma direção.', 'Experimenta um orçamento mensal total e vê quanto sobra.', 'Volta aqui no próximo mês: os hábitos mudam e a análise também.']],
-    'novo' => ['Ainda a conhecer-te', 6, 'hourglass-split',
-        'Com poucas transações ainda não dá para ver um padrão a sério. Continua a registar e a análise aparece sozinha.',
-        ['Regista também as compras pequenas: são as que mais mostram hábitos.', 'Usa "Ler fatura" para registar mais depressa.', 'Associa as despesas a cartões para veres também como os usas.']],
+    'fds' => [t('O Impulsivo de Fim de Semana'), 7, 'calendar-heart',
+        t('Os teus fins de semana pesam mais na carteira do que o resto da semana: saídas, refeições ou compras por impulso entre sábado e domingo.'),
+        [t('Define um valor para o fim de semana na sexta-feira. Quando acabar, acabou.'), t('Antes de sair, decide quanto vais gastar, não só o que vais fazer.'), t('Usa a regra das 24 horas: se te apetecer comprar algo ao sábado, decide no domingo.')]],
+    'experiencias' => [t('O Colecionador de Experiências'), 2, 'ticket-perforated',
+        t('Para ti o dinheiro serve para viver: concertos, saídas, subscrições. Não é mau, mas cada experiência parece justificar-se sozinha e a soma surpreende.'),
+        [t('Cria um orçamento de Entretenimento na Finora. Dentro dele, gasta sem culpa.'), t('No fim do mês, marca quais experiências valeram mesmo a pena. Repete essas.'), t('Revê as subscrições: quantas usaste este mês?')]],
+    'pequenos' => [t('O Mestre dos Pequenos Gastos'), 5, 'cup-hot',
+        t('Fazes muitas compras pequenas. Cada uma parece inofensiva, mas juntas fazem um valor que se nota no fim do mês.'),
+        [t('Junta as compras: uma ida ao supermercado por semana em vez de várias.'), t('Experimenta uma semana por mês sem compras pequenas e vê a diferença.'), t('Repara quando acontecem: tédio, pressa, cansaço?')]],
+    'minimalista' => [t('O Minimalista Decidido'), 3, 'bullseye',
+        t('Poucas compras, mas pensadas. Gastas pouco no dia a dia; o teu risco é uma compra grande que não estava planeada.'),
+        [t('Para compras acima de {amount}, espera 72 horas antes de decidir.t(', [')amount' => fmt_money(100, 0)]), t('Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.'), t('Revê as últimas compras grandes: quais repetias?')]],
+    'concentrado' => [t('O Especialista de Uma Categoria'), 8, 'pie-chart',
+        t('Mais de metade do teu dinheiro vai para uma única categoria. Pode ser normal (a renda, por exemplo) ou um ponto cego.'),
+        [t('Pergunta-te se essa categoria reflete as tuas prioridades ou só um hábito.'), t('Põe um orçamento nessa categoria durante um mês e vê como te sentes.'), t('Procura alternativas mais baratas só para essa categoria: é onde o impacto é maior.')]],
+    'variado' => [t('O Explorador Imprevisível'), 4, 'shuffle',
+        t('Os teus gastos mudam muito: muitas categorias e valores muito diferentes. Pode ser uma vida cheia ou falta de plano.'),
+        [t('Começa com três grupos: necessidades, lazer e o resto.'), t('Uma vez por mês, revê os gastos e marca o que foi planeado e o que aconteceu.'), t('Os orçamentos da Finora ajudam a pôr limites às categorias que mais variam.')]],
+    'equilibrado' => [t('O Equilibrado Consciente'), 1, 'yin-yang',
+        t('Os teus gastos não mostram nenhum padrão extremo: estão bem distribuídos pelas categorias e pela semana.'),
+        [t('Define uma meta concreta: mesmo quem é equilibrado ganha com uma direção.'), t('Experimenta um orçamento mensal total e vê quanto sobra.'), t('Volta aqui no próximo mês: os hábitos mudam e a análise também.')]],
+    'novo' => [t('Ainda a conhecer-te'), 6, 'hourglass-split',
+        t('Com poucas transações ainda não dá para ver um padrão a sério. Continua a registar e a análise aparece sozinha.'),
+        [t('Regista também as compras pequenas: são as que mais mostram hábitos.'), t('Usa "Ler fatura" para registar mais depressa.'), t('Associa as despesas a cartões para veres também como os usas.')]],
 ];
 [$pName, $pSlot, $pIcon, $pDesc, $pTips] = $defs[$key];
 $tone = "var(--cat-$pSlot)";
@@ -119,7 +119,7 @@ $tone = "var(--cat-$pSlot)";
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Personalidade - Finora</title>
+  <title><?= te('Personalidade - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -205,29 +205,29 @@ include __DIR__ . '/../components/sidebar.php';
 <div class="pg-wrap ps-wrap" style="--tone:<?= $tone ?>">
 
   <div class="pg-head">
-    <h1>Personalidade</h1>
-    <p>O teu estilo de gastar, a partir dos últimos <?= PERSONA_DAYS ?> dias.</p>
+    <h1><?= te('Personalidade') ?></h1>
+    <p><?= te('O teu estilo de gastar, a partir dos últimos {n} dias.', ['n' => PERSONA_DAYS]) ?></p>
   </div>
 
   <section class="ps-hero" aria-labelledby="psName">
     <div>
       <div class="ps-badge" aria-hidden="true"><i class="bi bi-<?= $pIcon ?>"></i></div>
-      <p class="ps-kicker"><?= $key === 'novo' ? 'Personalidade' : 'A tua personalidade' ?></p>
+      <p class="ps-kicker"><?= $key === 'novo' ? te('Personalidade') : te('A tua personalidade') ?></p>
       <h2 class="ps-name" id="psName"><?= htmlspecialchars($pName) ?></h2>
       <p class="ps-desc"><?= htmlspecialchars($pDesc) ?></p>
     </div>
     <div class="ps-why">
       <?php if ($key === 'novo'): ?>
-        <h2>Faltam <?= PERSONA_MIN_TX - $totalTx ?> transações</h2>
-        <div class="ps-progress" role="progressbar" aria-valuemin="0" aria-valuemax="<?= PERSONA_MIN_TX ?>" aria-valuenow="<?= $totalTx ?>" aria-label="Transações registadas">
+        <h2><?= te('Faltam {n} transações', ['n' => PERSONA_MIN_TX - $totalTx]) ?></h2>
+        <div class="ps-progress" role="progressbar" aria-valuemin="0" aria-valuemax="<?= PERSONA_MIN_TX ?>" aria-valuenow="<?= $totalTx ?>" aria-label="<?= te('Transações registadas') ?>">
           <i style="width:<?= (int) round($totalTx / PERSONA_MIN_TX * 100) ?>%"></i>
         </div>
-        <p class="ps-empty-why"><?= $totalTx ?> de <?= PERSONA_MIN_TX ?> nos últimos <?= PERSONA_DAYS ?> dias.</p>
+        <p class="ps-empty-why"><?= te('{n} de {min} nos últimos {days} dias.', ['n' => $totalTx, 'min' => PERSONA_MIN_TX, 'days' => PERSONA_DAYS]) ?></p>
       <?php elseif (!$traits): ?>
-        <h2>Porquê</h2>
-        <p class="ps-empty-why">Nenhum dos traços passou o limite: fim de semana, experiências, pequenas compras, poucas compras grandes, uma só categoria ou gastos muito variados.</p>
+        <h2><?= te('Porquê') ?></h2>
+        <p class="ps-empty-why"><?= te('Nenhum dos traços passou o limite: fim de semana, experiências, pequenas compras, poucas compras grandes, uma só categoria ou gastos muito variados.') ?></p>
       <?php else: ?>
-        <h2>Porquê</h2>
+        <h2><?= te('Porquê') ?></h2>
         <?php foreach ($traits as $tk => [$score, $proof]): ?>
           <div class="ps-trait" style="--t:var(--cat-<?= $defs[$tk][1] ?>)">
             <div class="ps-trait-head"><span><?= htmlspecialchars($defs[$tk][0]) ?></span><span><?= $score ?>/100</span></div>
@@ -242,18 +242,18 @@ include __DIR__ . '/../components/sidebar.php';
   <?php if ($totalTx > 0): ?>
   <div class="ps-stats">
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
-      <div><b><?= fmt_money($total / 3, 0) ?></b><span>por mês, em média</span></div></div>
+      <div><b><?= fmt_money($total / 3, 0) ?></b><span><?= te('por mês, em média') ?></span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-7)" aria-hidden="true"><i class="bi bi-receipt"></i></span>
-      <div><b><?= $totalTx ?></b><span>transações em <?= PERSONA_DAYS ?> dias</span></div></div>
+      <div><b><?= $totalTx ?></b><span><?= te('transações em {n} dias', ['n' => PERSONA_DAYS]) ?></span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-calculator"></i></span>
-      <div><b><?= fmt_money($avg) ?></b><span>por transação</span></div></div>
+      <div><b><?= fmt_money($avg) ?></b><span><?= te('por transação') ?></span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-graph-up-arrow"></i></span>
       <div>
         <?php if ($trendPct === null): ?>
-          <b>—</b><span>sem 30 dias anteriores para comparar</span>
+          <b>—</b><span><?= te('sem 30 dias anteriores para comparar') ?></span>
         <?php else: ?>
-          <b class="<?= $trendPct > 5 ? 'ps-up' : ($trendPct < -5 ? 'ps-down' : '') ?>"><?= ($trendPct >= 0 ? '+' : '−') . number_format(abs($trendPct), 0, ',', ' ') ?>%</b>
-          <span>últimos 30 dias vs. os 30 antes</span>
+          <b class="<?= $trendPct > 5 ? 'ps-up' : ($trendPct < -5 ? 'ps-down' : '') ?>"><?= ($trendPct >= 0 ? '+' : '−') . fmt_num(abs($trendPct), 0) ?>%</b>
+          <span><?= te('últimos 30 dias vs. os 30 antes') ?></span>
         <?php endif; ?>
       </div></div>
   </div>
@@ -261,19 +261,19 @@ include __DIR__ . '/../components/sidebar.php';
   <div class="ps-grid">
     <section class="pg-card" style="--tone:var(--cat-7)" aria-labelledby="dowTitle">
       <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-calendar-week"></i></span>
-        <div><h2 id="dowTitle">Dias da semana</h2><p>Quanto gastaste em cada dia; o fim de semana está realçado.</p></div></header>
-      <div class="ps-body"><div class="ps-chart"><canvas id="dowChart" role="img" aria-label="Gastos por dia da semana"></canvas></div></div>
+        <div><h2 id="dowTitle"><?= te('Dias da semana') ?></h2><p><?= te('Quanto gastaste em cada dia; o fim de semana está realçado.') ?></p></div></header>
+      <div class="ps-body"><div class="ps-chart"><canvas id="dowChart" role="img" aria-label="<?= te('Gastos por dia da semana') ?>"></canvas></div></div>
     </section>
 
     <section class="pg-card" style="--tone:var(--cat-2)" aria-labelledby="catTitle">
       <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-grid"></i></span>
-        <div><h2 id="catTitle">Categorias</h2><p>Para onde foi o dinheiro.</p></div></header>
+        <div><h2 id="catTitle"><?= te('Categorias') ?></h2><p><?= te('Para onde foi o dinheiro.') ?></p></div></header>
       <div class="ps-body">
         <?php foreach (array_slice($catData, 0, 6) as $c): $p = $total > 0 ? $c['total'] / $total * 100 : 0; ?>
           <div class="ps-cat">
             <div class="ps-cat-head">
               <span class="dot" style="background:<?= category_color($c['category']) ?>"></span>
-              <span class="name"><?= htmlspecialchars($c['category']) ?></span>
+              <span class="name"><?= te($c['category']) ?></span>
               <span class="val"><?= fmt_money($c['total']) ?> · <?= number_format($p, 0, ',', '') ?>%</span>
             </div>
             <div class="ps-cat-bar"><i style="width:<?= round($p, 1) ?>%;background:<?= category_color($c['category']) ?>"></i></div>
@@ -286,13 +286,13 @@ include __DIR__ . '/../components/sidebar.php';
 
   <section class="pg-card" style="margin-top:18px" aria-labelledby="tipsTitle">
     <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
-      <div><h2 id="tipsTitle">Para ti</h2><p>Três ideias para o teu estilo.</p></div></header>
+      <div><h2 id="tipsTitle"><?= te('Para ti') ?></h2><p><?= te('Três ideias para o teu estilo.') ?></p></div></header>
     <ol class="ps-tips">
       <?php foreach ($pTips as $tip): ?><li><?= htmlspecialchars($tip) ?></li><?php endforeach; ?>
     </ol>
   </section>
 
-  <p class="ps-note"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> Atualiza-se sozinha com cada transação. São ideias para refletir, não aconselhamento financeiro.</p>
+  <p class="ps-note"><i class="bi bi-arrow-repeat" aria-hidden="true"></i> <?= te('Atualiza-se sozinha com cada transação. São ideias para refletir, não aconselhamento financeiro.') ?></p>
 
 </div>
 </div>
@@ -311,7 +311,7 @@ if (ctx) {
   new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+      labels: <?= json_encode(array_map(fn($w) => mb_substr(ucfirst(weekday_name($w)), 0, 3), [1, 2, 3, 4, 5, 6, 0]), JSON_UNESCAPED_UNICODE) ?>,
       datasets: [{ data, borderRadius: 6, borderSkipped: false, maxBarThickness: 36,
                    backgroundColor: data.map((_, i) => i >= 5 ? toneV : v('--fn-line')) }]
     },

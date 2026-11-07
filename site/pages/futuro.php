@@ -29,14 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $pdo->prepare("INSERT INTO future_goals (user_id, name, target_amount, monthly_income, target_date) VALUES (:uid,:name,:amount,:income,:date)");
                 $stmt->execute([':uid'=>$uid,':name'=>$name,':amount'=>$targetAmount,':income'=>$monthlyIncome,':date'=>$targetDate]);
-                $message = 'Meta criada.'; $messageType = 'success';
-            } catch (PDOException $e) { $message = 'Não foi possível criar a meta. Tenta novamente.'; $messageType = 'danger'; }
-        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'; $messageType = 'danger'; }
+                $message = t('Meta criada.'); $messageType = 'success';
+            } catch (PDOException $e) { $message = t('Não foi possível criar a meta. Tenta novamente.'); $messageType = 'danger'; }
+        } else { $message = t('Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'); $messageType = 'danger'; }
     }
     if ($action === 'delete') {
         $gid = intval($_POST['goal_id'] ?? 0);
         $pdo->prepare("DELETE FROM future_goals WHERE id=:id AND user_id=:uid")->execute([':id'=>$gid,':uid'=>$uid]);
-        $message = 'Meta apagada. O dinheiro que lá estava passou para as poupanças sem meta.'; $messageType = 'info';
+        $message = t('Meta apagada. O dinheiro que lá estava passou para as poupanças sem meta.'); $messageType = 'info';
     }
     if ($action === 'update') {
         $gid           = intval($_POST['goal_id'] ?? 0);
@@ -49,9 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             try {
                 $stmt = $pdo->prepare("UPDATE future_goals SET name=:name, target_amount=:amount, monthly_income=:income, target_date=:date WHERE id=:id AND user_id=:uid");
                 $stmt->execute([':name'=>$name,':amount'=>$targetAmount,':income'=>$monthlyIncome,':date'=>$targetDate,':id'=>$gid,':uid'=>$uid]);
-                $message = 'Meta atualizada.'; $messageType = 'success';
-            } catch (PDOException $e) { $message = 'Não foi possível atualizar a meta. Tenta novamente.'; $messageType = 'danger'; }
-        } else { $message = 'Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'; $messageType = 'danger'; }
+                $message = t('Meta atualizada.'); $messageType = 'success';
+            } catch (PDOException $e) { $message = t('Não foi possível atualizar a meta. Tenta novamente.'); $messageType = 'danger'; }
+        } else { $message = t('Preenche todos os campos: nome, valor, rendimento e uma data no futuro.'); $messageType = 'danger'; }
     }
 }
 
@@ -84,25 +84,25 @@ function goal_projection(array $goal, float $avgMonthlySpend): array {
     $ratio        = $target > 0 ? $projected / $target : 0;
 
     if ($perMonth <= 0) {
-        $tone = 'danger'; $title = 'Estás a gastar mais do que ganhas';
-        $msg  = 'Com os hábitos de agora não sobra nada ao fim do mês. Para chegares à meta, precisas de reduzir os gastos em ' . fmt_money(abs($perMonth) + $neededMonth, 0) . ' por mês.';
+        $tone = 'danger'; $title = t('Estás a gastar mais do que ganhas');
+        $msg  = t('Com os hábitos de agora não sobra nada ao fim do mês. Para chegares à meta, precisas de reduzir os gastos em {amount} por mês.', ['amount' => fmt_money(abs($perMonth) + $neededMonth, 0)]);
     } elseif ($ratio >= 1.1) {
-        $tone = 'success'; $title = 'Vais conseguir, e ainda sobra';
-        $msg  = 'Se mantiveres este ritmo, chegas ao prazo com ' . fmt_money($projected, 0) . ': mais ' . fmt_money($projected - $target, 0) . ' do que precisas.';
+        $tone = 'success'; $title = t('Vais conseguir, e ainda sobra');
+        $msg  = t('Se mantiveres este ritmo, chegas ao prazo com {amount}: mais {extra} do que precisas.', ['amount' => fmt_money($projected, 0), 'extra' => fmt_money($projected - $target, 0)]);
     } elseif ($ratio >= 0.85) {
-        $tone = 'warning'; $title = 'Estás quase lá, mas sem margem';
-        $msg  = 'Chegas com cerca de ' . fmt_money($projected, 0) . '. Um mês com mais gastos pode deixar-te abaixo da meta.';
+        $tone = 'warning'; $title = t('Estás quase lá, mas sem margem');
+        $msg  = t('Chegas com cerca de {amount}. Um mês com mais gastos pode deixar-te abaixo da meta.', ['amount' => fmt_money($projected, 0)]);
     } else {
-        $tone = 'warning'; $title = 'Assim não chegas lá';
-        $msg  = 'Ao ritmo atual juntas ' . fmt_money($projected, 0) . ' de ' . fmt_money($target, 0) . '. Precisas de poupar mais ' . fmt_money(($target - $projected) / $monthsLeft, 0) . ' por mês.';
+        $tone = 'warning'; $title = t('Assim não chegas lá');
+        $msg  = t('Ao ritmo atual juntas {amount} de {target}. Precisas de poupar mais {more} por mês.', ['amount' => fmt_money($projected, 0), 'target' => fmt_money($target, 0), 'more' => fmt_money(($target - $projected) / $monthsLeft, 0)]);
     }
     return compact('tone', 'title', 'msg', 'projected', 'perMonth', 'neededMonth', 'monthsLeft');
 }
 
 function months_left_label(string $date): string {
     $m = (int) round((strtotime($date) - time()) / (30 * 24 * 3600));
-    if ($m <= 0) return 'prazo a terminar';
-    return 'falta' . ($m === 1 ? ' 1 mês' : "m $m meses");
+    if ($m <= 0) return t('prazo a terminar');
+    return $m === 1 ? t('falta 1 mês') : t('faltam {n} meses', ['n' => $m]);
 }
 ?>
 <!doctype html>
@@ -110,7 +110,7 @@ function months_left_label(string $date): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Metas - Finora</title>
+  <title><?= te('Metas - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -220,14 +220,14 @@ function months_left_label(string $date): string {
 <div class="gl">
 
   <div class="gl-head">
-    <h1>Metas</h1>
-    <p class="gl-intro">Diz quanto queres juntar e até quando. Com o teu rendimento e o que costumas gastar, a Finora mostra o que o teu eu do futuro vai ter nessa data.</p>
+    <h1><?= te('Metas') ?></h1>
+    <p class="gl-intro"><?= te('Diz quanto queres juntar e até quando. Com o teu rendimento e o que costumas gastar, a Finora mostra o que o teu eu do futuro vai ter nessa data.') ?></p>
   </div>
   <p class="gl-context">
     <?php if ($avgMonthlySpend > 0): ?>
-      Gastas em média <strong><?= fmt_money($avgMonthlySpend) ?></strong> por mês (últimos 6 meses) · este mês já vais em <strong><?= fmt_money($thisMonthSpend) ?></strong>.
+      <?= t('Gastas em média {avg} por mês (últimos 6 meses) · este mês já vais em {month}.', ['avg' => '<strong>' . fmt_money($avgMonthlySpend) . '</strong>', 'month' => '<strong>' . fmt_money($thisMonthSpend) . '</strong>']) ?>
     <?php else: ?>
-      Ainda não tens gastos registados, por isso a projeção assume que poupas todo o rendimento. Regista as tuas transações para uma previsão realista.
+      <?= te('Ainda não tens gastos registados, por isso a projeção assume que poupas todo o rendimento. Regista as tuas transações para uma previsão realista.') ?>
     <?php endif; ?>
   </p>
 
@@ -243,8 +243,8 @@ function months_left_label(string $date): string {
       <?php if (empty($goals)): ?>
         <div class="gl-empty">
           <span class="gl-empty-art" aria-hidden="true"><i class="bi bi-flag"></i></span>
-          <h2>Ainda não tens metas</h2>
-          <p>Cria a primeira ao lado: umas férias, um portátil novo, um fundo de emergência…</p>
+          <h2><?= te('Ainda não tens metas') ?></h2>
+          <p><?= te('Cria a primeira ao lado: umas férias, um portátil novo, um fundo de emergência…') ?></p>
         </div>
       <?php endif; ?>
 
@@ -257,18 +257,18 @@ function months_left_label(string $date): string {
           <div class="gl-top">
             <div>
               <h2 class="gl-name" id="g<?= $g['id'] ?>"><?= htmlspecialchars($g['name']) ?></h2>
-              <p class="gl-due">Até <?= date('j', $dTs) ?> de <?= month_name_pt((int) date('n', $dTs)) ?> de <?= date('Y', $dTs) ?> · <?= months_left_label($g['target_date']) ?></p>
+              <p class="gl-due"><?= te('Até {date}', ['date' => fmt_date_long($dTs, true)]) ?> · <?= htmlspecialchars(months_left_label($g['target_date'])) ?></p>
             </div>
             <div class="gl-icons">
-              <button type="button" class="js-edit" aria-label="Editar <?= htmlspecialchars($g['name']) ?>" title="Editar"
+              <button type="button" class="js-edit" aria-label="<?= te('Editar {name}', ['name' => $g['name']]) ?>" title="<?= te('Editar') ?>"
                       data-id="<?= (int) $g['id'] ?>" data-name="<?= htmlspecialchars($g['name']) ?>"
                       data-amount="<?= htmlspecialchars($g['target_amount']) ?>" data-income="<?= htmlspecialchars($g['monthly_income']) ?>"
                       data-date="<?= htmlspecialchars($g['target_date']) ?>"><i class="bi bi-pencil"></i></button>
-              <form method="post" onsubmit="return confirm('Apagar esta meta? O dinheiro poupado nela passa para as poupanças sem meta.')">
+              <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar esta meta? O dinheiro poupado nela passa para as poupanças sem meta.')) ?>)">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="goal_id" value="<?= (int) $g['id'] ?>">
-                <button type="submit" class="del" aria-label="Apagar <?= htmlspecialchars($g['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+                <button type="submit" class="del" aria-label="<?= te('Apagar {name}', ['name' => $g['name']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
               </form>
             </div>
           </div>
@@ -280,48 +280,48 @@ function months_left_label(string $date): string {
             $savedPct = $target > 0 ? $saved / $target * 100 : 0;
             $markPct  = $target > 0 ? $expected / $target * 100 : null;
             $mLeft    = max(1, (strtotime($g['target_date']) - strtotime($todayYmd)) / (30 * 86400));
-            if ($saved >= $target)        { $st = 'done'; $stTxt = 'Meta cumprida'; $stMsg = 'Já tens tudo o que precisavas. Parabéns!'; }
-            elseif ($saved >= $expected)  { $st = 'ok';   $stTxt = 'No caminho';    $stMsg = 'Estás acima da linha de hoje. Faltam ' . fmt_money($target - $saved, 0) . '.'; }
-            else                          { $st = 'late'; $stTxt = 'Atrasado';      $stMsg = 'Junta ' . fmt_money(($target - $saved) / $mLeft, 0) . ' por mês para chegares a tempo.'; }
+            if ($saved >= $target)        { $st = 'done'; $stTxt = t('Meta cumprida'); $stMsg = t('Já tens tudo o que precisavas. Parabéns!'); }
+            elseif ($saved >= $expected)  { $st = 'ok';   $stTxt = t('No caminho');    $stMsg = t('Estás acima da linha de hoje. Faltam {amount}.', ['amount' => fmt_money($target - $saved, 0)]); }
+            else                          { $st = 'late'; $stTxt = t('Atrasado');      $stMsg = t('Junta {amount} por mês para chegares a tempo.', ['amount' => fmt_money(($target - $saved) / $mLeft, 0)]); }
           ?>
           <div class="gl-saved">
-            <?= piggy_html($savedPct, 'Mealheiro da meta ' . round(min($savedPct, 100)) . '% cheio; devias estar em ' . round(min((float) $markPct, 100)) . '%', 'sm', $markPct) ?>
+            <?= piggy_html($savedPct, t('Mealheiro da meta {pct}% cheio; devias estar em {mark}%', ['pct' => round(min($savedPct, 100)), 'mark' => round(min((float) $markPct, 100))]), 'sm', $markPct) ?>
             <div class="info">
-              <div class="amt"><?= fmt_money($saved, 0) ?> <small>de <?= fmt_money($target, 0) ?> já poupados</small></div>
-              <span class="gl-status <?= $st ?>"><i class="bi bi-<?= $st === 'late' ? 'exclamation-circle' : ($st === 'done' ? 'trophy' : 'check-circle') ?>"></i> <?= $stTxt ?></span>
-              <p><?= $stMsg ?> <?php if ($st !== 'done'): ?>A linha tracejada mostra onde devias estar hoje (<?= fmt_money($expected, 0) ?>).<?php endif; ?></p>
-              <a class="btn-s btn-s-primary" href="savings.php?goal=<?= (int) $g['id'] ?>#juntar"><i class="bi bi-plus-lg"></i> Juntar</a>
+              <div class="amt"><?= fmt_money($saved, 0) ?> <small><?= te('de {amount} já poupados', ['amount' => fmt_money($target, 0)]) ?></small></div>
+              <span class="gl-status <?= $st ?>"><i class="bi bi-<?= $st === 'late' ? 'exclamation-circle' : ($st === 'done' ? 'trophy' : 'check-circle') ?>"></i> <?= htmlspecialchars($stTxt) ?></span>
+              <p><?= htmlspecialchars($stMsg) ?> <?php if ($st !== 'done'): ?><?= te('A linha tracejada mostra onde devias estar hoje ({amount}).', ['amount' => fmt_money($expected, 0)]) ?><?php endif; ?></p>
+              <a class="btn-s btn-s-primary" href="savings.php?goal=<?= (int) $g['id'] ?>#juntar"><i class="bi bi-plus-lg"></i> <?= te('Juntar') ?></a>
             </div>
           </div>
 
-          <div class="gl-proj-label">Se continuares a gastar como agora, no prazo vais ter cerca de</div>
-          <div class="gl-proj"><?= fmt_money(max($p['projected'], 0), 0) ?> <small>de <?= fmt_money($g['target_amount'], 0) ?></small></div>
-          <div class="gl-meter" role="img" aria-label="Projeção: <?= round($pct) ?>% da meta"><span class="<?= $p['tone'] ?>" style="width:<?= round($pct, 1) ?>%"></span></div>
+          <div class="gl-proj-label"><?= te('Se continuares a gastar como agora, no prazo vais ter cerca de') ?></div>
+          <div class="gl-proj"><?= fmt_money(max($p['projected'], 0), 0) ?> <small><?= te('de {amount}', ['amount' => fmt_money($g['target_amount'], 0)]) ?></small></div>
+          <div class="gl-meter" role="img" aria-label="<?= te('Projeção: {pct}% da meta', ['pct' => round($pct)]) ?>"><span class="<?= $p['tone'] ?>" style="width:<?= round($pct, 1) ?>%"></span></div>
 
           <div class="gl-future <?= $p['tone'] ?>">
-            <div class="who">O teu eu do futuro diz</div>
+            <div class="who"><?= te('O teu eu do futuro diz') ?></div>
             <div class="t"><?= $p['title'] ?></div>
             <p><?= $p['msg'] ?></p>
           </div>
 
           <div class="gl-stats">
-            <div><strong><?= fmt_money($g['target_amount'], 0) ?></strong>Meta</div>
-            <div><strong><?= fmt_money($p['perMonth'], 0) ?></strong>Poupas por mês agora</div>
-            <div><strong><?= fmt_money($p['neededMonth'], 0) ?></strong>Precisas por mês</div>
+            <div><strong><?= fmt_money($g['target_amount'], 0) ?></strong><?= te('Meta') ?></div>
+            <div><strong><?= fmt_money($p['perMonth'], 0) ?></strong><?= te('Poupas por mês agora') ?></div>
+            <div><strong><?= fmt_money($p['neededMonth'], 0) ?></strong><?= te('Precisas por mês') ?></div>
           </div>
         </article>
       <?php endforeach; ?>
     </div>
 
     <aside class="gl-form" aria-labelledby="newGoal">
-      <h2 id="newGoal">Nova meta</h2>
-      <p>A projeção usa o teu rendimento e a média de gastos dos últimos 6 meses.</p>
+      <h2 id="newGoal"><?= te('Nova meta') ?></h2>
+      <p><?= te('A projeção usa o teu rendimento e a média de gastos dos últimos 6 meses.') ?></p>
       <form method="post">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="create">
         <div class="gl-field">
-          <label class="form-label" for="gName">Nome</label>
-          <input id="gName" type="text" name="name" class="form-control" placeholder="Ex: Férias de verão" required minlength="2" maxlength="120">
+          <label class="form-label" for="gName"><?= te('Nome') ?></label>
+          <input id="gName" type="text" name="name" class="form-control" placeholder="<?= te('Ex: Férias de verão') ?>" required minlength="2" maxlength="120">
         </div>
         <div class="gl-field">
           <label class="form-label" for="gAmount"><?= te('Quanto queres juntar ({symbol})', ['symbol' => currency_symbol()]) ?></label>
@@ -330,13 +330,13 @@ function months_left_label(string $date): string {
         <div class="gl-field">
           <label class="form-label" for="gIncome"><?= te('Rendimento mensal líquido ({symbol})', ['symbol' => currency_symbol()]) ?></label>
           <input id="gIncome" type="number" name="monthly_income" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="1200" required>
-          <div class="form-hint">O que recebes por mês, já sem impostos.</div>
+          <div class="form-hint"><?= te('O que recebes por mês, já sem impostos.') ?></div>
         </div>
         <div class="gl-field">
-          <label class="form-label" for="gDate">Até quando</label>
+          <label class="form-label" for="gDate"><?= te('Até quando') ?></label>
           <input id="gDate" type="date" name="target_date" class="form-control" min="<?= date('Y-m-d', strtotime('+1 day')) ?>" required>
         </div>
-        <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-flag"></i> Criar meta</button>
+        <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-flag"></i> <?= te('Criar meta') ?></button>
       </form>
     </aside>
   </div>
@@ -347,13 +347,13 @@ function months_left_label(string $date): string {
 </div>
 
 <dialog class="gl-dialog" id="editGoal" aria-labelledby="editGoalTitle">
-  <h2 id="editGoalTitle">Editar meta</h2>
+  <h2 id="editGoalTitle"><?= te('Editar meta') ?></h2>
   <form method="post">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="update">
     <input type="hidden" name="goal_id" id="edit_goal_id">
     <div class="mb-3">
-      <label class="form-label" for="edit_name">Nome</label>
+      <label class="form-label" for="edit_name"><?= te('Nome') ?></label>
       <input type="text" name="name" id="edit_name" class="form-control" required minlength="2" maxlength="120">
     </div>
     <div class="row2 mb-3">
@@ -367,12 +367,12 @@ function months_left_label(string $date): string {
       </div>
     </div>
     <div class="mb-3">
-      <label class="form-label" for="edit_target_date">Até quando</label>
+      <label class="form-label" for="edit_target_date"><?= te('Até quando') ?></label>
       <input type="date" name="target_date" id="edit_target_date" class="form-control" required>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()">Cancelar</button>
-      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> Guardar</button>
+      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Guardar') ?></button>
     </div>
   </form>
 </dialog>

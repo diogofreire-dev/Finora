@@ -182,7 +182,7 @@ for ($m = 1; $m <= $currentMonthNum; $m++) {
 }
 
 $monthNames      = ['','Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-$monthNamesShort = ['','jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+$monthNamesShort = array_merge([''], array_map(fn($m) => mb_substr(month_name($m), 0, 3), range(1, 12)));
 
 // ── Comparação justa: no ano atual só se comparam os meses que já passaram ──
 $isCurrentYear = (int) $year === (int) date('Y');
@@ -190,7 +190,7 @@ $cutMonth      = $isCurrentYear ? (int) date('n') : 12;
 $curToDate     = array_sum(array_slice($monthlyTotals, 0, $cutMonth));
 $prevToDate    = array_sum(array_slice($prevMonthlyTotals, 0, $cutMonth));
 $diffPct       = $prevToDate > 0 ? ($curToDate - $prevToDate) / $prevToDate * 100 : null;
-$periodLabel   = $isCurrentYear ? 'até ' . month_name_pt($cutMonth) : 'no ano inteiro';
+$periodLabel   = $isCurrentYear ? t('até {month}', ['month' => month_name($cutMonth)]) : t('no ano inteiro');
 
 $minYear = min($availableYears);
 $maxYear = max(max($availableYears), (int) date('Y'));
@@ -215,7 +215,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Análise - Finora</title>
+  <title><?= te('Análise - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -301,18 +301,18 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
 <div class="an">
 
   <div class="an-head">
-    <h1>Análise</h1>
+    <h1><?= te('Análise') ?></h1>
     <form class="an-controls" method="get">
-      <nav class="an-year" aria-label="Escolher ano">
-        <a href="<?= htmlspecialchars(an_url(['year' => $year - 1, 'compare_year' => $year - 2])) ?>" aria-label="Ano anterior"<?= $year <= $minYear ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-left"></i></a>
+      <nav class="an-year" aria-label="<?= te('Escolher ano') ?>">
+        <a href="<?= htmlspecialchars(an_url(['year' => $year - 1, 'compare_year' => $year - 2])) ?>" aria-label="<?= te('Ano anterior') ?>"<?= $year <= $minYear ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-left"></i></a>
         <span><?= (int) $year ?></span>
-        <a href="<?= htmlspecialchars(an_url(['year' => $year + 1, 'compare_year' => $year])) ?>" aria-label="Ano seguinte"<?= $year >= $maxYear ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-right"></i></a>
+        <a href="<?= htmlspecialchars(an_url(['year' => $year + 1, 'compare_year' => $year])) ?>" aria-label="<?= te('Ano seguinte') ?>"<?= $year >= $maxYear ? ' aria-disabled="true" tabindex="-1"' : '' ?>><i class="bi bi-chevron-right"></i></a>
       </nav>
       <input type="hidden" name="year" value="<?= (int) $year ?>">
       <input type="hidden" name="compare_year" value="<?= (int) $compareYear ?>">
-      <label class="visually-hidden" for="anCard">Cartão</label>
+      <label class="visually-hidden" for="anCard"><?= te('Cartão') ?></label>
       <select id="anCard" name="card_id" class="form-select" onchange="this.form.submit()">
-        <option value="">Todos os cartões</option>
+        <option value=""><?= te('Todos os cartões') ?></option>
         <?php foreach ($cards as $c): ?>
           <option value="<?= $c['id'] ?>" <?= $card_id == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
         <?php endforeach; ?>
@@ -322,27 +322,27 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
 
   <?php if (empty($categoryTotals)): ?>
     <div class="an-empty">
-      <h2>Sem gastos em <?= (int) $year ?></h2>
-      <p>Quando registares transações neste ano, vês aqui a evolução mês a mês, as categorias e a comparação com anos anteriores.</p>
-      <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+      <h2><?= te('Sem gastos em {year}', ['year' => (int) $year]) ?></h2>
+      <p><?= te('Quando registares transações neste ano, vês aqui a evolução mês a mês, as categorias e a comparação com anos anteriores.') ?></p>
+      <a href="create_transaction.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Registar uma transação') ?></a>
     </div>
   <?php else: ?>
 
   <section class="an-hero" aria-labelledby="anHeadline">
-    <h2 id="anHeadline">Em <?= (int) $year ?> gastaste <?= fmt_money($totalYear) ?></h2>
+    <h2 id="anHeadline"><?= te('Em {year} gastaste {amount}', ['year' => (int) $year, 'amount' => fmt_money($totalYear)]) ?></h2>
     <p>
       <?php if ($diffPct === null): ?>
-        Sem gastos em <?= (int) $compareYear ?> para comparar.
+        <?= te('Sem gastos em {year} para comparar.', ['year' => (int) $compareYear]) ?>
       <?php else: ?>
-        <strong><?= round(abs($diffPct)) ?>% <?= $diffPct >= 0 ? 'mais' : 'menos' ?></strong>
-        do que em <?= (int) $compareYear ?> <?= $periodLabel ?> (<?= fmt_money($curToDate, 0) ?> contra <?= fmt_money($prevToDate, 0) ?>).
+        <strong><?= te($diffPct >= 0 ? '{pct}% mais' : '{pct}% menos', ['pct' => round(abs($diffPct))]) ?></strong>
+        <?= te('do que em {year} {period} ({now} contra {before}).', ['year' => (int) $compareYear, 'period' => $periodLabel, 'now' => fmt_money($curToDate, 0), 'before' => fmt_money($prevToDate, 0)]) ?>
       <?php endif; ?>
     </p>
     <div class="an-facts">
-      <div><strong><?= (int) $stats['total_transactions'] ?></strong>transações</div>
-      <div><strong><?= fmt_money($stats['avg_amount']) ?></strong>média por transação</div>
-      <div><strong><?= ucfirst(month_name_pt((int) $maxMonth)) ?></strong>mês com mais gastos (<?= fmt_money($maxMonthVal, 0) ?>)</div>
-      <div><strong><?= htmlspecialchars($categoryTotals[0]['category']) ?></strong>categoria principal</div>
+      <div><strong><?= (int) $stats['total_transactions'] ?></strong><?= te('transações') ?></div>
+      <div><strong><?= fmt_money($stats['avg_amount']) ?></strong><?= te('média por transação') ?></div>
+      <div><strong><?= ucfirst(month_name((int) $maxMonth)) ?></strong><?= te('mês com mais gastos ({amount})', ['amount' => fmt_money($maxMonthVal, 0)]) ?></div>
+      <div><strong><?= te($categoryTotals[0]['category']) ?></strong><?= te('categoria principal') ?></div>
     </div>
   </section>
 
@@ -350,35 +350,35 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   <section class="an-panel" aria-labelledby="hMonth">
     <div class="an-panel-head">
       <div>
-        <h2 id="hMonth">Mês a mês</h2>
-        <p><?= (int) $year ?> comparado com <?= (int) $compareYear ?></p>
+        <h2 id="hMonth"><?= te('Mês a mês') ?></h2>
+        <p><?= te('{year} comparado com {other}', ['year' => (int) $year, 'other' => (int) $compareYear]) ?></p>
       </div>
       <form method="get">
         <input type="hidden" name="year" value="<?= (int) $year ?>">
         <?php if ($card_id): ?><input type="hidden" name="card_id" value="<?= (int) $card_id ?>"><?php endif; ?>
-        <label class="visually-hidden" for="anCompare">Comparar com</label>
+        <label class="visually-hidden" for="anCompare"><?= te('Comparar com') ?></label>
         <select id="anCompare" name="compare_year" class="form-select" onchange="this.form.submit()">
           <?php foreach ($allYears as $y): if ($y == $year) continue; ?>
-            <option value="<?= $y ?>" <?= $compareYear == $y ? 'selected' : '' ?>>Comparar com <?= $y ?></option>
+            <option value="<?= $y ?>" <?= $compareYear == $y ? 'selected' : '' ?>><?= te('Comparar com {year}', ['year' => $y]) ?></option>
           <?php endforeach; ?>
-          <?php if (!in_array($compareYear, $allYears)): ?><option value="<?= (int) $compareYear ?>" selected>Comparar com <?= (int) $compareYear ?></option><?php endif; ?>
+          <?php if (!in_array($compareYear, $allYears)): ?><option value="<?= (int) $compareYear ?>" selected><?= te('Comparar com {year}', ['year' => (int) $compareYear]) ?></option><?php endif; ?>
         </select>
       </form>
     </div>
-    <div class="an-chart"><canvas id="monthChart" role="img" aria-label="Gastos por mês em <?= (int) $year ?> e <?= (int) $compareYear ?>"></canvas></div>
+    <div class="an-chart"><canvas id="monthChart" role="img" aria-label="<?= te('Gastos por mês em {year} e {other}', ['year' => (int) $year, 'other' => (int) $compareYear]) ?>"></canvas></div>
 
     <?php if ($hasPrevData && ($biggestRise || $biggestDrop)): ?>
     <div class="an-insights">
       <?php if ($biggestRise && $biggestRise['pct'] > 0): ?>
-        <div class="an-insight"><i class="bi bi-arrow-up-right"></i>Maior subida
-          <strong><?= ucfirst(month_name_pt($biggestRise['month'])) ?></strong>
-          <?= !empty($biggestRise['new']) ? 'sem gastos no mesmo mês de ' . (int) $compareYear : '+' . round($biggestRise['pct']) . '% face a ' . (int) $compareYear ?>
+        <div class="an-insight"><i class="bi bi-arrow-up-right"></i><?= te('Maior subida') ?>
+          <strong><?= ucfirst(month_name($biggestRise['month'])) ?></strong>
+          <?= !empty($biggestRise['new']) ? te('sem gastos no mesmo mês de {year}', ['year' => (int) $compareYear]) : te('+{pct}% face a {year}', ['pct' => round($biggestRise['pct']), 'year' => (int) $compareYear]) ?>
         </div>
       <?php endif; ?>
       <?php if ($biggestDrop && $biggestDrop['pct'] < 0): ?>
-        <div class="an-insight"><i class="bi bi-arrow-down-right"></i>Maior descida
-          <strong><?= ucfirst(month_name_pt($biggestDrop['month'])) ?></strong>
-          <?= round($biggestDrop['pct']) ?>% face a <?= (int) $compareYear ?>
+        <div class="an-insight"><i class="bi bi-arrow-down-right"></i><?= te('Maior descida') ?>
+          <strong><?= ucfirst(month_name($biggestDrop['month'])) ?></strong>
+          <?= te('{pct}% face a {year}', ['pct' => round($biggestDrop['pct']), 'year' => (int) $compareYear]) ?>
         </div>
       <?php endif; ?>
     </div>
@@ -388,19 +388,19 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   <div class="an-grid">
     <!-- Categorias por mês (barras empilhadas) -->
     <section class="an-panel" aria-labelledby="hCatMonth">
-      <div class="an-panel-head"><div><h2 id="hCatMonth">Categorias por mês</h2><p>Como se dividiu o gasto de cada mês</p></div></div>
-      <div class="an-chart"><canvas id="catChart" role="img" aria-label="Gastos por categoria em cada mês de <?= (int) $year ?>"></canvas></div>
+      <div class="an-panel-head"><div><h2 id="hCatMonth"><?= te('Categorias por mês') ?></h2><p><?= te('Como se dividiu o gasto de cada mês') ?></p></div></div>
+      <div class="an-chart"><canvas id="catChart" role="img" aria-label="<?= te('Gastos por categoria em cada mês de {year}', ['year' => (int) $year]) ?>"></canvas></div>
     </section>
 
     <!-- Categorias no ano -->
     <section class="an-panel" aria-labelledby="hCat">
-      <div class="an-panel-head"><div><h2 id="hCat">Por categoria</h2><p>Total de <?= (int) $year ?></p></div></div>
+      <div class="an-panel-head"><div><h2 id="hCat"><?= te('Por categoria') ?></h2><p><?= te('Total de {year}', ['year' => (int) $year]) ?></p></div></div>
       <ul class="an-bars">
         <?php foreach ($categoryTotals as $cat):
           $share = $totalYear > 0 ? $cat['total'] / $totalYear * 100 : 0; ?>
           <li>
             <div class="row1">
-              <span class="nm"><i style="background:<?= category_color($cat['category']) ?>"></i><?= htmlspecialchars($cat['category']) ?></span>
+              <span class="nm"><i style="background:<?= category_color($cat['category']) ?>"></i><?= te($cat['category']) ?></span>
               <span class="val"><?= fmt_money($cat['total']) ?><small><?= round($share) ?>%</small></span>
             </div>
             <div class="an-track"><span style="width:<?= round($cat['total'] / $maxCatTotal * 100, 1) ?>%;background:<?= category_color($cat['category']) ?>"></span></div>
@@ -414,14 +414,14 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
     <!-- Top 5 -->
     <section class="an-panel" aria-labelledby="hTop">
       <div class="an-panel-head">
-        <div><h2 id="hTop">Maiores gastos</h2><p><?= $top5Month ? ucfirst(month_name_pt($top5Month)) . ' de ' : '' ?><?= (int) $top5Year ?></p></div>
+        <div><h2 id="hTop"><?= te('Maiores gastos') ?></h2><p><?= $top5Month ? te('{month} de {year}', ['month' => ucfirst(month_name($top5Month)), 'year' => (int) $top5Year]) : (int) $top5Year ?></p></div>
         <form method="get" class="an-controls">
           <input type="hidden" name="year" value="<?= (int) $year ?>">
           <input type="hidden" name="compare_year" value="<?= (int) $compareYear ?>">
           <?php if ($card_id): ?><input type="hidden" name="card_id" value="<?= (int) $card_id ?>"><?php endif; ?>
-          <label class="visually-hidden" for="anTopMonth">Mês</label>
+          <label class="visually-hidden" for="anTopMonth"><?= te('Mês') ?></label>
           <select id="anTopMonth" name="top5_month" class="form-select" onchange="this.form.submit()">
-            <option value="0" <?= $top5Month == 0 ? 'selected' : '' ?>>Ano inteiro</option>
+            <option value="0" <?= $top5Month == 0 ? 'selected' : '' ?>><?= te('Ano inteiro') ?></option>
             <?php for ($m = 1; $m <= 12; $m++): ?>
               <option value="<?= $m ?>" <?= $top5Month == $m ? 'selected' : '' ?>><?= ucfirst(month_name_pt($m)) ?></option>
             <?php endfor; ?>
@@ -429,7 +429,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
         </form>
       </div>
       <?php if (empty($topTransactions)): ?>
-        <p class="an-muted">Sem transações neste período.</p>
+        <p class="an-muted"><?= te('Sem transações neste período.') ?></p>
       <?php else: ?>
         <ol class="an-top">
           <?php foreach ($topTransactions as $i => $t):
@@ -438,10 +438,10 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
             <li>
               <span class="an-rank"><?= $i + 1 ?></span>
               <div class="main">
-                <div class="d"><?= htmlspecialchars($t['description'] ?: 'Sem descrição') ?></div>
-                <div class="m"><?= htmlspecialchars($t['category'] ?: 'Outros') ?> · <?= date('j', $ts) ?> <?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?><?= $t['card_name'] ? ' · ' . htmlspecialchars($t['card_name']) : '' ?></div>
+                <div class="d"><?= htmlspecialchars($t['description'] ?: t('Sem descrição')) ?></div>
+                <div class="m"><?= te($t['category'] ?: 'Outros') ?> · <?= date('j', $ts) ?> <?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?><?= $t['card_name'] ? ' · ' . htmlspecialchars($t['card_name']) : '' ?></div>
               </div>
-              <div class="a"><?= fmt_money($t['amount']) ?><small><?= number_format($pct, 1, ',', '') ?>% do período</small></div>
+              <div class="a"><?= fmt_money($t['amount']) ?><small><?= te('{pct}% do período', ['pct' => fmt_num($pct, 1)]) ?></small></div>
             </li>
           <?php endforeach; ?>
         </ol>
@@ -450,9 +450,9 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
 
     <!-- Cartões -->
     <section class="an-panel" aria-labelledby="hCards">
-      <div class="an-panel-head"><div><h2 id="hCards">Por cartão</h2><p>Total de <?= (int) $year ?></p></div></div>
+      <div class="an-panel-head"><div><h2 id="hCards"><?= te('Por cartão') ?></h2><p><?= te('Total de {year}', ['year' => (int) $year]) ?></p></div></div>
       <?php if (empty($cardSpending)): ?>
-        <p class="an-muted">Nenhum gasto associado a cartões neste ano.</p>
+        <p class="an-muted"><?= te('Nenhum gasto associado a cartões neste ano.') ?></p>
       <?php else: ?>
         <ul class="an-bars">
           <?php $maxCard = max(array_column($cardSpending, 'total'));
@@ -526,13 +526,15 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   // 2. Categorias por mês: barras empilhadas, cor fixa por categoria (slot --cat-N)
   const catSlots = <?= json_encode(array_map(fn($c) => category_slot($c), array_combine(array_keys($catMonthlyOrdered), array_keys($catMonthlyOrdered)))) ?>;
   const catData  = <?= json_encode($catMonthlyOrdered) ?>;
+  // Nomes das categorias na língua da conta (as chaves continuam em português, como na base de dados)
+  const catNames = <?= json_encode(array_combine(array_keys($catMonthlyOrdered), array_map('t', array_keys($catMonthlyOrdered))), JSON_UNESCAPED_UNICODE | JSON_HEX_TAG) ?: '{}' ?>;
   const lastMonth = <?= $isCurrentYear ? (int) date('n') : 12 ?>;
   new Chart(document.getElementById('catChart'), {
     type: 'bar',
     data: {
       labels: months.slice(0, lastMonth),
       datasets: Object.keys(catData).map(cat => ({
-        label: cat,
+        label: catNames[cat] || cat,
         data: catData[cat].slice(0, lastMonth),
         backgroundColor: v('--cat-' + catSlots[cat]),
         borderColor: surface, borderWidth: { top: 2 },   // 2px de separação entre segmentos

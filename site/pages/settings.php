@@ -474,7 +474,7 @@ include __DIR__ . '/../components/sidebar.php';
             <label for="avatarInput" class="btn-s" style="margin:0"><i class="bi bi-camera"></i> <?= $avatarUrl ? 'Mudar foto' : 'Adicionar foto' ?></label>
           </form>
           <?php if ($avatarUrl): ?>
-            <form method="post" onsubmit="return confirm('Remover a foto de perfil?')">
+            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Remover a foto de perfil?')) ?>)">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="remove_avatar">
               <button type="submit" class="btn-s btn-s-danger" aria-label="Remover foto de perfil"><i class="bi bi-trash3"></i></button>
@@ -605,7 +605,7 @@ include __DIR__ . '/../components/sidebar.php';
           </div>
         </div>
         <?php if ($user['google_id']): ?>
-          <form method="post" style="margin:0" onsubmit="return confirm('Desligar a conta Google? Passas a entrar só com email e palavra-passe.')">
+          <form method="post" style="margin:0" onsubmit="return confirm(<?= htmlspecialchars(tj('Desligar a conta Google? Passas a entrar só com email e palavra-passe.')) ?>)">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="unlink_google">
             <button type="submit" class="btn-s btn-s-danger">Desligar</button>

@@ -337,7 +337,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
                     data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-type="<?= htmlspecialchars($i['type']) ?>"
                     data-ticker="<?= htmlspecialchars($i['ticker'] ?? '') ?>" data-quantity="<?= htmlspecialchars((string) (float) $i['quantity']) ?>"
                     data-buy="<?= htmlspecialchars((string) (float) $i['buy_price']) ?>" data-current="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-pencil"></i></button>
-            <form method="post" onsubmit="return confirm('Apagar este investimento? Não é possível desfazer.')">
+            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este investimento? Não é possível desfazer.')) ?>)">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="investment_id" value="<?= (int) $i['id'] ?>">

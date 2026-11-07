@@ -104,7 +104,7 @@ $unread = notif_unread_count($pdo, $uid);
         <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="read_all"><input type="hidden" name="f" value="<?= $filter ?>">
           <button type="submit" class="btn-s"><i class="bi bi-check2-all"></i> Marcar todas como lidas</button></form>
       <?php endif; ?>
-      <form method="post" onsubmit="return confirm('Apagar todas as notificações já lidas?')"><?= csrf_field() ?><input type="hidden" name="action" value="delete_read"><input type="hidden" name="f" value="<?= $filter ?>">
+      <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar todas as notificações já lidas?')) ?>)"><?= csrf_field() ?><input type="hidden" name="action" value="delete_read"><input type="hidden" name="f" value="<?= $filter ?>">
         <button type="submit" class="btn-s"><i class="bi bi-trash3"></i> Limpar lidas</button></form>
       <a class="btn-s" href="settings.php#notificacoes"><i class="bi bi-sliders"></i> Preferências</a>
     </div>
