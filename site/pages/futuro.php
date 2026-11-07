@@ -104,6 +104,10 @@ function months_left_label(string $date): string {
     if ($m <= 0) return t('prazo a terminar');
     return $m === 1 ? t('falta 1 mês') : t('faltam {n} meses', ['n' => $m]);
 }
+// Rendimento guardado nas boas-vindas ou nas Definições: pré-preenche a meta nova
+$stInc = $pdo->prepare('SELECT monthly_income FROM user_settings WHERE user_id = :u');
+$stInc->execute([':u' => $uid]);
+$savedIncome = (float) ($stInc->fetchColumn() ?: 0);
 ?>
 <!doctype html>
 <html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
@@ -117,7 +121,7 @@ function months_left_label(string $date): string {
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=9">
+  <link rel="stylesheet" href="../css/finora.css?v=10">
   <link rel="stylesheet" href="../css/piggy.css?v=3">
   <style>
     .gl { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
@@ -329,7 +333,7 @@ function months_left_label(string $date): string {
         </div>
         <div class="gl-field">
           <label class="form-label" for="gIncome"><?= te('Rendimento mensal líquido ({symbol})', ['symbol' => currency_symbol()]) ?></label>
-          <input id="gIncome" type="number" name="monthly_income" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="1200" required>
+          <input id="gIncome" type="number" name="monthly_income" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="1200" required value="<?= $savedIncome ? htmlspecialchars((string) $savedIncome) : '' ?>">
           <div class="form-hint"><?= te('O que recebes por mês, já sem impostos.') ?></div>
         </div>
         <div class="gl-field">

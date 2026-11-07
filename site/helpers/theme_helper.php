@@ -26,7 +26,7 @@ function getUserTheme($pdo, $user_id) {
 
         // Se não existir, criar configurações padrão
         // A língua é a que a pessoa estava a usar quando criou a conta (cookie / browser)
-        $stmt = $pdo->prepare("INSERT INTO user_settings (user_id, theme, language) VALUES (:uid, 'light', :lang)");
+        $stmt = $pdo->prepare("INSERT INTO user_settings (user_id, theme, language, onboarded) VALUES (:uid, 'light', :lang, 0)");
         $stmt->execute([':uid' => $user_id, ':lang' => current_lang()]);
         return 'light';
     } catch (PDOException $e) {

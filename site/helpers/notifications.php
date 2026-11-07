@@ -54,7 +54,7 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
             $has = $pdo->prepare('SELECT 1 FROM user_settings WHERE user_id = :u');
             $has->execute([':u' => $uid]);
             if ($has->fetchColumn()) return;                                   // já verificado hoje
-            $pdo->prepare('INSERT IGNORE INTO user_settings (user_id, notif_checked_on, language) VALUES (:u, CURDATE(), :lang)')->execute([':u' => $uid, ':lang' => current_lang()]);
+            $pdo->prepare('INSERT IGNORE INTO user_settings (user_id, notif_checked_on, language, onboarded) VALUES (:u, CURDATE(), :lang, 0)')->execute([':u' => $uid, ':lang' => current_lang()]);
         }
     }
     $on = fn(string $t) => !empty($prefs[$t]);

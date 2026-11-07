@@ -1,6 +1,7 @@
 <?php
 // site/dashboard.php
 require_once __DIR__ . '/helpers/auth.php';
+if (FINORA_NEEDS_WELCOME) { header('Location: pages/welcome.php'); exit; }
 require_once __DIR__ . '/../config/db.php';
 require_once __DIR__ . '/helpers/budget_alert_helper.php';
 require_once __DIR__ . '/helpers/banks.php';
