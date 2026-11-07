@@ -13,8 +13,9 @@ const CURRENCIES = [
     'CHF' => ['CHF', 'Franco suíço',     2],
     'CAD' => ['CA$', 'Dólar canadiano',  2],
     'AOA' => ['Kz',  'Kwanza angolano',  2],
-    'JPY' => ['JP¥', 'Iene japonês',     0],
 ];
+// Sem moedas de 0 casas decimais (ex.: iene): os formulários aceitam cêntimos e a BD guarda DECIMAL(10,2),
+// por isso 1,50 ¥ apareceria arredondado e os totais não batiam com os valores guardados.
 
 // Como o tema: só devolve códigos da lista (o valor vem da base de dados e vai parar ao HTML e ao JS)
 function valid_currency(?string $code): string {
