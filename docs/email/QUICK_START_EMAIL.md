@@ -9,7 +9,7 @@ composer install
 ```
 
 2. Configura `config/db.php` com as tuas credenciais MySQL
-3. Edita `config/EmailService.php` e adiciona o teu `fromEmail` e `appPassword`
+3. Copia `config/brevo.example.php` para `config/brevo.php` e põe a tua chave da Brevo (ver `docs/EMAIL_SYSTEM.md`)
 4. Testa envio direto:
 
 ```bash

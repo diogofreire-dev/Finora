@@ -15,3 +15,8 @@ define('BREVO_API_KEY', 'SUA_CHAVE_BREVO');
 // Local:     http://localhost/Finora/site
 // Produção:  https://<dominio>/site
 define('APP_URL', 'http://localhost/Finora/site');
+
+// Remetente dos emails (opcional). Tem de estar validado na mesma conta Brevo da chave:
+// Settings → Remetentes, domínio, IPs → Adicionar remetente.
+// define('MAIL_FROM_EMAIL', 'o-teu-remetente@exemplo.com');
+// define('MAIL_FROM_NAME', 'Finora');
