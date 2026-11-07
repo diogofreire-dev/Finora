@@ -85,16 +85,16 @@ function goal_projection(array $goal, float $avgMonthlySpend): array {
 
     if ($perMonth <= 0) {
         $tone = 'danger'; $title = 'Estás a gastar mais do que ganhas';
-        $msg  = 'Com os hábitos de agora não sobra nada ao fim do mês. Para chegares à meta, precisas de reduzir os gastos em ' . fmt_eur(abs($perMonth) + $neededMonth, 0) . ' por mês.';
+        $msg  = 'Com os hábitos de agora não sobra nada ao fim do mês. Para chegares à meta, precisas de reduzir os gastos em ' . fmt_money(abs($perMonth) + $neededMonth, 0) . ' por mês.';
     } elseif ($ratio >= 1.1) {
         $tone = 'success'; $title = 'Vais conseguir, e ainda sobra';
-        $msg  = 'Se mantiveres este ritmo, chegas ao prazo com ' . fmt_eur($projected, 0) . ': mais ' . fmt_eur($projected - $target, 0) . ' do que precisas.';
+        $msg  = 'Se mantiveres este ritmo, chegas ao prazo com ' . fmt_money($projected, 0) . ': mais ' . fmt_money($projected - $target, 0) . ' do que precisas.';
     } elseif ($ratio >= 0.85) {
         $tone = 'warning'; $title = 'Estás quase lá, mas sem margem';
-        $msg  = 'Chegas com cerca de ' . fmt_eur($projected, 0) . '. Um mês com mais gastos pode deixar-te abaixo da meta.';
+        $msg  = 'Chegas com cerca de ' . fmt_money($projected, 0) . '. Um mês com mais gastos pode deixar-te abaixo da meta.';
     } else {
         $tone = 'warning'; $title = 'Assim não chegas lá';
-        $msg  = 'Ao ritmo atual juntas ' . fmt_eur($projected, 0) . ' de ' . fmt_eur($target, 0) . '. Precisas de poupar mais ' . fmt_eur(($target - $projected) / $monthsLeft, 0) . ' por mês.';
+        $msg  = 'Ao ritmo atual juntas ' . fmt_money($projected, 0) . ' de ' . fmt_money($target, 0) . '. Precisas de poupar mais ' . fmt_money(($target - $projected) / $monthsLeft, 0) . ' por mês.';
     }
     return compact('tone', 'title', 'msg', 'projected', 'perMonth', 'neededMonth', 'monthsLeft');
 }
@@ -225,7 +225,7 @@ function months_left_label(string $date): string {
   </div>
   <p class="gl-context">
     <?php if ($avgMonthlySpend > 0): ?>
-      Gastas em média <strong><?= fmt_eur($avgMonthlySpend) ?></strong> por mês (últimos 6 meses) · este mês já vais em <strong><?= fmt_eur($thisMonthSpend) ?></strong>.
+      Gastas em média <strong><?= fmt_money($avgMonthlySpend) ?></strong> por mês (últimos 6 meses) · este mês já vais em <strong><?= fmt_money($thisMonthSpend) ?></strong>.
     <?php else: ?>
       Ainda não tens gastos registados, por isso a projeção assume que poupas todo o rendimento. Regista as tuas transações para uma previsão realista.
     <?php endif; ?>
@@ -281,21 +281,21 @@ function months_left_label(string $date): string {
             $markPct  = $target > 0 ? $expected / $target * 100 : null;
             $mLeft    = max(1, (strtotime($g['target_date']) - strtotime($todayYmd)) / (30 * 86400));
             if ($saved >= $target)        { $st = 'done'; $stTxt = 'Meta cumprida'; $stMsg = 'Já tens tudo o que precisavas. Parabéns!'; }
-            elseif ($saved >= $expected)  { $st = 'ok';   $stTxt = 'No caminho';    $stMsg = 'Estás acima da linha de hoje. Faltam ' . fmt_eur($target - $saved, 0) . '.'; }
-            else                          { $st = 'late'; $stTxt = 'Atrasado';      $stMsg = 'Junta ' . fmt_eur(($target - $saved) / $mLeft, 0) . ' por mês para chegares a tempo.'; }
+            elseif ($saved >= $expected)  { $st = 'ok';   $stTxt = 'No caminho';    $stMsg = 'Estás acima da linha de hoje. Faltam ' . fmt_money($target - $saved, 0) . '.'; }
+            else                          { $st = 'late'; $stTxt = 'Atrasado';      $stMsg = 'Junta ' . fmt_money(($target - $saved) / $mLeft, 0) . ' por mês para chegares a tempo.'; }
           ?>
           <div class="gl-saved">
             <?= piggy_html($savedPct, 'Mealheiro da meta ' . round(min($savedPct, 100)) . '% cheio; devias estar em ' . round(min((float) $markPct, 100)) . '%', 'sm', $markPct) ?>
             <div class="info">
-              <div class="amt"><?= fmt_eur($saved, 0) ?> <small>de <?= fmt_eur($target, 0) ?> já poupados</small></div>
+              <div class="amt"><?= fmt_money($saved, 0) ?> <small>de <?= fmt_money($target, 0) ?> já poupados</small></div>
               <span class="gl-status <?= $st ?>"><i class="bi bi-<?= $st === 'late' ? 'exclamation-circle' : ($st === 'done' ? 'trophy' : 'check-circle') ?>"></i> <?= $stTxt ?></span>
-              <p><?= $stMsg ?> <?php if ($st !== 'done'): ?>A linha tracejada mostra onde devias estar hoje (<?= fmt_eur($expected, 0) ?>).<?php endif; ?></p>
+              <p><?= $stMsg ?> <?php if ($st !== 'done'): ?>A linha tracejada mostra onde devias estar hoje (<?= fmt_money($expected, 0) ?>).<?php endif; ?></p>
               <a class="btn-s btn-s-primary" href="savings.php?goal=<?= (int) $g['id'] ?>#juntar"><i class="bi bi-plus-lg"></i> Juntar</a>
             </div>
           </div>
 
           <div class="gl-proj-label">Se continuares a gastar como agora, no prazo vais ter cerca de</div>
-          <div class="gl-proj"><?= fmt_eur(max($p['projected'], 0), 0) ?> <small>de <?= fmt_eur($g['target_amount'], 0) ?></small></div>
+          <div class="gl-proj"><?= fmt_money(max($p['projected'], 0), 0) ?> <small>de <?= fmt_money($g['target_amount'], 0) ?></small></div>
           <div class="gl-meter" role="img" aria-label="Projeção: <?= round($pct) ?>% da meta"><span class="<?= $p['tone'] ?>" style="width:<?= round($pct, 1) ?>%"></span></div>
 
           <div class="gl-future <?= $p['tone'] ?>">
@@ -305,9 +305,9 @@ function months_left_label(string $date): string {
           </div>
 
           <div class="gl-stats">
-            <div><strong><?= fmt_eur($g['target_amount'], 0) ?></strong>Meta</div>
-            <div><strong><?= fmt_eur($p['perMonth'], 0) ?></strong>Poupas por mês agora</div>
-            <div><strong><?= fmt_eur($p['neededMonth'], 0) ?></strong>Precisas por mês</div>
+            <div><strong><?= fmt_money($g['target_amount'], 0) ?></strong>Meta</div>
+            <div><strong><?= fmt_money($p['perMonth'], 0) ?></strong>Poupas por mês agora</div>
+            <div><strong><?= fmt_money($p['neededMonth'], 0) ?></strong>Precisas por mês</div>
           </div>
         </article>
       <?php endforeach; ?>
@@ -324,11 +324,11 @@ function months_left_label(string $date): string {
           <input id="gName" type="text" name="name" class="form-control" placeholder="Ex: Férias de verão" required minlength="2" maxlength="120">
         </div>
         <div class="gl-field">
-          <label class="form-label" for="gAmount">Quanto queres juntar (€)</label>
+          <label class="form-label" for="gAmount">Quanto queres juntar (<?= currency_symbol() ?>)</label>
           <input id="gAmount" type="number" name="target_amount" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="2000" required>
         </div>
         <div class="gl-field">
-          <label class="form-label" for="gIncome">Rendimento mensal líquido (€)</label>
+          <label class="form-label" for="gIncome">Rendimento mensal líquido (<?= currency_symbol() ?>)</label>
           <input id="gIncome" type="number" name="monthly_income" class="form-control" step="0.01" min="1" inputmode="decimal" placeholder="1200" required>
           <div class="form-hint">O que recebes por mês, já sem impostos.</div>
         </div>
@@ -358,11 +358,11 @@ function months_left_label(string $date): string {
     </div>
     <div class="row2 mb-3">
       <div>
-        <label class="form-label" for="edit_target_amount">Meta (€)</label>
+        <label class="form-label" for="edit_target_amount">Meta (<?= currency_symbol() ?>)</label>
         <input type="number" name="target_amount" id="edit_target_amount" class="form-control" step="0.01" min="1" required>
       </div>
       <div>
-        <label class="form-label" for="edit_monthly_income">Rendimento (€/mês)</label>
+        <label class="form-label" for="edit_monthly_income">Rendimento (<?= currency_symbol() ?>/mês)</label>
         <input type="number" name="monthly_income" id="edit_monthly_income" class="form-control" step="0.01" min="1" required>
       </div>
     </div>

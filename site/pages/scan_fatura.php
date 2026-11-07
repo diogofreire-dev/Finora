@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                     ->execute([':amt' => $amount, ':cid' => $card_id, ':uid' => $uid]);
             }
             $pdo->commit();
-            $_SESSION['flash_scan'] = ['success', "Despesa de " . fmt_eur($amount) . " em $desc guardada."];
+            $_SESSION['flash_scan'] = ['success', "Despesa de " . fmt_money($amount) . " em $desc guardada."];
         } catch (PDOException $e) {
             $pdo->rollBack();
             error_log('[scan_fatura] ' . $e->getMessage());
@@ -230,7 +230,7 @@ include __DIR__ . '/../components/sidebar.php';
 
         <div class="row2 mb">
           <div>
-            <label class="form-label" for="fAmount">Valor (€)</label>
+            <label class="form-label" for="fAmount">Valor (<?= currency_symbol() ?>)</label>
             <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="0,00" autocomplete="off">
           </div>
           <div>

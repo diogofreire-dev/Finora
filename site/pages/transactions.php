@@ -276,8 +276,8 @@ function day_label(string $day, array $weekdays): string {
   <p class="tx-summary">
     <?php if ($count > 0): ?>
       <strong><?= $count ?></strong> transaç<?= $count === 1 ? 'ão' : 'ões' ?> ·
-      <strong><?= fmt_eur($total) ?></strong> no total ·
-      média de <?= fmt_eur($total / $count) ?>
+      <strong><?= fmt_money($total) ?></strong> no total ·
+      média de <?= fmt_money($total / $count) ?>
     <?php else: ?>
       Sem transações neste período.
     <?php endif; ?>
@@ -345,7 +345,7 @@ function day_label(string $day, array $weekdays): string {
       <section class="tx-day" aria-labelledby="d<?= $day ?>">
         <div class="tx-day-head">
           <h2 id="d<?= $day ?>"><?= day_label($day, $weekdays) ?></h2>
-          <span><?= fmt_eur(array_sum(array_column($items, 'amount'))) ?></span>
+          <span><?= fmt_money(array_sum(array_column($items, 'amount'))) ?></span>
         </div>
         <ul class="tx-list">
           <?php foreach ($items as $t):
@@ -362,7 +362,7 @@ function day_label(string $day, array $weekdays): string {
                   <?php if (($t['source'] ?? '') === 'invoice'): ?><span class="tx-tag">Fatura</span><?php endif; ?>
                 </div>
               </div>
-              <span class="tx-amt">−<?= fmt_eur($t['amount']) ?></span>
+              <span class="tx-amt">−<?= fmt_money($t['amount']) ?></span>
               <div class="tx-actions">
                 <a href="edit_transaction.php?id=<?= $t['id'] ?>" aria-label="Editar <?= htmlspecialchars($t['description']) ?>" title="Editar"><i class="bi bi-pencil"></i></a>
                 <form method="post" onsubmit="return confirm('Apagar esta transação? Não é possível desfazer.')">

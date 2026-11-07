@@ -73,7 +73,7 @@
       </div>
     </div>
     <div class="text-end ms-3">
-      <h4 class="mb-0 text-danger">€<?=number_format($r['amount'], 2)?></h4>
+      <h4 class="mb-0 text-danger"><?= fmt_money($r['amount']) ?></h4>
       <?php if ($r['last_paid_date']): ?>
         <small class="text-muted">Último: <?=date('d/m', strtotime($r['last_paid_date']))?></small>
       <?php endif; ?>

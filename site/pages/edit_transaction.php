@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor (€) *</label>
+          <label class="form-label" style="text-align:center;width:100%">Valor (<?= currency_symbol() ?>) *</label>
           <input type="number" name="amount" step="0.01" min="0" class="form-control amount-input"
                  placeholder="0.00" value="<?=htmlspecialchars($transaction['amount'])?>" required>
         </div>
@@ -255,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <option value="" <?=!$card_id?'selected':''?>>Nenhum / Dinheiro</option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=$card_id==$c['id']?'selected':''?>>
-                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_eur($c['limit_amount']-$c['balance'])?>
+                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_money($c['limit_amount']-$c['balance'])?>
               </option>
             <?php endforeach; ?>
           </select>
@@ -281,7 +281,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       </div>
       <div class="orig-row">
         <span class="orig-label">Valor</span>
-        <span class="orig-value" style="font-weight:700;color:#e74c3c"><?=fmt_eur($transaction['amount'])?></span>
+        <span class="orig-value" style="font-weight:700;color:#e74c3c"><?=fmt_money($transaction['amount'])?></span>
       </div>
       <div class="orig-row">
         <span class="orig-label">Descrição</span>

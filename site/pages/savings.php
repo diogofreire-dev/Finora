@@ -33,15 +33,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $available = $goalId ? ($byGoal[$goalId] ?? 0) : array_sum($byGoal);
 
         if ($amount <= 0 || $amount > SAVINGS_MAX) {
-            $flash = ['danger', 'Escreve um valor entre 0,01 € e 1 000 000 €.'];
+            $flash = ['danger', 'Escreve um valor entre ' . fmt_money(0.01) . ' e ' . fmt_money(1000000, 0) . '.'];
         } elseif (!$d || $d->format('Y-m-d') !== $date || $date > $todayYmd || $date < '2000-01-01') {
             $flash = ['danger', 'Escolhe uma data válida, até hoje.'];
         } elseif ($kind === 'out' && $amount > $available + 0.001) {
-            $flash = ['danger', 'Só tens ' . fmt_eur(max($available, 0)) . ($goalId ? ' nessa meta.' : ' poupados.')];
+            $flash = ['danger', 'Só tens ' . fmt_money(max($available, 0)) . ($goalId ? ' nessa meta.' : ' poupados.')];
         } else {
             $pdo->prepare('INSERT INTO savings (user_id, goal_id, amount, note, saved_on) VALUES (:u, :g, :a, :n, :d)')
                 ->execute([':u' => $uid, ':g' => $goalId, ':a' => $kind === 'out' ? -$amount : $amount, ':n' => $note !== '' ? $note : null, ':d' => $date]);
-            $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_eur($amount) . '.' : 'Boa! Puseste ' . fmt_eur($amount) . ' de lado.'];
+            $flash = ['success', $kind === 'out' ? 'Registado: tiraste ' . fmt_money($amount) . '.' : 'Boa! Puseste ' . fmt_money($amount) . ' de lado.'];
             if ($kind === 'in') $_SESSION['savings_drop'] = true;   // moeda a cair no mealheiro
             if ($kind === 'in') {                                   // novo marco? avisa logo, não só no dia seguinte
                 require_once __DIR__ . '/../helpers/notifications.php';
@@ -249,22 +249,22 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <?php endif; ?>
 
   <section class="sv-hero" aria-labelledby="svTotalLabel">
-    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_eur($milestone, 0), 'lg', null, $coinDrop ? 'drop' : '') ?>
+    <?= piggy_html($fillPct, 'Mealheiro ' . round($fillPct) . '% cheio até ao próximo marco de ' . fmt_money($milestone, 0), 'lg', null, $coinDrop ? 'drop' : '') ?>
     <div>
       <p class="sv-label" id="svTotalLabel">Tens poupado</p>
-      <p class="sv-total"><?= fmt_eur(max($total, 0)) ?></p>
+      <p class="sv-total"><?= fmt_money(max($total, 0)) ?></p>
       <p class="sv-milestone">
         <?php if ($total <= 0): ?>
-          O mealheiro está vazio. O primeiro marco é <strong><?= fmt_eur($milestone, 0) ?></strong>.
+          O mealheiro está vazio. O primeiro marco é <strong><?= fmt_money($milestone, 0) ?></strong>.
         <?php else: ?>
-          Faltam <strong><?= fmt_eur($milestone - $total) ?></strong> para o próximo marco: <?= fmt_eur($milestone, 0) ?>.
+          Faltam <strong><?= fmt_money($milestone - $total) ?></strong> para o próximo marco: <?= fmt_money($milestone, 0) ?>.
         <?php endif; ?>
       </p>
       <div class="sv-stats">
         <?php $net = (float) $month['put'] + (float) $month['took']; ?>
-        <div><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_eur(abs($net)) ?></strong>este mês</div>
-        <div><strong><?= fmt_eur($avgSix) ?></strong>média por mês (6 meses)</div>
-        <div><strong><?= fmt_eur(max($byGoal[0] ?? 0, 0)) ?></strong>sem meta</div>
+        <div><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_money(abs($net)) ?></strong>este mês</div>
+        <div><strong><?= fmt_money($avgSix) ?></strong>média por mês (6 meses)</div>
+        <div><strong><?= fmt_money(max($byGoal[0] ?? 0, 0)) ?></strong>sem meta</div>
       </div>
       <div class="sv-actions">
         <button type="button" class="btn-s btn-s-primary" data-open="in"><i class="bi bi-plus-lg"></i> Pôr de lado</button>
@@ -275,7 +275,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
 
   <div class="sv-grid">
     <section class="pg-card" style="--tone: var(--cat-3)" aria-labelledby="svMoves">
-      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves">Movimentos</h2><p><?= (int) $found['n'] ?> movimento<?= $found['n'] == 1 ? '' : 's' ?> · <?= ($found['total'] >= 0 ? '+' : '−') . fmt_eur(abs($found['total'])) ?></p></div></header>
+      <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-list-ul"></i></span><div><h2 id="svMoves">Movimentos</h2><p><?= (int) $found['n'] ?> movimento<?= $found['n'] == 1 ? '' : 's' ?> · <?= ($found['total'] >= 0 ? '+' : '−') . fmt_money(abs($found['total'])) ?></p></div></header>
       <form class="sv-filters" method="get" action="savings.php#svMoves" aria-label="Filtrar movimentos">
         <label class="sv-filter"><span>Período</span>
           <select name="p" class="form-select">
@@ -297,12 +297,12 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
         <noscript><button type="submit" class="btn-s">Filtrar</button></noscript>
       </form>
       <?php if (!$moves && (int) $found['n'] === 0 && $filters === savings_filters([], $goalIds) && $total == 0): ?>
-        <div class="sv-empty">Ainda não há movimentos. Começa com "Pôr de lado", mesmo que sejam 5 €.</div>
+        <div class="sv-empty">Ainda não há movimentos. Começa com "Pôr de lado", mesmo que sejam <?= fmt_money(5, 0) ?>.</div>
       <?php elseif (!$moves): ?>
         <div class="sv-empty">Nenhum movimento com estes filtros. <a href="<?= $query(['p' => 'tudo', 'g' => 'todas', 't' => 'todos', 'n' => 1]) ?>">Ver todos</a></div>
       <?php endif; ?>
       <?php foreach ($moves as $ym => $items): $sum = array_sum(array_column($items, 'amount')); ?>
-        <div class="sv-month"><?= $monthName($ym) ?><span><?= ($sum >= 0 ? '+' : '−') . fmt_eur(abs($sum)) ?></span></div>
+        <div class="sv-month"><?= $monthName($ym) ?><span><?= ($sum >= 0 ? '+' : '−') . fmt_money(abs($sum)) ?></span></div>
         <ul class="sv-list">
           <?php foreach ($items as $m): $out = $m['amount'] < 0; $ts = strtotime($m['saved_on']); ?>
             <li>
@@ -311,13 +311,13 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
                 <b><?= htmlspecialchars($m['note'] ?? ($out ? 'Tirei das poupanças' : 'Pus de lado')) ?></b>
                 <small><?= date('j', $ts) ?> <?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?> · <?= $m['goal_name'] ? htmlspecialchars($m['goal_name']) : 'Sem meta' ?></small>
               </div>
-              <span class="sv-amt <?= $out ? 'out' : '' ?>"><?= ($out ? '−' : '+') . fmt_eur(abs($m['amount'])) ?></span>
+              <span class="sv-amt <?= $out ? 'out' : '' ?>"><?= ($out ? '−' : '+') . fmt_money(abs($m['amount'])) ?></span>
               <form method="post" onsubmit="return confirm('Apagar este movimento?')">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">
                 <input type="hidden" name="saving_id" value="<?= (int) $m['id'] ?>">
-                <button type="submit" class="sv-del" aria-label="Apagar movimento de <?= fmt_eur(abs($m['amount'])) ?>"><i class="bi bi-trash3"></i></button>
+                <button type="submit" class="sv-del" aria-label="Apagar movimento de <?= fmt_money(abs($m['amount'])) ?>"><i class="bi bi-trash3"></i></button>
               </form>
             </li>
           <?php endforeach; ?>
@@ -336,7 +336,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
         <?php endif; ?>
         <?php foreach ($goals as $g): $saved = max($byGoal[(int) $g['id']] ?? 0, 0); $p = $g['target_amount'] > 0 ? min(100, $saved / $g['target_amount'] * 100) : 0; ?>
           <a class="sv-goal" href="futuro.php#g<?= (int) $g['id'] ?>">
-            <div class="row1"><b><?= htmlspecialchars($g['name']) ?></b><span><?= fmt_eur($saved, 0) ?> de <?= fmt_eur($g['target_amount'], 0) ?></span></div>
+            <div class="row1"><b><?= htmlspecialchars($g['name']) ?></b><span><?= fmt_money($saved, 0) ?> de <?= fmt_money($g['target_amount'], 0) ?></span></div>
             <div class="bar" role="img" aria-label="<?= round($p) ?>% da meta"><i style="width: <?= round($p, 1) ?>%"></i></div>
           </a>
         <?php endforeach; ?>
@@ -346,7 +346,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
         <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-bar-chart"></i></span><div><h2 id="svYear">Últimos 12 meses</h2><p>Quanto ficou no mealheiro em cada mês.</p></div></header>
         <div class="sv-bars" role="img" aria-label="Poupança líquida por mês nos últimos 12 meses">
           <?php $last = array_key_last($bars); foreach ($bars as $ym => $v): ?>
-            <div class="col" title="<?= $monthName($ym) ?>: <?= fmt_eur($v) ?>"><span class="b <?= $v < 0 ? 'neg' : '' ?> <?= $ym === $last ? 'now' : '' ?>" style="height: <?= round(abs($v) / $maxBar * 100, 1) ?>%"></span></div>
+            <div class="col" title="<?= $monthName($ym) ?>: <?= fmt_money($v) ?>"><span class="b <?= $v < 0 ? 'neg' : '' ?> <?= $ym === $last ? 'now' : '' ?>" style="height: <?= round(abs($v) / $maxBar * 100, 1) ?>%"></span></div>
           <?php endforeach; ?>
         </div>
         <div class="sv-bars-lbl" aria-hidden="true"><?php foreach (array_keys($bars) as $ym): ?><span><?= mb_substr(month_name_pt((int) substr($ym, 5, 2)), 0, 1) ?></span><?php endforeach; ?></div>
@@ -369,7 +369,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
       <input type="radio" name="kind" id="kindOut" value="out"><label for="kindOut"><i class="bi bi-arrow-up-right"></i> Tirar</label>
     </div>
     <div class="sv-field">
-      <label class="form-label" for="svAmount">Valor (€)</label>
+      <label class="form-label" for="svAmount">Valor (<?= currency_symbol() ?>)</label>
       <input type="number" class="form-control sv-amount-input" id="svAmount" name="amount" step="0.01" min="0.01" max="1000000" inputmode="decimal" placeholder="0,00" required>
     </div>
     <div class="row2">

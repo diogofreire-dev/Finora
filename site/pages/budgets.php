@@ -233,23 +233,23 @@ unset($b);
           </div>
 
           <div class="bg-left-label"><?= $b['left'] < 0 ? 'Passaste o orçamento em' : 'Ainda podes gastar' ?></div>
-          <div class="bg-left <?= $b['left'] < 0 ? 'over' : '' ?>"><?= fmt_eur(abs($b['left'])) ?></div>
+          <div class="bg-left <?= $b['left'] < 0 ? 'over' : '' ?>"><?= fmt_money(abs($b['left'])) ?></div>
 
           <div class="bg-meter" role="img" aria-label="<?= round($b['pct']) ?>% gasto; já passou <?= round($pace['done'] * 100) ?>% do período">
             <span class="fill <?= $state === 'ok' ? '' : $state ?>" style="width:<?= min(round($b['pct'], 1), 100) ?>%"></span>
             <span class="pace" style="left:<?= round($pace['done'] * 100, 1) ?>%" title="Onde devias estar hoje"></span>
           </div>
           <div class="bg-line">
-            <span><?= fmt_eur($b['current_spent']) ?> de <?= fmt_eur($b['amount']) ?></span>
+            <span><?= fmt_money($b['current_spent']) ?> de <?= fmt_money($b['amount']) ?></span>
             <span><?= round($b['pct']) ?>%</span>
           </div>
 
           <?php if ($b['left'] < 0): ?>
             <p class="bg-hint over">Ultrapassaste o limite deste período.</p>
           <?php elseif ($b['ahead']): ?>
-            <p class="bg-hint warn">Estás a gastar mais depressa do que o previsto. Para não passares, gasta até <?= fmt_eur($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
+            <p class="bg-hint warn">Estás a gastar mais depressa do que o previsto. Para não passares, gasta até <?= fmt_money($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
           <?php else: ?>
-            <p class="bg-hint">Podes gastar cerca de <?= fmt_eur($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
+            <p class="bg-hint">Podes gastar cerca de <?= fmt_money($perDay) ?> por dia <?= $pace['unit'] ?>.</p>
           <?php endif; ?>
 
           <div class="bg-actions">
@@ -279,7 +279,7 @@ unset($b);
           <li>
             <div class="main">
               <div class="nm"><?= htmlspecialchars($b['name']) ?></div>
-              <div class="mt"><?= fmt_eur($b['amount']) ?> · <?= $periodLabels[$b['period']] ?? 'Mensal' ?><?= $b['category'] ? ' · ' . htmlspecialchars($b['category']) : '' ?></div>
+              <div class="mt"><?= fmt_money($b['amount']) ?> · <?= $periodLabels[$b['period']] ?? 'Mensal' ?><?= $b['category'] ? ' · ' . htmlspecialchars($b['category']) : '' ?></div>
             </div>
             <form method="post">
               <?= csrf_field() ?>

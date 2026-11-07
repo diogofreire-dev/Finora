@@ -196,8 +196,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cv-name" id="preview-name"><?=strtoupper(htmlspecialchars($card['name']))?></div>
           </div>
           <div class="cv-meta">
-            <span>Limite: <strong id="preview-limit"><?=fmt_eur($card['limit_amount'])?></strong></span>
-            <span>Gasto: <strong id="preview-balance"><?=fmt_eur($card['balance'])?></strong></span>
+            <span>Limite: <strong id="preview-limit"><?=fmt_money($card['limit_amount'])?></strong></span>
+            <span>Gasto: <strong id="preview-balance"><?=fmt_money($card['balance'])?></strong></span>
           </div>
         </div>
         <div style="margin-top:16px">
@@ -210,8 +210,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                  style="width:<?=$initPct?>%;background:<?=$initBarColor?>"></div>
           </div>
           <div class="usage-labels">
-            <span id="usage-spent"><?=fmt_eur($card['balance'])?> gasto</span>
-            <span id="usage-limit-lbl"><?=fmt_eur($card['limit_amount'])?> limite</span>
+            <span id="usage-spent"><?=fmt_money($card['balance'])?> gasto</span>
+            <span id="usage-limit-lbl"><?=fmt_money($card['limit_amount'])?> limite</span>
           </div>
         </div>
 
@@ -222,7 +222,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="l">Transacoes</div>
           </div>
           <div class="mini-stat-c">
-            <div class="v" style="color:#ef4444"><?=fmt_eur($cardStats['total'])?></div>
+            <div class="v" style="color:#ef4444"><?=fmt_money($cardStats['total'])?></div>
             <div class="l">Total Gasto</div>
           </div>
         </div>
@@ -277,14 +277,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="form-section">
             <div class="input-row">
               <div>
-                <label class="form-label">Limite (€) *</label>
+                <label class="form-label">Limite (<?= currency_symbol() ?>) *</label>
                 <input type="number" name="limit_amount" id="cardLimit" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($card['limit_amount'])?>" required>
                 <p class="form-hint">Limite maximo de gastos</p>
               </div>
               <div>
-                <label class="form-label">Saldo Atual (€)</label>
+                <label class="form-label">Saldo Atual (<?= currency_symbol() ?>)</label>
                 <input type="number" name="balance" id="cardBalance" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($card['balance'])?>">
@@ -326,6 +326,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const money = <?= money_js() ?>;
 const cardColorsMap = <?=json_encode(array_map(fn($c) => $c['gradient'], $cardColors))?>;
 
 // Logos dos bancos para a pré-visualização
@@ -395,10 +396,10 @@ document.getElementById('cardBalance').addEventListener('input', updatePreview);
 function updatePreview() {
   const lim = parseFloat(document.getElementById('cardLimit').value) || 0;
   const bal = parseFloat(document.getElementById('cardBalance').value) || 0;
-  document.getElementById('preview-limit').textContent = '€' + lim.toFixed(2);
-  document.getElementById('preview-balance').textContent = '€' + bal.toFixed(2);
-  document.getElementById('usage-spent').textContent = '€' + bal.toFixed(2) + ' gasto';
-  document.getElementById('usage-limit-lbl').textContent = '€' + lim.toFixed(2) + ' limite';
+  document.getElementById('preview-limit').textContent = money(lim);
+  document.getElementById('preview-balance').textContent = money(bal);
+  document.getElementById('usage-spent').textContent = money(bal) + ' gasto';
+  document.getElementById('usage-limit-lbl').textContent = money(lim) + ' limite';
   const pct = lim > 0 ? Math.min((bal / lim) * 100, 100) : 0;
   const bar = document.getElementById('usage-bar');
   bar.style.width = pct + '%';

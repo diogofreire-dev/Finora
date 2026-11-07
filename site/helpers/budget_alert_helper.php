@@ -54,8 +54,9 @@ function checkAndSendBudgetAlerts($pdo, $userId, $email, $username) {
 
             $sent = (new EmailService())->sendBudgetAlert($email, $username, [
                 'name'         => $budget['name'],
-                'limit'        => number_format($budget['limit_amount'], 2, ',', '.'),
-                'amount_spent' => number_format($budget['amount_spent'], 2, ',', '.'),
+                'limit'        => $budget['limit_amount'],
+                'amount_spent' => $budget['amount_spent'],
+                'currency'     => user_currency(),
                 'percentage'   => round($percentage, 1),
                 'category'     => $budget['category'] ?? 'Todas as categorias',
             ]);

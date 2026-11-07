@@ -198,7 +198,7 @@
       {
         selector: '.sv-hero .piggy',
         title: 'O teu mealheiro',
-        text: 'Enche com o dinheiro que pões de lado. Fica cheio quando chegas ao próximo marco (100 €, 250 €, 500 €…).',
+        text: 'Enche com o dinheiro que pões de lado. Fica cheio quando chegas ao próximo marco (100, 250, 500…).',
         position: 'right'
       },
       {

@@ -323,7 +323,7 @@ if ($card_id) {
 <div class="summary-boxes">
     <div class="summary-box">
         <div class="box-label">Total Gasto</div>
-        <div class="box-value"><?= number_format($totalAmount, 2, ',', ' ') ?> €</div>
+        <div class="box-value"><?= fmt_money($totalAmount) ?></div>
     </div>
     <div class="summary-box">
         <div class="box-label">Transações</div>
@@ -331,7 +331,7 @@ if ($card_id) {
     </div>
     <div class="summary-box">
         <div class="box-label">Média</div>
-        <div class="box-value"><?= number_format($avgAmount, 2, ',', ' ') ?> €</div>
+        <div class="box-value"><?= fmt_money($avgAmount) ?></div>
     </div>
 </div>
 
@@ -359,8 +359,8 @@ if ($card_id) {
                         <span class="badge-inactive">INATIVO</span>
                     <?php endif; ?>
                 </td>
-                <td class="text-right"><?= number_format($card['balance'], 2, ',', ' ') ?> / <?= number_format($card['limit_amount'], 2, ',', ' ') ?> €</td>
-                <td class="text-right"><?= number_format($available, 2, ',', ' ') ?> €</td>
+                <td class="text-right"><?= fmt_money($card['balance']) ?> / <?= fmt_money($card['limit_amount']) ?></td>
+                <td class="text-right"><?= fmt_money($available) ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>
@@ -385,7 +385,7 @@ if ($card_id) {
             <tr>
                 <td><?= htmlspecialchars($cat) ?></td>
                 <td class="text-center"><?= $stats['count'] ?></td>
-                <td class="text-right"><?= number_format($stats['total'], 2, ',', ' ') ?> €</td>
+                <td class="text-right"><?= fmt_money($stats['total']) ?></td>
                 <td class="text-right"><?= number_format($pct, 1) ?>%</td>
             </tr>
         <?php endforeach; ?>
@@ -415,7 +415,7 @@ if ($card_id) {
                 <td><?= htmlspecialchars(mb_substr($t['description'], 0, 40, 'UTF-8')) ?></td>
                 <td><?= htmlspecialchars($t['category'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($t['card_name'] ?? 'Dinheiro') ?></td>
-                <td class="text-right"><?= number_format($t['amount'], 2, ',', ' ') ?> €</td>
+                <td class="text-right"><?= fmt_money($t['amount']) ?></td>
             </tr>
         <?php endforeach; ?>
     </tbody>

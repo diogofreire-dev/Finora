@@ -123,7 +123,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor limite (€) *</label>
+          <label class="form-label" style="text-align:center;width:100%">Valor limite (<?= currency_symbol() ?>) *</label>
           <input type="number" name="amount" step="0.01" min="0.01" class="form-control amount-input" placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
 
