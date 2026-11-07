@@ -656,7 +656,7 @@ include __DIR__ . '/../components/sidebar.php';
         <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-translate"></i></span>
         <div class="pg-grow">
           <label class="st-label" for="language"><?= te('Língua') ?></label>
-          <p class="st-sub" id="languageHelp"><?= te('Algumas páginas ainda só existem em português.') ?></p>
+          <p class="st-sub" id="languageHelp"><?= te('Os nomes que escreves (cartões, transações, metas) ficam como os escreveste.') ?></p>
         </div>
         <select class="form-select st-currency" id="language" name="language" aria-describedby="languageHelp">
           <?php foreach (LANGS as $code => [$name]): ?>

@@ -19,6 +19,17 @@ foreach (glob(__DIR__ . '/../site/lang/*.php') as $file) {
     echo "✓ " . basename($file) . ': ' . count($table) . " frases\n";
 }
 
+// 3. O tutorial (JavaScript) tem o seu ficheiro por língua: todas as frases T('…') de tutorial.js têm de lá estar
+preg_match_all("/\\bT\\('((?:[^'\\\\]|\\\\.)*)'\\)/", file_get_contents(__DIR__ . '/../site/js/tutorial.js'), $m);
+$tutKeys = array_unique(array_map(fn($k) => str_replace("\\'", "'", $k), $m[1]));
+foreach (glob(__DIR__ . '/../site/js/lang/tutorial-*.js') as $file) {
+    $json = preg_replace('/^.*?=\s*|;\s*$/s', '', file_get_contents($file));
+    $tut  = json_decode($json, true);
+    if (!is_array($tut)) { echo "✗ " . basename($file) . " não é JSON válido\n"; $fail = 1; continue; }
+    foreach ($tutKeys as $k) if (!isset($tut[$k])) { echo "✗ " . basename($file) . ": falta \"$k\"\n"; $fail = 1; }
+    echo "✓ " . basename($file) . ': ' . count($tut) . " frases\n";
+}
+
 foreach (glob(__DIR__ . '/../site/helpers/*.php') as $file) {
     foreach (file($file) as $n => $line) {
         if (preg_match('#^\s*//.*\?>#', $line)) { echo "✗ " . basename($file) . ':' . ($n + 1) . ": fecho do PHP num comentário\n"; $fail = 1; }

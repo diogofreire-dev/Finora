@@ -18,9 +18,12 @@ foreach ($files as $file) {
     $n = count($tokens);
     for ($i = 0; $i < $n; $i++) {
         $tk = $tokens[$i];
-        if (!is_array($tk) || $tk[0] !== T_STRING || !in_array($tk[1], ['t', 'te', 'tj'], true)) continue;
-        $prev = $tokens[$i - 1] ?? null;   // ignora métodos ($x->t) e definições (function t)
-        if (is_array($prev) && in_array($prev[0], [T_OBJECT_OPERATOR, T_FUNCTION, T_DOUBLE_COLON], true)) continue;
+        if (!is_array($tk) || $tk[0] !== T_STRING) continue;
+        $prev = $tokens[$i - 1] ?? null;
+        $isMethod = is_array($prev) && $prev[0] === T_OBJECT_OPERATOR;
+        // t(), te(), tj() e o $this->L() dos emails (config/EmailService.php); não as definições (function t)
+        if ($isMethod ? $tk[1] !== 'L' : !in_array($tk[1], ['t', 'te', 'tj'], true)) continue;
+        if (is_array($prev) && in_array($prev[0], [T_FUNCTION, T_DOUBLE_COLON], true)) continue;
         $j = $i + 1;
         while ($j < $n && is_array($tokens[$j]) && $tokens[$j][0] === T_WHITESPACE) $j++;
         if (($tokens[$j] ?? null) !== '(') continue;
