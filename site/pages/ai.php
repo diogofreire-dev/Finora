@@ -11,7 +11,7 @@ $currentTheme = getUserTheme($pdo, $uid);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Assistente - Finora</title>
+  <title><?= te('Assistente - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -79,30 +79,30 @@ include __DIR__ . '/../components/sidebar.php';
 <div class="pg-wrap ai-wrap">
 
   <div class="pg-head">
-    <h1>Assistente</h1>
-    <p>Respostas sobre o teu dinheiro, a partir das tuas transações.</p>
+    <h1><?= te('Assistente') ?></h1>
+    <p><?= te('Respostas sobre o teu dinheiro, a partir das tuas transações.') ?></p>
   </div>
 
   <div class="ai-grid">
     <section class="pg-card" style="--tone:var(--cat-4)" aria-labelledby="insTitle">
       <header class="pg-card-head">
         <span class="pg-ico" aria-hidden="true"><i class="bi bi-lightbulb"></i></span>
-        <div class="pg-grow"><h2 id="insTitle">O teu mês</h2><p>Três coisas que se destacam.</p></div>
-        <button type="button" class="btn-s" id="btnInsights" data-type="insights" aria-label="Gerar o resumo do mês"><i class="bi bi-stars"></i> Gerar</button>
+        <div class="pg-grow"><h2 id="insTitle"><?= te('O teu mês') ?></h2><p><?= te('Três coisas que se destacam.') ?></p></div>
+        <button type="button" class="btn-s" id="btnInsights" data-type="insights" aria-label="<?= te('Gerar o resumo do mês') ?>"><i class="bi bi-stars"></i> <?= te('Gerar') ?></button>
       </header>
       <div class="ai-body" id="insightsBox" aria-live="polite">
-        <p class="ai-empty">Carrega em "Gerar" para veres o resumo do mês.</p>
+        <p class="ai-empty"><?= te('Carrega em "Gerar" para veres o resumo do mês.') ?></p>
       </div>
     </section>
 
     <section class="pg-card" style="--tone:var(--cat-3)" aria-labelledby="savTitle">
       <header class="pg-card-head">
         <span class="pg-ico" aria-hidden="true"><i class="bi bi-piggy-bank"></i></span>
-        <div class="pg-grow"><h2 id="savTitle">Onde poupar</h2><p>Sugestões com valores do teu mês.</p></div>
-        <button type="button" class="btn-s" id="btnSavings" data-type="savings" aria-label="Gerar sugestões de poupança"><i class="bi bi-stars"></i> Gerar</button>
+        <div class="pg-grow"><h2 id="savTitle"><?= te('Onde poupar') ?></h2><p><?= te('Sugestões com valores do teu mês.') ?></p></div>
+        <button type="button" class="btn-s" id="btnSavings" data-type="savings" aria-label="<?= te('Gerar sugestões de poupança') ?>"><i class="bi bi-stars"></i> <?= te('Gerar') ?></button>
       </header>
       <div class="ai-body" id="savingsBox" aria-live="polite">
-        <p class="ai-empty">Carrega em "Gerar" para receberes sugestões.</p>
+        <p class="ai-empty"><?= te('Carrega em "Gerar" para receberes sugestões.') ?></p>
       </div>
     </section>
   </div>
@@ -110,24 +110,24 @@ include __DIR__ . '/../components/sidebar.php';
   <section class="pg-card" style="--tone:var(--cat-7)" aria-labelledby="chatTitle">
     <header class="pg-card-head">
       <span class="pg-ico" aria-hidden="true"><i class="bi bi-chat-dots"></i></span>
-      <div class="pg-grow"><h2 id="chatTitle">Pergunta</h2><p>Sobre gastos, categorias, cartões ou meses anteriores.</p></div>
+      <div class="pg-grow"><h2 id="chatTitle"><?= te('Pergunta') ?></h2><p><?= te('Sobre gastos, categorias, cartões ou meses anteriores.') ?></p></div>
     </header>
     <div class="chat-body">
       <div class="chips">
-        <?php foreach ([['Quanto gastei este mês?', '--cat-1'], ['Em que categoria gasto mais?', '--cat-2'],
-                        ['Qual foi o meu maior gasto?', '--cat-8'], ['Como estou face ao mês passado?', '--cat-3'],
-                        ['Onde posso cortar?', '--cat-4']] as [$q, $c]): ?>
+        <?php foreach ([[t('Quanto gastei este mês?'), '--cat-1'], [t('Em que categoria gasto mais?'), '--cat-2'],
+                        [t('Qual foi o meu maior gasto?'), '--cat-8'], [t('Como estou face ao mês passado?'), '--cat-3'],
+                        [t('Onde posso cortar?'), '--cat-4']] as [$q, $c]): ?>
           <button type="button" class="chip" style="--c:var(<?= $c ?>)"><?= htmlspecialchars($q) ?></button>
         <?php endforeach; ?>
       </div>
       <div class="msgs" id="msgs" aria-live="polite"></div>
       <form class="ask" id="askForm">
-        <label class="visually-hidden" for="askInput">A tua pergunta</label>
-        <input type="text" class="form-control" id="askInput" maxlength="500" autocomplete="off" placeholder="Ex.: quanto gastei em transportes este mês?">
-        <button type="submit" class="btn-s btn-s-primary" id="askBtn" aria-label="Enviar pergunta"><i class="bi bi-send"></i></button>
+        <label class="visually-hidden" for="askInput"><?= te('A tua pergunta') ?></label>
+        <input type="text" class="form-control" id="askInput" maxlength="500" autocomplete="off" placeholder="<?= te('Ex.: quanto gastei em transportes este mês?') ?>">
+        <button type="submit" class="btn-s btn-s-primary" id="askBtn" aria-label="<?= te('Enviar pergunta') ?>"><i class="bi bi-send"></i></button>
       </form>
       <p class="ai-note"><i class="bi bi-shield-lock" aria-hidden="true"></i>
-        Para responder, a Finora envia à Groq (o serviço de IA) um resumo dos teus gastos deste mês e a tua pergunta. Não envia o teu nome, email nem dados dos cartões além do nome que lhes deste. As respostas podem ter erros e não são aconselhamento financeiro.</p>
+        <?= te('Para responder, a Finora envia à Groq (o serviço de IA) um resumo dos teus gastos deste mês e a tua pergunta. Não envia o teu nome, email nem dados dos cartões além do nome que lhes deste. As respostas podem ter erros e não são aconselhamento financeiro.') ?></p>
     </div>
   </section>
 
@@ -148,9 +148,9 @@ async function callAI(type, message = '', history = []) {
     res = await fetch('fdata.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': CSRF },
                                      body: JSON.stringify({ t: type, m: message, h: history }) });
     data = await res.json();
-  } catch (e) { throw new Error('Sem ligação ao servidor. Tenta outra vez.'); }
+  } catch (e) { throw new Error(<?= tj('Sem ligação ao servidor. Tenta outra vez.') ?>); }
   if (data.error) throw new Error(data.error);
-  if (!data.reply) throw new Error('O assistente não respondeu. Tenta outra vez.');
+  if (!data.reply) throw new Error(<?= tj('O assistente não respondeu. Tenta outra vez.') ?>);
   return data.reply;
 }
 

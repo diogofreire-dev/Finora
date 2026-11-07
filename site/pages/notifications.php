@@ -50,7 +50,7 @@ $unread = notif_unread_count($pdo, $uid);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Notificações - Finora</title>
+  <title><?= te('Notificações - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -96,27 +96,27 @@ $unread = notif_unread_count($pdo, $uid);
 <div class="nt">
   <div class="nt-head">
     <div>
-      <h1>Notificações</h1>
-      <p><?= $unread ? $unread . ' por ler' : 'Tudo lido' ?></p>
+      <h1><?= te('Notificações') ?></h1>
+      <p><?= $unread ? te('{n} por ler', ['n' => $unread]) : te('Tudo lido') ?></p>
     </div>
     <div class="nt-acts">
       <?php if ($unread): ?>
         <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="read_all"><input type="hidden" name="f" value="<?= $filter ?>">
-          <button type="submit" class="btn-s"><i class="bi bi-check2-all"></i> Marcar todas como lidas</button></form>
+          <button type="submit" class="btn-s"><i class="bi bi-check2-all"></i> <?= te('Marcar todas como lidas') ?></button></form>
       <?php endif; ?>
       <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar todas as notificações já lidas?')) ?>)"><?= csrf_field() ?><input type="hidden" name="action" value="delete_read"><input type="hidden" name="f" value="<?= $filter ?>">
-        <button type="submit" class="btn-s"><i class="bi bi-trash3"></i> Limpar lidas</button></form>
-      <a class="btn-s" href="settings.php#notificacoes"><i class="bi bi-sliders"></i> Preferências</a>
+        <button type="submit" class="btn-s"><i class="bi bi-trash3"></i> <?= te('Limpar lidas') ?></button></form>
+      <a class="btn-s" href="settings.php#notificacoes"><i class="bi bi-sliders"></i> <?= te('Preferências') ?></a>
     </div>
   </div>
 
-  <nav class="nt-tabs" aria-label="Filtrar">
-    <a href="notifications.php" <?= $filter === 'all' ? 'aria-current="page"' : '' ?>>Todas</a>
-    <a href="notifications.php?f=unread" <?= $filter === 'unread' ? 'aria-current="page"' : '' ?>>Por ler<?= $unread ? " ($unread)" : '' ?></a>
+  <nav class="nt-tabs" aria-label="<?= te('Filtrar') ?>">
+    <a href="notifications.php" <?= $filter === 'all' ? 'aria-current="page"' : '' ?>><?= te('Todas') ?></a>
+    <a href="notifications.php?f=unread" <?= $filter === 'unread' ? 'aria-current="page"' : '' ?>><?= te('Por ler') ?><?= $unread ? " ($unread)" : '' ?></a>
   </nav>
 
   <?php if (!$items): ?>
-    <div class="nt-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i><?= $filter === 'unread' ? 'Não tens notificações por ler.' : 'Ainda não há notificações. Avisamos-te de pagamentos, orçamentos, metas e mais.' ?></div>
+    <div class="nt-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i><?= $filter === 'unread' ? te('Não tens notificações por ler.') : te('Ainda não há notificações. Avisamos-te de pagamentos, orçamentos, metas e mais.') ?></div>
   <?php else: ?>
     <ul class="nt-list">
       <?php foreach ($items as $n): [$lbl, $ic, $tone] = NOTIF_TYPES[$n['type']] ?? ['', 'bell', 'cat-1']; ?>
@@ -132,16 +132,16 @@ $unread = notif_unread_count($pdo, $uid);
           <form method="post">
             <?= csrf_field() ?>
             <input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="<?= (int) $n['id'] ?>"><input type="hidden" name="f" value="<?= $filter ?>">
-            <button type="submit" class="nt-x" aria-label="Apagar notificação"><i class="bi bi-x-lg"></i></button>
+            <button type="submit" class="nt-x" aria-label="<?= te('Apagar notificação') ?>"><i class="bi bi-x-lg"></i></button>
           </form>
         </li>
       <?php endforeach; ?>
     </ul>
     <?php if (count($items) < $total): ?>
-      <div class="nt-more"><a class="btn-s" href="notifications.php?<?= http_build_query(['f' => $filter === 'unread' ? 'unread' : null, 'n' => $pages + 1]) ?>">Ver mais</a></div>
+      <div class="nt-more"><a class="btn-s" href="notifications.php?<?= http_build_query(['f' => $filter === 'unread' ? 'unread' : null, 'n' => $pages + 1]) ?>"><?= te('Ver mais') ?></a></div>
     <?php endif; ?>
   <?php endif; ?>
-  <p class="nt-note">A Finora verifica uma vez por dia, quando abres a app. As notificações lidas são apagadas ao fim de 6 meses.</p>
+  <p class="nt-note"><?= te('A Finora verifica uma vez por dia, quando abres a app. As notificações lidas são apagadas ao fim de 6 meses.') ?></p>
 </div>
 </div>
 </main>

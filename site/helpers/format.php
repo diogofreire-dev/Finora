@@ -49,6 +49,14 @@ function fmt_money($value, int $decimals = 2, ?string $code = null): string {
     return number_format((float) $value, $d, ',', "\u{202F}") . "\u{00A0}" . $symbol;
 }
 
+// Preço de um título (bolsa, investimentos): 4 casas abaixo de 1, e símbolos que não estão em CURRENCIES
+function fmt_price_in(float $v, string $cur = 'EUR'): string {
+    $sym = ['EUR' => '€', 'USD' => 'US$', 'GBP' => '£', 'CHF' => 'CHF'][$cur] ?? $cur;
+    $d   = $v < 1 ? 4 : 2;
+    if (current_lang() === 'en') return $sym . (ctype_alpha($sym) ? "\u{00A0}" : '') . number_format($v, $d, '.', ',');
+    return number_format($v, $d, ',', "\u{202F}") . "\u{00A0}" . $sym;
+}
+
 // Números sem moeda (percentagens, contagens) com o separador decimal da língua
 function fmt_num($value, int $decimals = 0): string {
     return current_lang() === 'en'

@@ -37,12 +37,12 @@ function investment_input(array $in): array {
     $cur    = parse_amount($in['current_price'] ?? '');
     if ($cur === null && $buy !== null) $cur = $buy;     // sem preço atual: usa o de compra
 
-    if (mb_strlen($name) < 2 || mb_strlen($name) > 100)          return [null, 'O nome tem de ter entre 2 e 100 caracteres.'];
-    if (!isset(INVESTMENT_TYPES[$type]))                          return [null, 'Escolhe um tipo válido.'];
-    if ($ticker !== '' && !preg_match('/^[A-Z0-9.\-:]{1,20}$/', $ticker)) return [null, 'O símbolo só pode ter letras, números, ponto, hífen e dois pontos (máx. 20).'];
-    if ($qty === null || $qty <= 0 || $qty > 1e10)                 return [null, 'A quantidade tem de ser maior que zero e até 10 mil milhões.'];
-    if ($buy === null || $buy < 0 || $buy > 1e9)                   return [null, 'O preço de compra tem de ser um número igual ou maior que zero.'];
-    if ($cur === null || $cur < 0 || $cur > 1e9)                   return [null, 'O preço atual tem de ser um número igual ou maior que zero.'];
+    if (mb_strlen($name) < 2 || mb_strlen($name) > 100)          return [null, t('O nome tem de ter entre 2 e 100 caracteres.')];
+    if (!isset(INVESTMENT_TYPES[$type]))                          return [null, t('Escolhe um tipo válido.')];
+    if ($ticker !== '' && !preg_match('/^[A-Z0-9.\-:]{1,20}$/', $ticker)) return [null, t('O símbolo só pode ter letras, números, ponto, hífen e dois pontos (máx. 20).')];
+    if ($qty === null || $qty <= 0 || $qty > 1e10)                 return [null, t('A quantidade tem de ser maior que zero e até 10 mil milhões.')];
+    if ($buy === null || $buy < 0 || $buy > 1e9)                   return [null, t('O preço de compra tem de ser um número igual ou maior que zero.')];
+    if ($cur === null || $cur < 0 || $cur > 1e9)                   return [null, t('O preço atual tem de ser um número igual ou maior que zero.')];
 
     return [['name' => $name, 'type' => $type, 'ticker' => $ticker ?: null,
              'quantity' => $qty, 'buy_price' => $buy, 'current_price' => $cur], null];
@@ -52,7 +52,7 @@ function investment_input(array $in): array {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
     $id     = (int) ($_POST['investment_id'] ?? 0);
-    $flash  = ['danger', 'Não foi possível guardar. Tenta novamente.'];
+    $flash  = ['danger', t('Não foi possível guardar. Tenta novamente.')];
     try {
         if ($action === 'create' || $action === 'update') {
             [$d, $err] = investment_input($_POST);
@@ -63,27 +63,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                VALUES (:uid, :name, :type, :ticker, :qty, :buy, :cur, NOW())")
                     ->execute([':uid' => $uid, ':name' => $d['name'], ':type' => $d['type'], ':ticker' => $d['ticker'],
                                ':qty' => $d['quantity'], ':buy' => $d['buy_price'], ':cur' => $d['current_price']]);
-                $flash = ['success', 'Investimento adicionado.'];
+                $flash = ['success', t('Investimento adicionado.')];
             } else {
                 $st = $pdo->prepare("UPDATE investments SET name=:name, type=:type, ticker=:ticker, quantity=:qty, buy_price=:buy,
                                             current_price=:cur, price_updated_at=NOW() WHERE id=:id AND user_id=:uid");
                 $st->execute([':id' => $id, ':uid' => $uid, ':name' => $d['name'], ':type' => $d['type'], ':ticker' => $d['ticker'],
                               ':qty' => $d['quantity'], ':buy' => $d['buy_price'], ':cur' => $d['current_price']]);
-                $flash = $st->rowCount() ? ['success', 'Investimento atualizado.'] : ['info', 'Nada para atualizar.'];
+                $flash = $st->rowCount() ? ['success', t('Investimento atualizado.')] : ['info', t('Nada para atualizar.')];
             }
         } elseif ($action === 'price') {
             $cur = parse_amount($_POST['current_price'] ?? '');
             if ($cur === null || $cur < 0 || $cur > 1e9) {
-                $flash = ['danger', 'O preço atual tem de ser um número igual ou maior que zero.'];
+                $flash = ['danger', t('O preço atual tem de ser um número igual ou maior que zero.')];
             } else {
                 $st = $pdo->prepare("UPDATE investments SET current_price=:cur, price_updated_at=NOW() WHERE id=:id AND user_id=:uid");
                 $st->execute([':cur' => $cur, ':id' => $id, ':uid' => $uid]);
-                $flash = $st->rowCount() ? ['success', 'Preço atualizado.'] : ['info', 'O preço já era esse.'];
+                $flash = $st->rowCount() ? ['success', t('Preço atualizado.')] : ['info', t('O preço já era esse.')];
             }
         } elseif ($action === 'delete') {
             $st = $pdo->prepare("DELETE FROM investments WHERE id=:id AND user_id=:uid");
             $st->execute([':id' => $id, ':uid' => $uid]);
-            $flash = $st->rowCount() ? ['success', 'Investimento apagado.'] : ['danger', 'Investimento não encontrado.'];
+            $flash = $st->rowCount() ? ['success', t('Investimento apagado.')] : ['danger', t('Investimento não encontrado.')];
         }
     } catch (PDOException $e) {
         error_log('[investments] ' . $e->getMessage());
@@ -132,9 +132,9 @@ foreach ($investments as $i) $byType[$i['type']] = ($byType[$i['type']] ?? 0) + 
 arsort($byType);
 
 function signed_eur(float $v): string { return ($v > 0 ? '+' : ($v < 0 ? '−' : '')) . fmt_eur(abs($v)); }
-function signed_pct(float $v): string { return ($v > 0 ? '+' : ($v < 0 ? '−' : '')) . number_format(abs($v), 1, ',', '') . '%'; }
-function fmt_price(float $v): string { return number_format($v, $v < 1 ? 4 : 2, ',', "\u{202F}") . "\u{00A0}€"; }
-function fmt_qty(float $v): string { return rtrim(rtrim(number_format($v, 8, ',', "\u{202F}"), '0'), ','); }
+function signed_pct(float $v): string { return ($v > 0 ? '+' : ($v < 0 ? '−' : '')) . fmt_num(abs($v), 1) . '%'; }
+function fmt_price(float $v): string { return fmt_price_in($v, 'EUR'); }
+function fmt_qty(float $v): string { $sep = current_lang() === 'en' ? '.' : ','; return rtrim(rtrim(fmt_num($v, 8), '0'), $sep); }
 
 $activePage = 'investments'; $sidebarPrefix = '../';
 ?>
@@ -143,7 +143,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Investimentos - Finora</title>
+  <title><?= te('Investimentos - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -248,8 +248,8 @@ $activePage = 'investments'; $sidebarPrefix = '../';
 <div class="iv">
 
   <div class="iv-head">
-    <h1>Investimentos</h1>
-    <button type="button" class="btn-s btn-s-primary js-new"><i class="bi bi-plus-lg"></i> Adicionar investimento</button>
+    <h1><?= te('Investimentos') ?></h1>
+    <button type="button" class="btn-s btn-s-primary js-new"><i class="bi bi-plus-lg"></i> <?= te('Adicionar investimento') ?></button>
   </div>
 
   <?php if ($message): ?>
@@ -262,39 +262,39 @@ $activePage = 'investments'; $sidebarPrefix = '../';
   <?php if (empty($investments)): ?>
     <div class="iv-empty">
       <span class="iv-empty-art" aria-hidden="true"><i class="bi bi-graph-up-arrow"></i></span>
-      <h2>Ainda não registaste investimentos</h2>
-      <p>Adiciona as tuas ações, ETFs, cripto, PPR ou depósitos com a quantidade e o preço de compra. A Finora mostra quanto valem hoje e quanto ganhaste ou perdeste.</p>
-      <button type="button" class="btn-s btn-s-primary js-new"><i class="bi bi-plus-lg"></i> Adicionar o primeiro</button>
+      <h2><?= te('Ainda não registaste investimentos') ?></h2>
+      <p><?= te('Adiciona as tuas ações, ETFs, cripto, PPR ou depósitos com a quantidade e o preço de compra. A Finora mostra quanto valem hoje e quanto ganhaste ou perdeste.') ?></p>
+      <button type="button" class="btn-s btn-s-primary js-new"><i class="bi bi-plus-lg"></i> <?= te('Adicionar o primeiro') ?></button>
     </div>
   <?php else:
     $state = $totalGain > 0.005 ? 'up' : ($totalGain < -0.005 ? 'down' : 'flat'); ?>
 
-    <section class="iv-hero" aria-label="Resumo da carteira">
+    <section class="iv-hero" aria-label="<?= te('Resumo da carteira') ?>">
       <div>
-        <p class="iv-label">Valor atual da carteira</p>
+        <p class="iv-label"><?= te('Valor atual da carteira') ?></p>
         <p class="iv-total"><?= fmt_eur($totalValue) ?></p>
         <span class="iv-gain <?= $state ?>">
           <i class="bi bi-<?= $state === 'up' ? 'arrow-up-right' : ($state === 'down' ? 'arrow-down-right' : 'dash') ?>"></i>
           <?= signed_eur($totalGain) ?> (<?= signed_pct($totalPct) ?>)
         </span>
-        <p class="iv-sub">Investiste <?= fmt_eur($totalCost) ?> em <?= count($investments) ?> posiç<?= count($investments) === 1 ? 'ão' : 'ões' ?>.</p>
+        <p class="iv-sub"><?= count($investments) === 1 ? te('Investiste {amount} em 1 posição.', ['amount' => fmt_eur($totalCost)]) : te('Investiste {amount} em {n} posições.', ['amount' => fmt_eur($totalCost), 'n' => count($investments)]) ?></p>
       </div>
       <div>
-        <p class="iv-label">Distribuição por tipo</p>
-        <div class="iv-alloc-bar" role="img" aria-label="Distribuição da carteira por tipo de investimento">
+        <p class="iv-label"><?= te('Distribuição por tipo') ?></p>
+        <div class="iv-alloc-bar" role="img" aria-label="<?= te('Distribuição da carteira por tipo de investimento') ?>">
           <?php foreach ($byType as $t => $v): if ($totalValue <= 0) break; ?>
             <span style="width:<?= round($v / $totalValue * 100, 2) ?>%;background:var(--cat-<?= INVESTMENT_TYPES[$t][1] ?>)"></span>
           <?php endforeach; ?>
         </div>
         <ul class="iv-alloc">
           <?php foreach ($byType as $t => $v): ?>
-            <li><i style="background:var(--cat-<?= INVESTMENT_TYPES[$t][1] ?>)"></i><?= INVESTMENT_TYPES[$t][0] ?><span class="pc"><?= $totalValue > 0 ? round($v / $totalValue * 100) : 0 ?>%</span></li>
+            <li><i style="background:var(--cat-<?= INVESTMENT_TYPES[$t][1] ?>)"></i><?= te(INVESTMENT_TYPES[$t][0]) ?><span class="pc"><?= $totalValue > 0 ? round($v / $totalValue * 100) : 0 ?>%</span></li>
           <?php endforeach; ?>
         </ul>
       </div>
     </section>
 
-    <ul class="iv-list" aria-label="Posições">
+    <ul class="iv-list" aria-label="<?= te('Posições') ?>">
       <?php foreach ($investments as $i):
         [$tLabel, $slot, $icon] = INVESTMENT_TYPES[$i['type']] ?? INVESTMENT_TYPES['outro'];
         $gain = $i['value'] - $i['cost'];
@@ -308,32 +308,32 @@ $activePage = 'investments'; $sidebarPrefix = '../';
           <div style="min-width:0">
             <div class="iv-name"><?= htmlspecialchars($i['name']) ?></div>
             <div class="iv-meta">
-              <?php if ($i['ticker']): ?><span class="tk"><?= htmlspecialchars($i['ticker']) ?></span> · <?php endif; ?><?= $tLabel ?>
+              <?php if ($i['ticker']): ?><span class="tk"><?= htmlspecialchars($i['ticker']) ?></span> · <?php endif; ?><?= te($tLabel) ?>
               · <?= fmt_qty((float) $i['quantity']) ?> × <?= fmt_price((float) $i['current_price']) ?>
             </div>
           </div>
           <div class="iv-val">
             <b><?= fmt_eur($i['value']) ?></b>
             <?php if ($q && !$q['stale']): ?>
-              <span class="iv-meta"><i class="bi bi-broadcast" aria-hidden="true"></i> Cotação automática · <?= $q['minutes'] < 1 ? 'agora' : 'há ' . $q['minutes'] . ' min' ?></span>
+              <span class="iv-meta"><i class="bi bi-broadcast" aria-hidden="true"></i> <?= te('Cotação automática') ?> · <?= $q['minutes'] < 1 ? te('agora') : te('há {n} min', ['n' => $q['minutes']]) ?></span>
               <?php if ($q['change_pct'] !== null): $cp = (float) $q['change_pct']; ?>
-                <span class="mk-chip <?= $cp > 0.005 ? 'up' : ($cp < -0.005 ? 'down' : '') ?>" title="Variação desde o fecho anterior"><?= signed_pct($cp) ?> hoje</span>
+                <span class="mk-chip <?= $cp > 0.005 ? 'up' : ($cp < -0.005 ? 'down' : '') ?>" title="<?= te('Variação desde o fecho anterior') ?>"><?= te('{pct} hoje', ['pct' => signed_pct($cp)]) ?></span>
               <?php endif; ?>
             <?php else: ?>
               <span class="iv-meta <?= $age !== null && $age > 30 ? 'iv-old' : '' ?>">
-                <?= $q ? 'Sem ligação à bolsa · ' : '' ?><?= $age === null ? 'Preço por atualizar' : ($age === 0 ? 'Preço de hoje' : 'Preço de há ' . $age . ' dia' . ($age > 1 ? 's' : '')) ?>
+                <?= $q ? te('Sem ligação à bolsa') . ' · ' : '' ?><?= $age === null ? te('Preço por atualizar') : ($age === 0 ? te('Preço de hoje') : ($age > 1 ? te('Preço de há {n} dias', ['n' => $age]) : te('Preço de há 1 dia'))) ?>
               </span>
             <?php endif; ?>
-            <?= $q ? market_spark_svg($q['spark'], 'Evolução do último mês de ' . $i['name']) : '' ?>
+            <?= $q ? market_spark_svg($q['spark'], t('Evolução do último mês de {name}', ['name' => $i['name']])) : '' ?>
           </div>
           <div class="iv-delta <?= $st ?>">
-            <?= signed_eur($gain) ?><small><?= signed_pct($pct) ?> · compra a <?= fmt_price((float) $i['buy_price']) ?></small>
+            <?= signed_eur($gain) ?><small><?= signed_pct($pct) ?> · <?= te('compra a {price}', ['price' => fmt_price((float) $i['buy_price'])]) ?></small>
           </div>
           <div class="iv-actions">
             <?php if (!$q || $q['stale']): ?>
-            <button type="button" class="btn-s js-price" aria-label="Atualizar preço de <?= htmlspecialchars($i['name']) ?>" data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-price="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-arrow-repeat"></i> Preço</button>
+            <button type="button" class="btn-s js-price" aria-label="<?= te('Atualizar preço de {name}', ['name' => $i['name']]) ?>" data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-price="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-arrow-repeat"></i> <?= te('Preço') ?></button>
             <?php endif; ?>
-            <button type="button" class="ico js-edit" aria-label="Editar <?= htmlspecialchars($i['name']) ?>" title="Editar"
+            <button type="button" class="ico js-edit" aria-label="<?= te('Editar {name}', ['name' => $i['name']]) ?>" title="<?= te('Editar') ?>"
                     data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-type="<?= htmlspecialchars($i['type']) ?>"
                     data-ticker="<?= htmlspecialchars($i['ticker'] ?? '') ?>" data-quantity="<?= htmlspecialchars((string) (float) $i['quantity']) ?>"
                     data-buy="<?= htmlspecialchars((string) (float) $i['buy_price']) ?>" data-current="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-pencil"></i></button>
@@ -341,13 +341,13 @@ $activePage = 'investments'; $sidebarPrefix = '../';
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="investment_id" value="<?= (int) $i['id'] ?>">
-              <button type="submit" class="ico del" aria-label="Apagar <?= htmlspecialchars($i['name']) ?>" title="Apagar"><i class="bi bi-trash3"></i></button>
+              <button type="submit" class="ico del" aria-label="<?= te('Apagar {name}', ['name' => $i['name']]) ?>" title="<?= te('Apagar') ?>"><i class="bi bi-trash3"></i></button>
             </form>
           </div>
         </li>
       <?php endforeach; ?>
     </ul>
-    <p class="iv-note">Ações, ETFs, fundos e cripto com símbolo são cotados automaticamente (Yahoo Finance, com atraso; câmbio do BCE). Os outros preços são introduzidos por ti. A Finora regista e calcula, mas não dá aconselhamento financeiro.</p>
+    <p class="iv-note"><?= te('Ações, ETFs, fundos e cripto com símbolo são cotados automaticamente (Yahoo Finance, com atraso; câmbio do BCE). Os outros preços são introduzidos por ti. A Finora regista e calcula, mas não dá aconselhamento financeiro.') ?></p>
   <?php endif; ?>
 
 </div><!-- /iv -->
@@ -357,65 +357,65 @@ $activePage = 'investments'; $sidebarPrefix = '../';
 
 <!-- Adicionar / editar -->
 <dialog class="iv-dialog" id="ivForm" aria-labelledby="ivFormTitle">
-  <h2 id="ivFormTitle">Adicionar investimento</h2>
+  <h2 id="ivFormTitle"><?= te('Adicionar investimento') ?></h2>
   <form method="post" novalidate>
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="create">
     <input type="hidden" name="investment_id" value="">
     <div class="mb">
-      <label class="form-label" for="ivName">Nome</label>
-      <input id="ivName" type="text" name="name" class="form-control" required minlength="2" maxlength="100" placeholder="Ex: Vanguard FTSE All-World">
+      <label class="form-label" for="ivName"><?= te('Nome') ?></label>
+      <input id="ivName" type="text" name="name" class="form-control" required minlength="2" maxlength="100" placeholder="<?= te('Ex: Vanguard FTSE All-World') ?>">
     </div>
     <div class="row2 mb">
       <div>
-        <label class="form-label" for="ivType">Tipo</label>
+        <label class="form-label" for="ivType"><?= te('Tipo') ?></label>
         <select id="ivType" name="type" class="form-select">
-          <?php foreach (INVESTMENT_TYPES as $k => [$label]): ?><option value="<?= $k ?>"><?= $label ?></option><?php endforeach; ?>
+          <?php foreach (INVESTMENT_TYPES as $k => [$label]): ?><option value="<?= $k ?>"><?= te($label) ?></option><?php endforeach; ?>
         </select>
       </div>
       <div>
-        <label class="form-label" for="ivTicker">Símbolo <span style="font-weight:400;color:var(--fn-muted)">(opcional)</span></label>
-        <input id="ivTicker" type="text" name="ticker" class="form-control" maxlength="20" placeholder="Ex: VWCE.DE ou escreve o nome" autocapitalize="characters" autocomplete="off" list="ivTickerList">
+        <label class="form-label" for="ivTicker"><?= te('Símbolo') ?> <span style="font-weight:400;color:var(--fn-muted)"><?= te('(opcional)') ?></span></label>
+        <input id="ivTicker" type="text" name="ticker" class="form-control" maxlength="20" placeholder="<?= te('Ex: VWCE.DE ou escreve o nome') ?>" autocapitalize="characters" autocomplete="off" list="ivTickerList">
         <datalist id="ivTickerList"></datalist>
-        <div class="hint">Com símbolo, o preço atualiza-se sozinho.</div>
+        <div class="hint"><?= te('Com símbolo, o preço atualiza-se sozinho.') ?></div>
       </div>
     </div>
     <div class="mb">
-      <label class="form-label" for="ivQty">Quantidade</label>
-      <input id="ivQty" type="text" name="quantity" class="form-control" inputmode="decimal" required placeholder="Ex: 12 ou 0,05">
-      <div class="hint">Unidades, ações ou moedas. Para um depósito, indica 1.</div>
+      <label class="form-label" for="ivQty"><?= te('Quantidade') ?></label>
+      <input id="ivQty" type="text" name="quantity" class="form-control" inputmode="decimal" required placeholder="<?= te('Ex: 12 ou 0,05') ?>">
+      <div class="hint"><?= te('Unidades, ações ou moedas. Para um depósito, indica 1.') ?></div>
     </div>
     <div class="row2 mb">
       <div>
-        <label class="form-label" for="ivBuy">Preço médio de compra (€)</label>
-        <input id="ivBuy" type="text" name="buy_price" class="form-control" inputmode="decimal" required placeholder="Ex: 105,40">
+        <label class="form-label" for="ivBuy"><?= te('Preço médio de compra (€)') ?></label>
+        <input id="ivBuy" type="text" name="buy_price" class="form-control" inputmode="decimal" required placeholder="<?= te('Ex: 105,40') ?>">
       </div>
       <div>
-        <label class="form-label" for="ivCur">Preço atual (€)</label>
-        <input id="ivCur" type="text" name="current_price" class="form-control" inputmode="decimal" placeholder="Igual ao de compra">
+        <label class="form-label" for="ivCur"><?= te('Preço atual (€)') ?></label>
+        <input id="ivCur" type="text" name="current_price" class="form-control" inputmode="decimal" placeholder="<?= te('Igual ao de compra') ?>">
       </div>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()">Cancelar</button>
-      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <span>Adicionar</span></button>
+      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <span><?= te('Adicionar') ?></span></button>
     </div>
   </form>
 </dialog>
 
 <!-- Atualizar só o preço -->
 <dialog class="iv-dialog" id="ivPrice" aria-labelledby="ivPriceTitle">
-  <h2 id="ivPriceTitle">Atualizar preço</h2>
+  <h2 id="ivPriceTitle"><?= te('Atualizar preço') ?></h2>
   <form method="post">
     <?= csrf_field() ?>
     <input type="hidden" name="action" value="price">
     <input type="hidden" name="investment_id" value="">
     <div class="mb">
-      <label class="form-label" for="ivNewPrice">Preço atual por unidade (€) de <strong class="js-pname"></strong></label>
+      <label class="form-label" for="ivNewPrice"><?= te('Preço atual por unidade (€) de') ?> <strong class="js-pname"></strong></label>
       <input id="ivNewPrice" type="text" name="current_price" class="form-control" inputmode="decimal" required>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()">Cancelar</button>
-      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> Guardar preço</button>
+      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Guardar preço') ?></button>
     </div>
   </form>
 </dialog>
@@ -429,8 +429,8 @@ $activePage = 'investments'; $sidebarPrefix = '../';
 
   document.querySelectorAll('.js-new').forEach(b => b.addEventListener('click', () => {
     f.reset(); f.elements.action.value = 'create'; f.elements.investment_id.value = '';
-    document.getElementById('ivFormTitle').textContent = 'Adicionar investimento';
-    f.querySelector('[type=submit] span').textContent = 'Adicionar';
+    document.getElementById('ivFormTitle').textContent = <?= tj('Adicionar investimento') ?>;
+    f.querySelector('[type=submit] span').textContent = <?= tj('Adicionar') ?>;
     formDlg.showModal(); f.elements.name.focus();
   }));
   document.querySelectorAll('.js-edit').forEach(b => b.addEventListener('click', () => {
@@ -438,8 +438,8 @@ $activePage = 'investments'; $sidebarPrefix = '../';
     f.elements.action.value = 'update'; f.elements.investment_id.value = d.id;
     f.elements.name.value = d.name; f.elements.type.value = d.type; f.elements.ticker.value = d.ticker;
     f.elements.quantity.value = toPt(d.quantity); f.elements.buy_price.value = toPt(d.buy); f.elements.current_price.value = toPt(d.current);
-    document.getElementById('ivFormTitle').textContent = 'Editar investimento';
-    f.querySelector('[type=submit] span').textContent = 'Guardar';
+    document.getElementById('ivFormTitle').textContent = <?= tj('Editar investimento') ?>;
+    f.querySelector('[type=submit] span').textContent = <?= tj('Guardar') ?>;
     formDlg.showModal(); f.elements.name.focus();
   }));
   document.querySelectorAll('.js-price').forEach(b => b.addEventListener('click', () => {

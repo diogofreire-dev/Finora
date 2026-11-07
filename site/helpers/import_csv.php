@@ -13,8 +13,8 @@ $firstLine = strtok($content, "\r\n") ?: '';
 $delimiter = substr_count($firstLine, ';') > substr_count($firstLine, ',') ? ';' : ',';
 
 $lines = array_values(array_filter(preg_split('/\r\n|\r|\n/', trim($content)), fn($l) => trim($l) !== ''));
-if (count($lines) < 2) import_finish('danger', 'O ficheiro está vazio ou só tem o cabeçalho.');
-if (count($lines) - 1 > IMPORT_MAX_ROWS) import_finish('danger', 'O ficheiro tem mais de ' . IMPORT_MAX_ROWS . ' linhas. Divide-o em partes mais pequenas.');
+if (count($lines) < 2) import_finish('danger', t('O ficheiro está vazio ou só tem o cabeçalho.'));
+if (count($lines) - 1 > IMPORT_MAX_ROWS) import_finish('danger', t('O ficheiro tem mais de {n} linhas. Divide-o em partes mais pequenas.', ['n' => IMPORT_MAX_ROWS]));
 
 $header = array_map(fn($h) => mb_strtolower(trim($h)), str_getcsv(array_shift($lines), $delimiter));
 $col = [];
@@ -23,7 +23,7 @@ foreach (['data', 'descricao', 'categoria', 'valor', 'cartao'] as $name) {
     $col[$name] = $i === false ? null : $i;
 }
 if ($col['data'] === null || $col['descricao'] === null || $col['valor'] === null) {
-    import_finish('danger', 'Faltam colunas obrigatórias: data, descricao e valor. Usa o modelo da página.');
+    import_finish('danger', t('Faltam colunas obrigatórias: data, descricao e valor. Usa o modelo da página.'));
 }
 
 $cardMap = import_card_map($pdo, $uid);
@@ -35,7 +35,7 @@ foreach ($lines as $n => $line) {
         'date' => $get('data'), 'description' => $get('descricao'), 'amount' => $get('valor'),
         'category' => $get('categoria'), 'card' => $get('cartao'),
     ], $cardMap);
-    if ($err) $errors[] = 'linha ' . ($n + 2) . ': ' . $err;
+    if ($err) $errors[] = t('linha {n}: {error}', ['n' => $n + 2, 'error' => $err]);
     else      $rows[] = $row;
 }
 
@@ -43,7 +43,7 @@ try {
     [$imported, $skipped] = import_save($pdo, $uid, $rows, !empty($_POST['skip_duplicates']));
 } catch (Throwable $e) {
     error_log('[import_csv] ' . $e->getMessage());
-    import_finish('danger', 'A importação falhou e nada foi gravado. Tenta outra vez.');
+    import_finish('danger', t('A importação falhou e nada foi gravado. Tenta outra vez.'));
 }
 
 import_finish(...import_summary($imported, $skipped, $errors));

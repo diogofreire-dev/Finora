@@ -25,13 +25,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
     $nif      = preg_match('/^\d{9}$/', $_POST['nif'] ?? '') ? (int) $_POST['nif'] : null;
 
     $error = null;
-    if ($amount === null)            $error = 'O valor tem de ser um número maior que zero.';
-    elseif (!$date)                  $error = 'A data não é válida.';
-    elseif ($date > date('Y-m-d'))   $error = 'A data não pode ser no futuro.';
+    if ($amount === null)            $error = t('O valor tem de ser um número maior que zero.');
+    elseif (!$date)                  $error = t('A data não é válida.');
+    elseif ($date > date('Y-m-d'))   $error = t('A data não pode ser no futuro.');
     elseif ($card_id) {
         foreach ($cards as $c) {
             if ((int) $c['id'] === $card_id && $c['limit_amount'] > 0 && $c['balance'] + $amount > $c['limit_amount']) {
-                $error = 'Esta despesa passa o limite disponível do cartão ' . $c['name'] . '.';
+                $error = t('Esta despesa passa o limite disponível do cartão {name}.', ['name' => $c['name']]);
             }
         }
     }
@@ -52,11 +52,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save'
                     ->execute([':amt' => $amount, ':cid' => $card_id, ':uid' => $uid]);
             }
             $pdo->commit();
-            $_SESSION['flash_scan'] = ['success', "Despesa de " . fmt_money($amount) . " em $desc guardada."];
+            $_SESSION['flash_scan'] = ['success', t('Despesa de {amount} em {place} guardada.', ['amount' => fmt_money($amount), 'place' => $desc])];
         } catch (PDOException $e) {
             $pdo->rollBack();
             error_log('[scan_fatura] ' . $e->getMessage());
-            $_SESSION['flash_scan'] = ['danger', 'Não foi possível guardar. Tenta outra vez.'];
+            $_SESSION['flash_scan'] = ['danger', t('Não foi possível guardar. Tenta outra vez.')];
         }
     }
     header('Location: scan_fatura.php');
@@ -71,7 +71,7 @@ unset($_SESSION['flash_scan']);
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Ler fatura - Finora</title>
+  <title><?= te('Ler fatura - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -170,25 +170,25 @@ include __DIR__ . '/../components/sidebar.php';
 <div class="sc-wrap">
 
   <div class="sc-head">
-    <h1>Ler fatura</h1>
-    <p>Lê o código QR de uma fatura portuguesa e a Finora preenche a despesa por ti.</p>
+    <h1><?= te('Ler fatura') ?></h1>
+    <p><?= te('Lê o código QR de uma fatura portuguesa e a Finora preenche a despesa por ti.') ?></p>
   </div>
 
   <?php if ($message): ?>
     <div class="sc-flash <?= htmlspecialchars($messageType) ?>" role="<?= $messageType === 'danger' ? 'alert' : 'status' ?>">
       <i class="bi bi-<?= $messageType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i>
       <span><?= htmlspecialchars($message) ?></span>
-      <?php if ($messageType === 'success'): ?><a href="transactions.php">Ver transações</a><?php endif; ?>
+      <?php if ($messageType === 'success'): ?><a href="transactions.php"><?= te('Ver transações') ?></a><?php endif; ?>
     </div>
   <?php endif; ?>
 
   <div class="sc-grid">
     <!-- LEITOR -->
     <section class="sc-card" aria-labelledby="scTitle">
-      <div class="sc-title" style="--tone:var(--cat-4)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-qr-code-scan"></i></span><h2 id="scTitle">Código QR</h2></div>
-      <div class="sc-switch" role="group" aria-label="Como ler o código">
-        <button type="button" id="modeCam" aria-pressed="true"><i class="bi bi-camera"></i> Câmara</button>
-        <button type="button" id="modeImg" aria-pressed="false"><i class="bi bi-image"></i> Imagem</button>
+      <div class="sc-title" style="--tone:var(--cat-4)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-qr-code-scan"></i></span><h2 id="scTitle"><?= te('Código QR') ?></h2></div>
+      <div class="sc-switch" role="group" aria-label="<?= te('Como ler o código') ?>">
+        <button type="button" id="modeCam" aria-pressed="true"><i class="bi bi-camera"></i> <?= te('Câmara') ?></button>
+        <button type="button" id="modeImg" aria-pressed="false"><i class="bi bi-image"></i> <?= te('Imagem') ?></button>
       </div>
 
       <div id="panelCam">
@@ -197,19 +197,19 @@ include __DIR__ . '/../components/sidebar.php';
           <div class="sc-frame" aria-hidden="true"></div>
           <div class="sc-idle">
             <i class="bi bi-qr-code-scan" aria-hidden="true"></i>
-            <p>O código QR está normalmente no fundo da fatura, junto ao total.</p>
+            <p><?= te('O código QR está normalmente no fundo da fatura, junto ao total.') ?></p>
           </div>
         </div>
         <div class="sc-cam-btn">
-          <button type="button" class="btn-s btn-s-primary" id="camBtn"><i class="bi bi-camera-video"></i> Ligar câmara</button>
+          <button type="button" class="btn-s btn-s-primary" id="camBtn"><i class="bi bi-camera-video"></i> <?= te('Ligar câmara') ?></button>
         </div>
       </div>
 
       <div id="panelImg" hidden>
         <label class="sc-drop" id="drop">
           <i class="bi bi-image" aria-hidden="true"></i>
-          <b>Escolhe ou arrasta uma foto</b>
-          <span>Uma foto nítida do código QR</span>
+          <b><?= te('Escolhe ou arrasta uma foto') ?></b>
+          <span><?= te('Uma foto nítida do código QR') ?></span>
           <input type="file" id="imgFile" accept="image/*">
         </label>
       </div>
@@ -220,8 +220,8 @@ include __DIR__ . '/../components/sidebar.php';
 
     <!-- DESPESA -->
     <section class="sc-card" aria-labelledby="formTitle">
-      <div class="sc-title" style="--tone:var(--cat-1)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-receipt"></i></span><h2 id="formTitle">Despesa</h2></div>
-      <div class="sc-read" id="readOk"><i class="bi bi-check-circle-fill"></i> Fatura lida. Confirma os dados e guarda.</div>
+      <div class="sc-title" style="--tone:var(--cat-1)"><span class="pg-ico" aria-hidden="true"><i class="bi bi-receipt"></i></span><h2 id="formTitle"><?= te('Despesa') ?></h2></div>
+      <div class="sc-read" id="readOk"><i class="bi bi-check-circle-fill"></i> <?= te('Fatura lida. Confirma os dados e guarda.') ?></div>
 
       <form method="post" class="sc-form" id="form">
         <?= csrf_field() ?>
@@ -234,20 +234,20 @@ include __DIR__ . '/../components/sidebar.php';
             <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="0,00" autocomplete="off">
           </div>
           <div>
-            <label class="form-label" for="fDate">Data</label>
+            <label class="form-label" for="fDate"><?= te('Data') ?></label>
             <input type="date" class="form-control" name="transaction_date" id="fDate" required value="<?= date('Y-m-d') ?>" max="<?= date('Y-m-d') ?>">
           </div>
         </div>
 
         <div class="mb">
-          <label class="form-label" for="fDesc">Onde</label>
-          <input type="text" class="form-control" name="description" id="fDesc" maxlength="255" placeholder="Nome da loja ou empresa">
+          <label class="form-label" for="fDesc"><?= te('Onde') ?></label>
+          <input type="text" class="form-control" name="description" id="fDesc" maxlength="255" placeholder="<?= te('Nome da loja ou empresa') ?>">
           <div class="sc-nif" id="nifInfo" aria-live="polite"></div>
         </div>
 
         <div class="row2 mb">
           <div>
-            <label class="form-label" for="fCat">Categoria</label>
+            <label class="form-label" for="fCat"><?= te('Categoria') ?></label>
             <select class="form-select" name="category" id="fCat">
               <?php foreach ($categories as $cat): ?>
                 <option <?= $cat === 'Outros' ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
@@ -255,9 +255,9 @@ include __DIR__ . '/../components/sidebar.php';
             </select>
           </div>
           <div>
-            <label class="form-label" for="fCard">Cartão</label>
+            <label class="form-label" for="fCard"><?= te('Cartão') ?></label>
             <select class="form-select" name="card_id" id="fCard">
-              <option value="">Sem cartão</option>
+              <option value=""><?= te('Sem cartão') ?></option>
               <?php foreach ($cards as $c): ?>
                 <option value="<?= (int) $c['id'] ?>"><?= htmlspecialchars($c['name']) ?></option>
               <?php endforeach; ?>
@@ -266,13 +266,13 @@ include __DIR__ . '/../components/sidebar.php';
         </div>
 
         <details class="sc-raw mb" id="rawWrap" hidden>
-          <summary>Ver o conteúdo do código QR</summary>
+          <summary><?= te('Ver o conteúdo do código QR') ?></summary>
           <pre id="raw"></pre>
         </details>
 
         <div class="sc-acts">
-          <button type="button" class="btn-s" id="resetBtn">Limpar</button>
-          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-lg"></i> Guardar despesa</button>
+          <button type="button" class="btn-s" id="resetBtn"><?= te('Limpar') ?></button>
+          <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check-lg"></i> <?= te('Guardar despesa') ?></button>
         </div>
       </form>
     </section>
@@ -298,20 +298,19 @@ function setStatus(text, warn = false) { $('status').textContent = text; $('stat
 // O nome do erro diz porque é que a câmara falhou; cada caso tem uma solução diferente
 function cameraProblem(e) {
   if (!window.isSecureContext || !navigator.mediaDevices) {
-    return 'A câmara só funciona em páginas seguras (https ou localhost). Escolhe "Imagem" e usa uma foto.';
+    return <?= tj('A câmara só funciona em páginas seguras (https ou localhost). Escolhe "Imagem" e usa uma foto.') ?>;
   }
   switch (e && e.name) {
     case 'NotAllowedError':
-      return 'Sem permissão para a câmara. Carrega no ícone à esquerda do endereço e permite a câmara. '
-           + 'No Mac, confirma também em Definições do Sistema › Privacidade e segurança › Câmara que o browser está ligado.';
+      return <?= tj('Sem permissão para a câmara. Carrega no ícone à esquerda do endereço e permite a câmara. No Mac, confirma também em Definições do Sistema › Privacidade e segurança › Câmara que o browser está ligado.') ?>;
     case 'NotFoundError':
     case 'OverconstrainedError':
-      return 'Não foi encontrada nenhuma câmara neste dispositivo. Escolhe "Imagem" e usa uma foto.';
+      return <?= tj('Não foi encontrada nenhuma câmara neste dispositivo. Escolhe "Imagem" e usa uma foto.') ?>;
     case 'NotReadableError':
     case 'AbortError':
-      return 'A câmara está a ser usada por outra aplicação (FaceTime, Teams, Zoom…). Fecha-a e tenta outra vez.';
+      return <?= tj('A câmara está a ser usada por outra aplicação (FaceTime, Teams, Zoom…). Fecha-a e tenta outra vez.') ?>;
     default:
-      return 'Não foi possível usar a câmara. Escolhe "Imagem" e usa uma foto.';
+      return <?= tj('Não foi possível usar a câmara. Escolhe "Imagem" e usa uma foto.') ?>;
   }
 }
 
@@ -322,8 +321,8 @@ async function startCamera() {
     $('video').srcObject = stream;
     await $('video').play();
     $('viewer').classList.add('live');
-    $('camBtn').innerHTML = '<i class="bi bi-camera-video-off"></i> Desligar câmara';
-    setStatus('Aponta para o código QR.');
+    $('camBtn').innerHTML = '<i class="bi bi-camera-video-off"></i> '; $('camBtn').append(<?= tj('Desligar câmara') ?>);
+    setStatus(<?= tj('Aponta para o código QR.') ?>);
     timer = setInterval(scanVideo, 250);
   } catch (e) {
     stopCamera();
@@ -336,7 +335,7 @@ function stopCamera() {
   if (stream) stream.getTracks().forEach(t => t.stop());
   stream = null;
   $('viewer').classList.remove('live');
-  $('camBtn').innerHTML = '<i class="bi bi-camera-video"></i> Ligar câmara';
+  $('camBtn').innerHTML = '<i class="bi bi-camera-video"></i> '; $('camBtn').append(<?= tj('Ligar câmara') ?>);
 }
 $('camBtn').addEventListener('click', () => stream ? (stopCamera(), setStatus('')) : startCamera());
 
@@ -349,16 +348,16 @@ function scanVideo() {
 
 // ── Imagem ──
 function readImage(file) {
-  if (!file || !file.type.startsWith('image/')) { setStatus('Escolhe um ficheiro de imagem.', true); return; }
+  if (!file || !file.type.startsWith('image/')) { setStatus(<?= tj('Escolhe um ficheiro de imagem.') ?>, true); return; }
   const img = new Image();
   img.onload = () => {
     // Imagens enormes ficam mais pequenas: o QR continua legível e o browser não bloqueia
     const scale = Math.min(1, 1600 / Math.max(img.width, img.height));
     const code = readCanvas(img, Math.round(img.width * scale), Math.round(img.height * scale), 'attemptBoth');
     URL.revokeObjectURL(img.src);
-    code ? handleQR(code) : setStatus('Não encontrei um código QR nesta imagem. Tenta uma foto mais nítida.', true);
+    code ? handleQR(code) : setStatus(<?= tj('Não encontrei um código QR nesta imagem. Tenta uma foto mais nítida.') ?>, true);
   };
-  img.onerror = () => setStatus('Não foi possível abrir esta imagem.', true);
+  img.onerror = () => setStatus(<?= tj('Não foi possível abrir esta imagem.') ?>, true);
   img.src = URL.createObjectURL(file);
 }
 function readCanvas(src, w, h, inversion) {
@@ -395,7 +394,7 @@ function handleQR(raw) {
 
   const isAT = /^\d{9}$/.test(f.A || '') && /^\d{8}$/.test(f.F || '');
   if (!isAT) {
-    setStatus('Este código QR não é de uma fatura portuguesa. Preenche a despesa à mão.', true);
+    setStatus(<?= tj('Este código QR não é de uma fatura portuguesa. Preenche a despesa à mão.') ?>, true);
     return;
   }
 
@@ -419,17 +418,17 @@ function nifLine(icon, cls, text) {
 }
 
 async function lookupNIF(nif) {
-  nifLine('hourglass-split', '', 'A procurar o NIF ' + nif + '…');
+  nifLine('hourglass-split', '', <?= tj('A procurar o NIF {nif}…') ?>.replace('{nif}', nif));
   try {
     const r = await fetch('get_company_by_nif.php?nif=' + encodeURIComponent(nif));
-    if (r.status === 429) return nifLine('exclamation-circle', 'warn', 'Muitas pesquisas seguidas. Escreve o nome à mão.');
+    if (r.status === 429) return nifLine('exclamation-circle', 'warn', <?= tj('Muitas pesquisas seguidas. Escreve o nome à mão.') ?>);
     const d = await r.json();
-    if (!d.found) return nifLine('exclamation-circle', 'warn', 'NIF ' + nif + ' sem nome conhecido. Escreve onde foi.');
+    if (!d.found) return nifLine('exclamation-circle', 'warn', <?= tj('NIF {nif} sem nome conhecido. Escreve onde foi.') ?>.replace('{nif}', nif));
     $('fDesc').value = d.nome;
-    nifLine('check-circle', 'ok', 'NIF ' + nif + (d.source === 'teu' ? ' · o nome que usaste da última vez' : ''));
+    nifLine('check-circle', 'ok', 'NIF ' + nif + (d.source === 'teu' ? ' · ' + <?= tj('o nome que usaste da última vez') ?> : ''));
     if (CATEGORIES.includes(d.categoria)) $('fCat').value = d.categoria;
   } catch (e) {
-    nifLine('exclamation-circle', 'warn', 'Não foi possível procurar o NIF. Escreve onde foi.');
+    nifLine('exclamation-circle', 'warn', <?= tj('Não foi possível procurar o NIF. Escreve onde foi.') ?>);
   }
 }
 

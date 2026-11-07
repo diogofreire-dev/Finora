@@ -30,7 +30,9 @@ jobs:
           if [ -n "$errors" ]; then echo "$errors"; exit 1; fi
           echo "Todos os ficheiros PHP sem erros de sintaxe."
       - name: Ficheiros de língua
-        run: php tests/i18n_check.php
+        run: |
+          php tests/i18n_check.php
+          php tests/i18n_missing.php en
 
   secrets:
     name: Segredos (gitleaks)

@@ -97,7 +97,7 @@ $defs = [
         [t('Junta as compras: uma ida ao supermercado por semana em vez de várias.'), t('Experimenta uma semana por mês sem compras pequenas e vê a diferença.'), t('Repara quando acontecem: tédio, pressa, cansaço?')]],
     'minimalista' => [t('O Minimalista Decidido'), 3, 'bullseye',
         t('Poucas compras, mas pensadas. Gastas pouco no dia a dia; o teu risco é uma compra grande que não estava planeada.'),
-        [t('Para compras acima de {amount}, espera 72 horas antes de decidir.t(', [')amount' => fmt_money(100, 0)]), t('Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.'), t('Revê as últimas compras grandes: quais repetias?')]],
+        [t('Para compras acima de {amount}, espera 72 horas antes de decidir.', ['amount' => fmt_money(100, 0)]), t('Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.'), t('Revê as últimas compras grandes: quais repetias?')]],
     'concentrado' => [t('O Especialista de Uma Categoria'), 8, 'pie-chart',
         t('Mais de metade do teu dinheiro vai para uma única categoria. Pode ser normal (a renda, por exemplo) ou um ponto cego.'),
         [t('Pergunta-te se essa categoria reflete as tuas prioridades ou só um hábito.'), t('Põe um orçamento nessa categoria durante um mês e vê como te sentes.'), t('Procura alternativas mais baratas só para essa categoria: é onde o impacto é maior.')]],

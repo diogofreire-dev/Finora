@@ -11,21 +11,21 @@ $currentTheme = getUserTheme($pdo, $uid);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $sym    = market_symbol($_POST['symbol'] ?? '');
     $action = $_POST['action'] ?? '';
-    $flash  = ['danger', 'Símbolo inválido.'];
+    $flash  = ['danger', t('Símbolo inválido.')];
     if ($sym && $action === 'follow') {
         $n = $pdo->prepare('SELECT COUNT(*) FROM watchlist WHERE user_id = :u');
         $n->execute([':u' => $uid]);
         if ((int) $n->fetchColumn() >= MARKET_WATCH_MAX) {
-            $flash = ['danger', 'Já segues ' . MARKET_WATCH_MAX . ' títulos. Deixa de seguir algum primeiro.'];
+            $flash = ['danger', t('Já segues {n} títulos. Deixa de seguir algum primeiro.', ['n' => MARKET_WATCH_MAX])];
         } elseif (!market_quote($pdo, $uid, $sym)) {          // só se segue o que existe mesmo na fonte
-            $flash = ['danger', 'Não encontrámos cotação para ' . $sym . '.'];
+            $flash = ['danger', t('Não encontrámos cotação para {symbol}.', ['symbol' => $sym])];
         } else {
             $pdo->prepare('INSERT IGNORE INTO watchlist (user_id, symbol) VALUES (:u, :s)')->execute([':u' => $uid, ':s' => $sym]);
-            $flash = ['success', 'A seguir ' . $sym . '.'];
+            $flash = ['success', t('A seguir {symbol}.', ['symbol' => $sym])];
         }
     } elseif ($sym && $action === 'unfollow') {
         $pdo->prepare('DELETE FROM watchlist WHERE user_id = :u AND symbol = :s')->execute([':u' => $uid, ':s' => $sym]);
-        $flash = ['success', 'Deixaste de seguir ' . $sym . '.'];
+        $flash = ['success', t('Deixaste de seguir {symbol}.', ['symbol' => $sym])];
     }
     $_SESSION['flash_bolsa'] = $flash;
     $q = trim((string) ($_POST['q'] ?? ''));
@@ -47,18 +47,15 @@ $watch = [];
 foreach ($following as $sym) $watch[$sym] = market_quote($pdo, $uid, $sym);
 
 $suggestions = ['VWCE.DE' => 'Vanguard FTSE All-World', 'EDP.LS' => 'EDP', 'GALP.LS' => 'Galp', 'AAPL' => 'Apple', 'BTC-EUR' => 'Bitcoin'];
-function pct_txt(?float $v): string { return $v === null ? '—' : ($v > 0 ? '+' : ($v < 0 ? '−' : '')) . number_format(abs($v), 2, ',', '') . '%'; }
-function price_txt(float $v, string $cur = 'EUR'): string {
-    $sym = ['EUR' => '€', 'USD' => 'US$', 'GBP' => '£', 'CHF' => 'CHF'][$cur] ?? $cur;
-    return number_format($v, $v < 1 ? 4 : 2, ',', "\u{202F}") . "\u{00A0}" . $sym;
-}
+function pct_txt(?float $v): string { return $v === null ? '—' : ($v > 0 ? '+' : ($v < 0 ? '−' : '')) . fmt_num(abs($v), 2) . '%'; }
+function price_txt(float $v, string $cur = 'EUR'): string { return fmt_price_in($v, $cur); }
 ?>
 <!doctype html>
 <html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Bolsa - Finora</title>
+  <title><?= te('Bolsa - Finora') ?></title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="../css/theme.css">
@@ -114,23 +111,23 @@ function price_txt(float $v, string $cur = 'EUR'): string {
 <main class="main-content">
 <div class="page-content">
 <div class="bk">
-  <h1>Bolsa</h1>
-  <p class="bk-intro">Pesquisa ações, ETFs e cripto e segue as cotações. Para registar o que tens, usa os <a href="investments.php">Investimentos</a>.</p>
+  <h1><?= te('Bolsa') ?></h1>
+  <p class="bk-intro"><?= te('Pesquisa ações, ETFs e cripto e segue as cotações. Para registar o que tens, usa os') ?> <a href="investments.php"><?= te('Investimentos') ?></a>.</p>
 
   <?php if ($flashText): ?>
     <div class="s-alert s-alert-<?= $flashType ?>" role="status"><i class="bi bi-<?= $flashType === 'success' ? 'check-circle' : 'exclamation-circle' ?>"></i><span><?= htmlspecialchars($flashText) ?></span></div>
   <?php endif; ?>
 
   <section class="pg-card" style="--tone: var(--cat-1)" aria-labelledby="bkSearchT">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-search"></i></span><div><h2 id="bkSearchT">Pesquisar</h2><p>Pelo nome ou pelo símbolo: "galp", "vanguard", "AAPL", "bitcoin".</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-search"></i></span><div><h2 id="bkSearchT"><?= te('Pesquisar') ?></h2><p><?= te('Pelo nome ou pelo símbolo: "galp", "vanguard", "AAPL", "bitcoin".') ?></p></div></header>
     <form class="bk-search" method="get" role="search">
-      <label class="visually-hidden" for="bkQ">Pesquisar título</label>
-      <input id="bkQ" type="search" name="q" class="form-control" maxlength="40" value="<?= htmlspecialchars($q) ?>" placeholder="Ex: EDP" autocomplete="off">
-      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-search"></i> Pesquisar</button>
+      <label class="visually-hidden" for="bkQ"><?= te('Pesquisar título') ?></label>
+      <input id="bkQ" type="search" name="q" class="form-control" maxlength="40" value="<?= htmlspecialchars($q) ?>" placeholder="<?= te('Ex: EDP') ?>" autocomplete="off">
+      <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-search"></i> <?= te('Pesquisar') ?></button>
     </form>
     <?php if ($q !== ''): ?>
       <?php if (!$results): ?>
-        <div class="bk-empty">Sem resultados para "<?= htmlspecialchars($q) ?>". Experimenta outro nome ou o símbolo.</div>
+        <div class="bk-empty"><?= te('Sem resultados para "{q}". Experimenta outro nome ou o símbolo.', ['q' => $q]) ?></div>
       <?php else: ?>
         <ul class="bk-results">
           <?php foreach ($results as $r): $isF = in_array($r['symbol'], $following, true); ?>
@@ -138,14 +135,14 @@ function price_txt(float $v, string $cur = 'EUR'): string {
               <span class="bk-sym"><?= htmlspecialchars($r['symbol']) ?></span>
               <div class="bk-what"><b><?= htmlspecialchars($r['name']) ?></b><small><?= htmlspecialchars($r['type']) ?><?= $r['exchange'] ? ' · ' . htmlspecialchars($r['exchange']) : '' ?></small></div>
               <?php if ($isF): ?>
-                <span class="mk-chip up"><i class="bi bi-check2"></i> A seguir</span>
+                <span class="mk-chip up"><i class="bi bi-check2"></i> <?= te('A seguir') ?></span>
               <?php else: ?>
                 <form method="post">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="follow">
                   <input type="hidden" name="symbol" value="<?= htmlspecialchars($r['symbol']) ?>">
                   <input type="hidden" name="q" value="<?= htmlspecialchars($q) ?>">
-                  <button type="submit" class="btn-s"><i class="bi bi-plus-lg"></i> Seguir</button>
+                  <button type="submit" class="btn-s"><i class="bi bi-plus-lg"></i> <?= te('Seguir') ?></button>
                 </form>
               <?php endif; ?>
             </li>
@@ -156,10 +153,10 @@ function price_txt(float $v, string $cur = 'EUR'): string {
   </section>
 
   <section class="pg-card" style="--tone: var(--cat-3)" aria-labelledby="bkWatchT">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-eye"></i></span><div><h2 id="bkWatchT">A seguir</h2><p><?= count($following) ?> de <?= MARKET_WATCH_MAX ?> títulos · preços em euros</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-eye"></i></span><div><h2 id="bkWatchT"><?= te('A seguir') ?></h2><p><?= te('{n} de {max} títulos · preços em euros', ['n' => count($following), 'max' => MARKET_WATCH_MAX]) ?></p></div></header>
     <?php if (!$following): ?>
       <div class="bk-empty">
-        Ainda não segues nenhum título. Experimenta um destes:
+        <?= te('Ainda não segues nenhum título. Experimenta um destes:') ?>
         <div class="bk-sugg">
           <?php foreach ($suggestions as $sym => $label): ?>
             <form method="post">
@@ -181,7 +178,7 @@ function price_txt(float $v, string $cur = 'EUR'): string {
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="unfollow">
                 <input type="hidden" name="symbol" value="<?= htmlspecialchars($sym) ?>">
-                <button type="submit" class="bk-x" aria-label="Deixar de seguir <?= htmlspecialchars($sym) ?>" title="Deixar de seguir"><i class="bi bi-x-lg"></i></button>
+                <button type="submit" class="bk-x" aria-label="<?= te('Deixar de seguir {symbol}', ['symbol' => $sym]) ?>" title="<?= te('Deixar de seguir') ?>"><i class="bi bi-x-lg"></i></button>
               </form>
             </div>
             <?php if ($w): ?>
@@ -190,21 +187,21 @@ function price_txt(float $v, string $cur = 'EUR'): string {
                 <?php $cp = $w['change_pct']; ?>
                 <span class="mk-chip <?= $cp === null ? '' : ($cp > 0.005 ? 'up' : ($cp < -0.005 ? 'down' : '')) ?>"><?= pct_txt($cp) ?></span>
               </div>
-              <?php if ($w['currency'] !== 'EUR'): ?><span class="orig"><?= price_txt($w['price'], $w['currency']) ?> na moeda original</span><?php endif; ?>
-              <?= market_spark_svg($w['spark'], 'Evolução do último mês de ' . ($w['name'] ?? $sym)) ?>
+              <?php if ($w['currency'] !== 'EUR'): ?><span class="orig"><?= price_txt($w['price'], $w['currency']) ?> <?= te('na moeda original') ?></span><?php endif; ?>
+              <?= market_spark_svg($w['spark'], t('Evolução do último mês de {name}', ['name' => $w['name'] ?? $sym])) ?>
               <div class="bk-row">
-                <span class="when"><?= $w['stale'] ? 'Sem ligação · último preço conhecido' : ($w['minutes'] < 1 ? 'Atualizado agora' : 'Há ' . $w['minutes'] . ' min') ?></span>
-                <a class="btn-s" href="investments.php?add=<?= rawurlencode($sym) ?>" style="min-height:32px;padding:3px 10px;font-size:12.5px"><i class="bi bi-plus-lg"></i> À carteira</a>
+                <span class="when"><?= $w['stale'] ? te('Sem ligação · último preço conhecido') : ($w['minutes'] < 1 ? te('Atualizado agora') : te('Há {n} min', ['n' => $w['minutes']])) ?></span>
+                <a class="btn-s" href="investments.php?add=<?= rawurlencode($sym) ?>" style="min-height:32px;padding:3px 10px;font-size:12.5px"><i class="bi bi-plus-lg"></i> <?= te('À carteira') ?></a>
               </div>
             <?php else: ?>
-              <span class="when">Cotação indisponível de momento.</span>
+              <span class="when"><?= te('Cotação indisponível de momento.') ?></span>
             <?php endif; ?>
           </article>
         <?php endforeach; ?>
       </div>
     <?php endif; ?>
   </section>
-  <p class="bk-note">Cotações do Yahoo Finance (podem ter atraso) convertidas para euros com o câmbio do BCE. Informação, não aconselhamento financeiro.</p>
+  <p class="bk-note"><?= te('Cotações do Yahoo Finance (podem ter atraso) convertidas para euros com o câmbio do BCE. Informação, não aconselhamento financeiro.') ?></p>
 </div>
 </div>
 </main>
