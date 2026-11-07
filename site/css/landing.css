@@ -257,3 +257,6 @@ section[id] { scroll-margin-top: 72px; }
   html { scroll-behavior: auto; }
   * { transition: none !important; }
 }
+
+/* Seletor de língua (EN / PT) com o mesmo tamanho do botão do tema */
+.ln-lang { font: 700 13px/1 var(--ln-font); letter-spacing: .02em; text-decoration: none; }

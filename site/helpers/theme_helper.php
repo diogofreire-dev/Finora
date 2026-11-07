@@ -1,5 +1,6 @@
 <?php
 // site/helpers/theme_helper.php
+require_once __DIR__ . '/i18n.php';
 
 // Os únicos temas que existem. O valor vai parar a data-theme="…" em todas as páginas,
 // por isso nunca devolvemos nada que não esteja nesta lista (whitelist).
@@ -24,8 +25,9 @@ function getUserTheme($pdo, $user_id) {
         }
 
         // Se não existir, criar configurações padrão
-        $stmt = $pdo->prepare("INSERT INTO user_settings (user_id, theme) VALUES (:uid, 'light')");
-        $stmt->execute([':uid' => $user_id]);
+        // A língua é a que a pessoa estava a usar quando criou a conta (cookie / browser)
+        $stmt = $pdo->prepare("INSERT INTO user_settings (user_id, theme, language) VALUES (:uid, 'light', :lang)");
+        $stmt->execute([':uid' => $user_id, ':lang' => current_lang()]);
         return 'light';
     } catch (PDOException $e) {
         return 'light';

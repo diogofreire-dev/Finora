@@ -100,16 +100,16 @@ $thisPath = $linePath($thisCum, $today);
 
 $categoryTotal = array_sum(array_column($categoryData, 'total'));
 $activeCards   = array_values(array_filter($cards, fn($c) => $c['active']));
-$firstName     = explode(' ', trim($_SESSION['username'] ?? ''))[0] ?: 'olá';
+$firstName     = explode(' ', trim($_SESSION['username'] ?? ''))[0] ?: t('olá');
 $hour          = (int) date('G');
-$greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite');
+$greeting      = $hour < 12 ? t('Bom dia') : ($hour < 20 ? t('Boa tarde') : t('Boa noite'));
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?=$currentTheme?>">
+<html lang="<?= html_lang() ?>" data-theme="<?=$currentTheme?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard - Finora</title>
+  <title><?= te('Dashboard') ?> - Finora</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
   <link rel="stylesheet" href="css/theme.css">
@@ -249,29 +249,29 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
   <!-- ── O mês numa frase ── -->
   <section class="dsh-hero" aria-labelledby="dshHeadline">
     <div>
-      <p class="dsh-greet"><?= $greeting ?>, <?= htmlspecialchars($firstName) ?></p>
+      <p class="dsh-greet"><?= htmlspecialchars($greeting) ?>, <?= htmlspecialchars($firstName) ?></p>
       <?php if ($spentToDate > 0): ?>
-        <h1 class="dsh-headline" id="dshHeadline">Em <?= $monthName ?> já gastaste <?= fmt_money($spentToDate) ?></h1>
+        <h1 class="dsh-headline" id="dshHeadline"><?= te('Em {month} já gastaste {amount}', ['month' => $monthName, 'amount' => fmt_money($spentToDate)]) ?></h1>
         <p class="dsh-compare">
           <?php if ($prevToDate == 0): ?>
-            Até dia <?= $today ?> de <?= $prevName ?> não tinhas gastos registados.
+            <?= te('Até dia {day} de {month} não tinhas gastos registados.', ['day' => $today, 'month' => $prevName]) ?>
           <?php elseif (abs($diffToDate) < 0.005): ?>
-            Exatamente o mesmo que até dia <?= $today ?> de <?= $prevName ?>.
+            <?= te('Exatamente o mesmo que até dia {day} de {month}.', ['day' => $today, 'month' => $prevName]) ?>
           <?php else: ?>
-            <strong><?= fmt_money(abs($diffToDate)) ?> <?= $diffToDate > 0 ? 'mais' : 'menos' ?></strong>
-            do que até dia <?= $today ?> de <?= $prevName ?>.
+            <strong><?= te($diffToDate > 0 ? '{amount} mais' : '{amount} menos', ['amount' => fmt_money(abs($diffToDate))]) ?></strong>
+            <?= te('do que até dia {day} de {month}.', ['day' => $today, 'month' => $prevName]) ?>
           <?php endif; ?>
         </p>
       <?php else: ?>
-        <h1 class="dsh-headline" id="dshHeadline">Ainda não registaste gastos em <?= $monthName ?></h1>
-        <p class="dsh-compare">Regista o que vais gastando para veres aqui como corre o mês em comparação com <?= $prevName ?>.</p>
-        <a href="pages/create_transaction.php" class="dsh-hero-cta"><i class="bi bi-plus-lg"></i> Registar uma transação</a>
+        <h1 class="dsh-headline" id="dshHeadline"><?= te('Ainda não registaste gastos em {month}', ['month' => $monthName]) ?></h1>
+        <p class="dsh-compare"><?= te('Regista o que vais gastando para veres aqui como corre o mês em comparação com {month}.', ['month' => $prevName]) ?></p>
+        <a href="pages/create_transaction.php" class="dsh-hero-cta"><i class="bi bi-plus-lg"></i> <?= te('Registar uma transação') ?></a>
       <?php endif; ?>
     </div>
 
     <figure class="dsh-chart" style="margin:0">
       <svg viewBox="0 0 <?= $chartW ?> <?= $chartH ?>" role="img"
-           aria-label="Gasto acumulado: <?= fmt_money($spentToDate) ?> até dia <?= $today ?> de <?= $monthName ?>, contra <?= fmt_money($prevToDate) ?> no mesmo ponto de <?= $prevName ?>">
+           aria-label="<?= te('Gasto acumulado: {amount} até dia {day} de {month}, contra {prev} no mesmo ponto de {prevMonth}', ['amount' => fmt_money($spentToDate), 'day' => $today, 'month' => $monthName, 'prev' => fmt_money($prevToDate), 'prevMonth' => $prevName]) ?>">
         <line class="base" x1="0" y1="<?= $chartH - $chartPad ?>" x2="<?= $chartW ?>" y2="<?= $chartH - $chartPad ?>"/>
         <?php if ($prevPath): ?><path class="prev" d="<?= $prevPath ?>"/><?php endif; ?>
         <?php if ($thisPath): ?>
@@ -293,14 +293,14 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
       <section class="dsh-panel" id="dshCategorias" aria-labelledby="hCat">
         <div class="dsh-panel-head">
-          <h2 id="hCat">Para onde foi o dinheiro</h2>
-          <a href="pages/analytics.php">Ver análise</a>
+          <h2 id="hCat"><?= te('Para onde foi o dinheiro') ?></h2>
+          <a href="pages/analytics.php"><?= te('Ver análise') ?></a>
         </div>
         <?php if (empty($categoryData)): ?>
-          <p class="dsh-empty">Quando registares gastos este mês, vês aqui a divisão por categoria.</p>
+          <p class="dsh-empty"><?= te('Quando registares gastos este mês, vês aqui a divisão por categoria.') ?></p>
         <?php else: ?>
           <div class="dsh-panel-body">
-            <div class="dsh-catbar" role="img" aria-label="Divisão dos gastos de <?= $monthName ?> por categoria">
+            <div class="dsh-catbar" role="img" aria-label="<?= te('Divisão dos gastos de {month} por categoria', ['month' => $monthName]) ?>">
               <?php foreach ($categoryData as $cat): ?>
                 <span style="width:<?= round($cat['total'] / $categoryTotal * 100, 2) ?>%;background:<?= $catColor($cat['category']) ?>"></span>
               <?php endforeach; ?>
@@ -309,7 +309,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
               <?php foreach (array_slice($categoryData, 0, 8) as $cat): ?>
                 <li>
                   <span class="sw" style="background:<?= $catColor($cat['category']) ?>"></span>
-                  <span class="nm"><?= htmlspecialchars($cat['category']) ?></span>
+                  <span class="nm"><?= te($cat['category']) ?></span>
                   <span class="pc"><?= round($cat['total'] / $categoryTotal * 100) ?>%</span>
                   <span class="am"><?= fmt_money($cat['total']) ?></span>
                 </li>
@@ -321,11 +321,11 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
       <section class="dsh-panel" aria-labelledby="hTx">
         <div class="dsh-panel-head">
-          <h2 id="hTx">Últimas transações</h2>
-          <a href="pages/transactions.php">Ver todas</a>
+          <h2 id="hTx"><?= te('Últimas transações') ?></h2>
+          <a href="pages/transactions.php"><?= te('Ver todas') ?></a>
         </div>
         <?php if (empty($recent)): ?>
-          <p class="dsh-empty">Ainda não tens transações. <a href="pages/create_transaction.php">Registar a primeira</a></p>
+          <p class="dsh-empty"><?= te('Ainda não tens transações.') ?> <a href="pages/create_transaction.php"><?= te('Registar a primeira') ?></a></p>
         <?php else: ?>
           <ul class="dsh-rows">
             <?php foreach ($recent as $r):
@@ -336,9 +336,9 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
               <li class="dsh-row">
                 <span class="dsh-cat-ico" style="background:<?= category_tint($cat) ?>;color:<?= $col ?>"><i class="bi bi-<?= category_icon($cat) ?>"></i></span>
                 <div class="main">
-                  <div class="t1"><?= htmlspecialchars($r['description'] ?: 'Sem descrição') ?></div>
+                  <div class="t1"><?= htmlspecialchars($r['description'] ?: t('Sem descrição')) ?></div>
                   <div class="t2">
-                    <?= htmlspecialchars($cat) ?> · <?= date('j', $ts) ?> <?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?>
+                    <?= te($cat) ?> · <?= date('j', $ts) ?> <?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?>
                     <?= $r['card_name'] ? ' · ' . htmlspecialchars($r['card_name']) : '' ?>
                   </div>
                 </div>
@@ -357,8 +357,8 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
       <?php if (!empty($upcomingReminders) && $notifPrefs['_on']): ?>
       <section class="dsh-panel" aria-labelledby="hPay">
         <div class="dsh-panel-head">
-          <h2 id="hPay"><?= $hasOverdue ? 'Pagamentos em atraso e próximos' : 'Próximos pagamentos' ?></h2>
-          <a href="pages/reminders.php">Lembretes</a>
+          <h2 id="hPay"><?= $hasOverdue ? te('Pagamentos em atraso e próximos') : te('Próximos pagamentos') ?></h2>
+          <a href="pages/reminders.php"><?= te('Lembretes') ?></a>
         </div>
         <ul class="dsh-rows">
           <?php foreach ($upcomingReminders as $r):
@@ -367,13 +367,13 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
             $days = (int) $r['days_until'];
           ?>
             <li class="dsh-row">
-              <span class="dsh-date <?= $over ? 'over' : '' ?>"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?></small></span>
+              <span class="dsh-date <?= $over ? 'over' : '' ?>"><b><?= date('j', $ts) ?></b><small><?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?></small></span>
               <div class="main">
                 <div class="t1"><?= htmlspecialchars($r['name']) ?></div>
                 <div class="t2">
-                  <?php if ($over): ?>Em atraso há <?= abs($days) ?> dia<?= abs($days) > 1 ? 's' : '' ?>
+                  <?php if ($over): ?><?= abs($days) > 1 ? te('Em atraso há {n} dias', ['n' => abs($days)]) : te('Em atraso há 1 dia') ?>
                   <?php elseif ($days === 0): ?>Vence hoje
-                  <?php else: ?>Vence em <?= $days ?> dia<?= $days > 1 ? 's' : '' ?><?php endif; ?>
+                  <?php else: ?><?= $days > 1 ? te('Vence em {n} dias', ['n' => $days]) : te('Vence em 1 dia') ?><?php endif; ?>
                 </div>
               </div>
               <span class="amt"><?= fmt_money($r['amount']) ?></span>
@@ -385,11 +385,11 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
       <section class="dsh-panel" aria-labelledby="hCards">
         <div class="dsh-panel-head">
-          <h2 id="hCards">Cartões</h2>
-          <a href="pages/cards.php"><?= empty($cards) ? 'Adicionar' : 'Gerir' ?></a>
+          <h2 id="hCards"><?= te('Cartões') ?></h2>
+          <a href="pages/cards.php"><?= empty($cards) ? te('Adicionar') : te('Gerir') ?></a>
         </div>
         <?php if (empty($activeCards)): ?>
-          <p class="dsh-empty">Adiciona os teus cartões para acompanhar o limite e o que ainda tens disponível. <a href="pages/add_card.php">Adicionar cartão</a></p>
+          <p class="dsh-empty"><?= te('Adiciona os teus cartões para acompanhar o limite e o que ainda tens disponível.') ?> <a href="pages/add_card.php"><?= te('Adicionar cartão') ?></a></p>
         <?php else: ?>
           <ul class="dsh-rows">
             <?php foreach (array_slice($activeCards, 0, 4) as $c):
@@ -405,12 +405,12 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
                   <div class="t1"><?= htmlspecialchars($c['name']) ?></div>
                   <?php if ($limit > 0): ?>
                     <div class="dsh-meter"><span class="<?= $state ?>" style="width:<?= min(round($pct, 1), 100) ?>%"></span></div>
-                    <div class="t2"><?= fmt_money(max($limit - $c['balance'], 0)) ?> disponíveis de <?= fmt_money($limit, 0) ?></div>
+                    <div class="t2"><?= te('{amount} disponíveis de {limit}', ['amount' => fmt_money(max($limit - $c['balance'], 0)), 'limit' => fmt_money($limit, 0)]) ?></div>
                   <?php else: ?>
-                    <div class="t2">Sem limite definido · <?= fmt_money($c['balance']) ?> usados</div>
+                    <div class="t2"><?= te('Sem limite definido · {amount} usados', ['amount' => fmt_money($c['balance'])]) ?></div>
                   <?php endif; ?>
                 </div>
-                <?php if ($state === 'over'): ?><span class="dsh-flag over">Limite excedido</span>
+                <?php if ($state === 'over'): ?><span class="dsh-flag over"><?= te('Limite excedido') ?></span>
                 <?php elseif ($state === 'warn'): ?><span class="dsh-flag warn"><?= round($pct) ?>%</span><?php endif; ?>
               </li>
             <?php endforeach; ?>
@@ -420,11 +420,11 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
       <section class="dsh-panel" aria-labelledby="hBudget">
         <div class="dsh-panel-head">
-          <h2 id="hBudget">Orçamento</h2>
-          <a href="pages/budgets.php"><?= $activeBudgetsCount > 0 ? 'Ver todos' : 'Criar' ?></a>
+          <h2 id="hBudget"><?= te('Orçamento') ?></h2>
+          <a href="pages/budgets.php"><?= $activeBudgetsCount > 0 ? te('Ver todos') : te('Criar') ?></a>
         </div>
         <?php if (!$mainBudget): ?>
-          <p class="dsh-empty">Define quanto queres gastar por mês e a Finora avisa-te antes de passares o limite. <a href="pages/add_budget.php">Criar orçamento</a></p>
+          <p class="dsh-empty"><?= te('Define quanto queres gastar por mês e a Finora avisa-te antes de passares o limite.') ?> <a href="pages/add_budget.php"><?= te('Criar orçamento') ?></a></p>
         <?php else:
           $left  = $mainBudget['amount'] - $mainBudget['current_spent'];
           $state = $budgetPercentage >= 100 ? 'over' : ($budgetPercentage >= 80 ? 'warn' : '');
@@ -432,13 +432,13 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
           <div class="dsh-panel-body dsh-budget">
             <div class="dsh-budget-top">
               <b><?= fmt_money($mainBudget['current_spent'], 0) ?></b>
-              <span>de <?= fmt_money($mainBudget['amount'], 0) ?> · <?= htmlspecialchars($mainBudget['name']) ?></span>
+              <span><?= te('de {amount}', ['amount' => fmt_money($mainBudget['amount'], 0)]) ?> · <?= htmlspecialchars($mainBudget['name']) ?></span>
             </div>
             <div class="dsh-meter"><span class="<?= $state ?>" style="width:<?= min(round($budgetPercentage, 1), 100) ?>%"></span></div>
             <?php if ($left < 0): ?>
-              <p class="dsh-note over">Passaste o orçamento em <?= fmt_money(abs($left)) ?>.</p>
+              <p class="dsh-note over"><?= te('Passaste o orçamento em {amount}.', ['amount' => fmt_money(abs($left))]) ?></p>
             <?php else: ?>
-              <p class="dsh-note">Ainda podes gastar <?= fmt_money($left) ?><?= $activeBudgetsCount > 1 ? ' · mais ' . ($activeBudgetsCount - 1) . ' orçamento' . ($activeBudgetsCount > 2 ? 's' : '') . ' ativo' . ($activeBudgetsCount > 2 ? 's' : '') : '' ?>.</p>
+              <p class="dsh-note"><?= te('Ainda podes gastar {amount}', ['amount' => fmt_money($left)]) ?><?= $activeBudgetsCount > 2 ? ' · ' . te('mais {n} orçamentos ativos', ['n' => $activeBudgetsCount - 1]) : ($activeBudgetsCount === 2 ? ' · ' . te('mais 1 orçamento ativo') : '') ?>.</p>
             <?php endif; ?>
           </div>
         <?php endif; ?>

@@ -3,6 +3,7 @@
 // Moldura comum das páginas de autenticação (login, registo, recuperar, verificar).
 // Também envia os cabeçalhos de segurança que estas páginas precisam.
 require_once __DIR__ . '/brand.php';
+require_once __DIR__ . '/i18n.php';
 
 // $o['panel'] = ['title' => ..., 'text' => ...] mostra o painel azul à esquerda (login e registo).
 function auth_page_start(string $title, array $o = []): void {
@@ -15,7 +16,7 @@ function auth_page_start(string $title, array $o = []): void {
     $e = fn($s) => htmlspecialchars($s, ENT_QUOTES);
     ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="light">
+<html lang="<?= html_lang() ?>" data-theme="light">
 <head>
 <script>
   (function () {
@@ -44,7 +45,7 @@ function auth_page_start(string $title, array $o = []): void {
 <div class="au-shell<?= $panel ? ' au-split' : '' ?>">
 <?php if ($panel): ?>
   <aside class="au-panel">
-    <a href="../../index.php" class="au-panel-brand" aria-label="Finora — página inicial"><?= finora_logo('au-logo') ?></a>
+    <a href="../../index.php" class="au-panel-brand" aria-label="<?= te('Finora — página inicial') ?>"><?= finora_logo('au-logo') ?></a>
     <div class="au-pitch">
       <h1><?= $e($panel['title']) ?></h1>
       <p><?= $e($panel['text']) ?></p>
@@ -58,13 +59,15 @@ function auth_page_start(string $title, array $o = []): void {
 <?php endif; ?>
   <main class="au-main">
     <div class="au-top">
-      <a href="../../index.php" class="au-chip"><i class="bi bi-arrow-left" aria-hidden="true"></i> Página inicial</a>
-      <button type="button" class="au-chip au-chip-icon" id="auTheme" aria-label="Mudar para tema escuro">
+      <a href="../../index.php" class="au-chip"><i class="bi bi-arrow-left" aria-hidden="true"></i> <?= te('Página inicial') ?></a>
+      <?php $__other = current_lang() === 'en' ? 'pt-PT' : 'en'; ?>
+      <a href="<?= htmlspecialchars(lang_url($__other)) ?>" class="au-chip au-lang" lang="<?= LANGS[$__other][1] ?>" hreflang="<?= LANGS[$__other][1] ?>"><i class="bi bi-translate" aria-hidden="true"></i> <?= htmlspecialchars(LANGS[$__other][0]) ?></a>
+      <button type="button" class="au-chip au-chip-icon" id="auTheme" aria-label="<?= te('Mudar para tema escuro') ?>">
         <i class="bi bi-moon-stars" aria-hidden="true"></i>
       </button>
     </div>
     <div class="au-center">
-      <a href="../../index.php" class="au-brand" aria-label="Finora — página inicial"><?= finora_logo('au-logo') ?></a>
+      <a href="../../index.php" class="au-brand" aria-label="<?= te('Finora — página inicial') ?>"><?= finora_logo('au-logo') ?></a>
 <?php
 }
 
@@ -80,7 +83,7 @@ function auth_page_end(string $script = ''): void {
   function paint() {
     var dark = root.dataset.theme === 'dark';
     btn.innerHTML = dark ? '<i class="bi bi-sun" aria-hidden="true"></i>' : '<i class="bi bi-moon-stars" aria-hidden="true"></i>';
-    btn.setAttribute('aria-label', dark ? 'Mudar para tema claro' : 'Mudar para tema escuro');
+    btn.setAttribute('aria-label', dark ? <?= tj('Mudar para tema claro') ?> : <?= tj('Mudar para tema escuro') ?>);
   }
   paint();
   btn.addEventListener('click', function () {
@@ -95,7 +98,7 @@ function auth_page_end(string $script = ''): void {
       var show = input.type === 'password';
       input.type = show ? 'text' : 'password';
       b.setAttribute('aria-pressed', show ? 'true' : 'false');
-      b.setAttribute('aria-label', show ? 'Esconder palavra-passe' : 'Mostrar palavra-passe');
+      b.setAttribute('aria-label', show ? <?= tj('Esconder palavra-passe') ?> : <?= tj('Mostrar palavra-passe') ?>);
       b.querySelector('i').className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
     });
   });
@@ -155,9 +158,9 @@ function auth_google_button(string $label): string {
 // Barra de força + regras por baixo do campo $forId (o JS comum atualiza-as enquanto se escreve).
 // As regras são as mesmas de helpers/password_rules.php — o servidor volta sempre a validar.
 function auth_password_rules(string $forId): string {
-    $rules = ['len' => '8 caracteres', 'upper' => 'Maiúscula', 'lower' => 'Minúscula', 'num' => 'Número', 'sym' => 'Símbolo'];
+    $rules = ['len' => t('8 caracteres'), 'upper' => t('Maiúscula'), 'lower' => t('Minúscula'), 'num' => t('Número'), 'sym' => t('Símbolo')];
     $html = '<div class="au-meter" data-score="0" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span></div>'
-          . '<ul class="au-reqs" id="' . $forId . 'Reqs" data-for="' . $forId . '" aria-label="Regras da palavra-passe">';
+          . '<ul class="au-reqs" id="' . $forId . 'Reqs" data-for="' . $forId . '" aria-label="' . te('Regras da palavra-passe') . '">';
     foreach ($rules as $k => $label) $html .= '<li data-rule="' . $k . '"><i class="bi bi-circle" aria-hidden="true"></i>' . $label . '</li>';
     return $html . '</ul>';
 }
@@ -166,5 +169,5 @@ function auth_password_rules(string $forId): string {
 function auth_password_input(string $id, string $name, string $autocomplete, string $extra = ''): string {
     return '<div class="au-input-wrap"><i class="bi bi-lock au-input-ico" aria-hidden="true"></i>'
          . '<input type="password" id="' . $id . '" name="' . $name . '" class="au-input au-has-btn" autocomplete="' . $autocomplete . '" required ' . $extra . '>'
-         . '<button type="button" class="au-reveal" data-reveal="' . $id . '" aria-label="Mostrar palavra-passe" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button></div>';
+         . '<button type="button" class="au-reveal" data-reveal="' . $id . '" aria-label="' . te('Mostrar palavra-passe') . '" aria-pressed="false"><i class="bi bi-eye" aria-hidden="true"></i></button></div>';
 }

@@ -20,11 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = strtolower(trim((string) ($_POST['email'] ?? '')));
 
     if (!hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-        $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+        $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     } elseif (strlen($email) > 255 || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = 'Esse email não parece válido.';
+        $errors[] = t('Esse email não parece válido.');
     } elseif (!throttle_allow($pdo, 'forgot', client_ip(), FORGOT_IP_MAX, FORGOT_MINUTES)) {
-        $errors[] = 'Demasiados pedidos a partir desta ligação. Tenta daqui a uma hora.';
+        $errors[] = t('Demasiados pedidos a partir desta ligação. Tenta daqui a uma hora.');
     } else {
         $stmt = $pdo->prepare('SELECT id, username, email FROM users WHERE email = :e LIMIT 1');
         $stmt->execute([':e' => $email]);
@@ -46,24 +46,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-auth_page_start('Recuperar palavra-passe');
+auth_page_start(t('Recuperar palavra-passe'));
 ?>
       <div class="au-card">
 <?php if ($sent): ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-envelope-paper" aria-hidden="true"></i></div>
-          <h2>Vê o teu email</h2>
-          <p>Se existir uma conta com <b><?= htmlspecialchars($email) ?></b>, enviámos um link para escolheres uma palavra-passe nova. O link vale durante uma hora.</p>
+          <h2><?= te('Vê o teu email') ?></h2>
+          <p><?= t('Se existir uma conta com {email}, enviámos um link para escolheres uma palavra-passe nova. O link vale durante uma hora.', ['email' => '<b>' . htmlspecialchars($email) . '</b>']) ?></p>
         </div>
         <div class="au-stack">
-          <a href="login.php" class="au-btn">Voltar ao login</a>
+          <a href="login.php" class="au-btn"><?= te('Voltar ao login') ?></a>
         </div>
-        <p class="au-foot au-muted">Não chegou? Vê a pasta de spam ou <a href="forgot_password.php">pede outro link</a>.</p>
+        <p class="au-foot au-muted"><?= te('Não chegou? Vê a pasta de spam ou') ?> <a href="forgot_password.php"><?= te('pede outro link') ?></a>.</p>
 <?php else: ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-key" aria-hidden="true"></i></div>
-          <h2>Esqueceste-te da palavra-passe?</h2>
-          <p>Escreve o email da tua conta e enviamos um link para criares uma nova.</p>
+          <h2><?= te('Esqueceste-te da palavra-passe?') ?></h2>
+          <p><?= te('Escreve o email da tua conta e enviamos um link para criares uma nova.') ?></p>
         </div>
 
         <?= auth_alert('err', $errors) ?>
@@ -71,16 +71,16 @@ auth_page_start('Recuperar palavra-passe');
         <form method="post" data-once>
           <?= csrf_field() ?>
           <div class="au-field">
-            <label class="au-label" for="email">Email</label>
+            <label class="au-label" for="email"><?= te('Email') ?></label>
             <div class="au-input-wrap">
               <i class="bi bi-envelope au-input-ico" aria-hidden="true"></i>
               <input type="email" id="email" name="email" class="au-input" maxlength="255"
                      value="<?= htmlspecialchars($email) ?>" autocomplete="email" required autofocus>
             </div>
           </div>
-          <button type="submit" class="au-btn">Enviar link</button>
+          <button type="submit" class="au-btn"><?= te('Enviar link') ?></button>
         </form>
-        <p class="au-foot">Lembraste-te? <a href="login.php">Entrar</a></p>
+        <p class="au-foot"><?= te('Lembraste-te?') ?> <a href="login.php"><?= te('Entrar') ?></a></p>
 <?php endif; ?>
       </div>
 <?php auth_page_end(); ?>

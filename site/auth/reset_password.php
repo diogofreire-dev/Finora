@@ -26,11 +26,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === 'valid') {
     $password2 = (string) ($_POST['password2'] ?? '');
 
     if (!hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-        $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+        $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     } elseif ($msg = password_problem_message($password)) {
         $errors[] = $msg;
     } elseif ($password !== $password2) {
-        $errors[] = 'As duas palavras-passe não são iguais.';
+        $errors[] = t('As duas palavras-passe não são iguais.');
     } else {
         // Abrir o link do email prova que a pessoa controla o email: a conta fica verificada
         // e o bloqueio por tentativas falhadas é levantado. O token só serve uma vez.
@@ -43,14 +43,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $status === 'valid') {
     }
 }
 
-auth_page_start('Nova palavra-passe');
+auth_page_start(t('Nova palavra-passe'));
 ?>
       <div class="au-card">
 <?php if ($status === 'valid'): ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-shield-lock" aria-hidden="true"></i></div>
-          <h2>Escolhe uma palavra-passe nova</h2>
-          <p>Depois disto, a antiga deixa de funcionar.</p>
+          <h2><?= te('Escolhe uma palavra-passe nova') ?></h2>
+          <p><?= te('Depois disto, a antiga deixa de funcionar.') ?></p>
         </div>
 
         <?= auth_alert('err', $errors) ?>
@@ -58,34 +58,34 @@ auth_page_start('Nova palavra-passe');
         <form method="post" data-once>
           <?= csrf_field() ?>
           <div class="au-field">
-            <label class="au-label" for="password">Nova palavra-passe</label>
+            <label class="au-label" for="password"><?= te('Nova palavra-passe') ?></label>
             <?= auth_password_input('password', 'password', 'new-password', 'minlength="8" maxlength="72" aria-describedby="passwordReqs" autofocus') ?>
             <?= auth_password_rules('password') ?>
           </div>
           <div class="au-field">
-            <label class="au-label" for="password2">Repetir palavra-passe</label>
+            <label class="au-label" for="password2"><?= te('Repetir palavra-passe') ?></label>
             <?= auth_password_input('password2', 'password2', 'new-password', 'maxlength="72"') ?>
           </div>
-          <button type="submit" class="au-btn">Guardar palavra-passe</button>
+          <button type="submit" class="au-btn"><?= te('Guardar palavra-passe') ?></button>
         </form>
 <?php elseif ($status === 'success'): ?>
         <div class="au-head au-head-center">
           <div class="au-status ok"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-          <h2>Palavra-passe guardada</h2>
-          <p>Já podes entrar com a palavra-passe nova.</p>
+          <h2><?= te('Palavra-passe guardada') ?></h2>
+          <p><?= te('Já podes entrar com a palavra-passe nova.') ?></p>
         </div>
-        <a href="login.php" class="au-btn">Entrar</a>
+        <a href="login.php" class="au-btn"><?= te('Entrar') ?></a>
 <?php else: ?>
         <div class="au-head au-head-center">
           <div class="au-status bad"><i class="bi bi-<?= $status === 'expired' ? 'hourglass-bottom' : 'x-lg' ?>" aria-hidden="true"></i></div>
-          <h2><?= $status === 'expired' ? 'Este link expirou' : 'Este link não funciona' ?></h2>
+          <h2><?= $status === 'expired' ? t('Este link expirou') : t('Este link não funciona') ?></h2>
           <p><?= $status === 'expired'
-                ? 'Os links de recuperação valem durante uma hora. Pede um novo.'
-                : 'Pode já ter sido usado, ou foi copiado incompleto. Pede um novo.' ?></p>
+                ? t('Os links de recuperação valem durante uma hora. Pede um novo.')
+                : t('Pode já ter sido usado, ou foi copiado incompleto. Pede um novo.') ?></p>
         </div>
         <div class="au-stack">
-          <a href="forgot_password.php" class="au-btn">Pedir link novo</a>
-          <a href="login.php" class="au-btn-quiet">Voltar ao login</a>
+          <a href="forgot_password.php" class="au-btn"><?= te('Pedir link novo') ?></a>
+          <a href="login.php" class="au-btn-quiet"><?= te('Voltar ao login') ?></a>
         </div>
 <?php endif; ?>
       </div>

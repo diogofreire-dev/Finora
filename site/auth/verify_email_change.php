@@ -24,7 +24,7 @@ if (strlen($token) === 64 && ctype_xdigit($token)) {
 // se um GET bastasse, a mudança era confirmada sem a pessoa carregar em nada.
 if ($status === 'confirm' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-        $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+        $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     } else {
         try {
             $upd = $pdo->prepare('UPDATE users SET email = pending_email, last_email_change = NOW(),
@@ -38,7 +38,7 @@ if ($status === 'confirm' && $_SERVER['REQUEST_METHOD'] === 'POST') {
                 $status = 'taken';
             } else {
                 error_log('[verify_email_change] ' . $e->getMessage());
-                $errors[] = 'Não foi possível mudar o email. Tenta outra vez.';
+                $errors[] = t('Não foi possível mudar o email. Tenta outra vez.');
             }
         }
     }
@@ -49,37 +49,37 @@ if ($status === 'expired' && $user) {
         ->execute([':id' => $user['id']]);
 }
 
-$back = !empty($_SESSION['user_id']) ? ['../pages/settings.php', 'Voltar às definições'] : ['login.php', 'Entrar'];
+$back = !empty($_SESSION['user_id']) ? ['../pages/settings.php', t('Voltar às definições')] : ['login.php', t('Entrar')];
 
-auth_page_start('Confirmar novo email');
+auth_page_start(t('Confirmar novo email'));
 ?>
       <div class="au-card">
 <?php if ($status === 'confirm'): ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-envelope-arrow-up" aria-hidden="true"></i></div>
-          <h2>Confirmar novo email</h2>
-          <p>A tua conta vai passar a usar <b><?= htmlspecialchars($user['pending_email']) ?></b> para entrar e receber avisos.</p>
+          <h2><?= te('Confirmar novo email') ?></h2>
+          <p><?= t('A tua conta vai passar a usar {email} para entrar e receber avisos.', ['email' => '<b>' . htmlspecialchars($user['pending_email']) . '</b>']) ?></p>
         </div>
         <?= auth_alert('err', $errors) ?>
         <form method="post" data-once>
           <?= csrf_field() ?>
-          <button type="submit" class="au-btn">Confirmar mudança</button>
+          <button type="submit" class="au-btn"><?= te('Confirmar mudança') ?></button>
         </form>
 <?php elseif ($status === 'success'): ?>
         <div class="au-head au-head-center">
           <div class="au-status ok"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-          <h2>Email mudado</h2>
-          <p>A partir de agora entras com o email novo.</p>
+          <h2><?= te('Email mudado') ?></h2>
+          <p><?= te('A partir de agora entras com o email novo.') ?></p>
         </div>
         <a href="<?= $back[0] ?>" class="au-btn"><?= $back[1] ?></a>
 <?php else: ?>
         <div class="au-head au-head-center">
           <div class="au-status bad"><i class="bi bi-<?= $status === 'expired' ? 'hourglass-bottom' : 'x-lg' ?>" aria-hidden="true"></i></div>
-          <h2><?= ['expired' => 'Este link expirou', 'taken' => 'Esse email já está em uso'][$status] ?? 'Este link não funciona' ?></h2>
+          <h2><?= ['expired' => t('Este link expirou'), 'taken' => t('Esse email já está em uso')][$status] ?? t('Este link não funciona') ?></h2>
           <p><?= [
-                'expired' => 'Os links valem durante uma hora. Pede a mudança outra vez nas definições.',
-                'taken'   => 'Entretanto foi criada outra conta com esse email. Escolhe outro nas definições.',
-              ][$status] ?? 'Pode já ter sido usado, ou foi copiado incompleto. Pede a mudança outra vez nas definições.' ?></p>
+                'expired' => t('Os links valem durante uma hora. Pede a mudança outra vez nas definições.'),
+                'taken'   => t('Entretanto foi criada outra conta com esse email. Escolhe outro nas definições.'),
+              ][$status] ?? t('Pode já ter sido usado, ou foi copiado incompleto. Pede a mudança outra vez nas definições.') ?></p>
         </div>
         <a href="<?= $back[0] ?>" class="au-btn"><?= $back[1] ?></a>
 <?php endif; ?>

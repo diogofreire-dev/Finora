@@ -3,6 +3,7 @@
 session_start();
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../../config/google_oauth.php';
+require_once __DIR__ . '/../helpers/i18n.php';
 
 // As colunas google_id e avatar_path vêm de database/migration_users_profile.sql
 // (antes cada login com Google tentava fazer ALTER TABLE à base de dados).
@@ -16,14 +17,14 @@ function googleError($msg) {
 // Verificar state anti-CSRF
 $state = (string) ($_GET['state'] ?? '');
 if (empty($_SESSION['google_oauth_state']) || !hash_equals($_SESSION['google_oauth_state'], $state)) {
-    googleError('Sessão inválida. Tenta novamente.');
+    googleError(t('Sessão inválida. Tenta novamente.'));
 }
 unset($_SESSION['google_oauth_state']);
 
 // Verificar código
 $code = (string) ($_GET['code'] ?? '');
 if (empty($code)) {
-    googleError('Login com Google cancelado.');
+    googleError(t('Login com Google cancelado.'));
 }
 
 // Trocar código por token
@@ -61,13 +62,13 @@ if (!$tokenResponse) {
 }
 
 if (!$tokenResponse) {
-    googleError('Não foi possível comunicar com o Google. Tenta novamente.');
+    googleError(t('Não foi possível comunicar com o Google. Tenta novamente.'));
 }
 
 $tokenData = json_decode($tokenResponse, true);
 $accessToken = $tokenData['access_token'] ?? '';
 if (empty($accessToken)) {
-    googleError('Falha ao obter token do Google. Tenta novamente.');
+    googleError(t('Falha ao obter token do Google. Tenta novamente.'));
 }
 
 // Obter informações do utilizador
@@ -87,7 +88,7 @@ if (!$userInfoResponse) {
 }
 
 if (!$userInfoResponse) {
-    googleError('Não foi possível obter informações do Google. Tenta novamente.');
+    googleError(t('Não foi possível obter informações do Google. Tenta novamente.'));
 }
 
 $googleUser = json_decode($userInfoResponse, true);
@@ -98,13 +99,13 @@ $googlePic  = $googleUser['picture']        ?? '';
 $emailVerified = $googleUser['verified_email'] ?? false;
 
 if (empty($googleId) || empty($googleEmail)) {
-    googleError('Não foi possível obter o teu email do Google.');
+    googleError(t('Não foi possível obter o teu email do Google.'));
 }
 
 // Só confiar no email se o Google o tiver verificado. Sem isto, uma conta Google criada
 // com o email de outra pessoa (ainda por verificar) entrava na conta Finora dessa pessoa.
 if ($emailVerified !== true) {
-    googleError('O email da tua conta Google ainda não está verificado.');
+    googleError(t('O email da tua conta Google ainda não está verificado.'));
 }
 
 // Nome mostrado na app: sem caracteres de controlo e no máximo 50 (tamanho da coluna)
@@ -126,10 +127,10 @@ unset($_SESSION['google_link_uid']);
 if ($linkUid && $linkUid === (int) ($_SESSION['user_id'] ?? 0)) {
     $stmt = $pdo->prepare('SELECT id FROM users WHERE google_id = :gid AND id != :uid LIMIT 1');
     $stmt->execute([':gid' => $googleId, ':uid' => $linkUid]);
-    if ($stmt->fetch()) settingsFlash('danger', 'Esta conta Google já está ligada a outro utilizador.');
+    if ($stmt->fetch()) settingsFlash('danger', t('Esta conta Google já está ligada a outro utilizador.'));
     $pdo->prepare('UPDATE users SET google_id = :gid WHERE id = :uid')
         ->execute([':gid' => $googleId, ':uid' => $linkUid]);
-    settingsFlash('success', 'Conta Google ligada. Já podes entrar com ela.');
+    settingsFlash('success', t('Conta Google ligada. Já podes entrar com ela.'));
 }
 
 // Primeiro pela conta Google já ligada; só depois pelo email
@@ -175,7 +176,8 @@ try {
         ]);
     $newId = $pdo->lastInsertId();
     try {
-        $pdo->prepare('INSERT INTO user_settings (user_id) VALUES (:uid)')->execute([':uid' => $newId]);
+        // A conta nova fica na língua em que a pessoa estava a ver o site
+        $pdo->prepare('INSERT INTO user_settings (user_id, language) VALUES (:uid, :lang)')->execute([':uid' => $newId, ':lang' => current_lang()]);
     } catch (PDOException $e) {}
     session_regenerate_id(true);
     $_SESSION['user_id']  = $newId;
@@ -184,5 +186,5 @@ try {
     exit;
 } catch (PDOException $e) {
     error_log('[google_callback] ' . $e->getMessage());
-    googleError('Não foi possível criar a conta. Tenta outra vez.');
+    googleError(t('Não foi possível criar a conta. Tenta outra vez.'));
 }
