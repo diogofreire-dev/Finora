@@ -41,7 +41,7 @@ $stmt = $pdo->prepare("SELECT * FROM user_settings WHERE user_id = :uid");
 $stmt->execute([':uid' => $uid]);
 $settings = $stmt->fetch();
 if (!$settings) {
-    $pdo->prepare("INSERT INTO user_settings (user_id) VALUES (:uid)")->execute([':uid' => $uid]);
+    $pdo->prepare("INSERT INTO user_settings (user_id, language) VALUES (:uid, :lang)")->execute([':uid' => $uid, ':lang' => current_lang()]);
     $settings = ['theme' => 'light', 'notifications' => 1];
 }
 
@@ -81,15 +81,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $flash = ['success', $theme === 'dark' ? 'Tema escuro ativado.' : 'Tema claro ativado.'];
         }
 
+        elseif ($action === 'update_language') {
+            $code = $_POST['language'] ?? '';
+            if (isset(LANGS[$code])) {
+                $pdo->prepare("UPDATE user_settings SET language = :l WHERE user_id = :uid")->execute([':l' => $code, ':uid' => $uid]);
+                set_lang($code);
+                remember_lang($code);   // o login e a landing também passam a aparecer nesta língua
+                $flash = ['success', t('Língua alterada.')];
+            } else {
+                $flash = ['danger', t('Escolhe uma língua da lista.')];
+            }
+        }
         elseif ($action === 'update_currency') {
             // Só códigos da lista CURRENCIES: um valor inventado no pedido é recusado, não guardado
             $code = $_POST['currency'] ?? '';
             if (isset(CURRENCIES[$code])) {
                 $pdo->prepare("UPDATE user_settings SET currency = :c WHERE user_id = :uid")->execute([':c' => $code, ':uid' => $uid]);
                 set_user_currency($code);
-                $flash = ['success', 'A moeda passou a ' . CURRENCIES[$code][1] . ' (' . CURRENCIES[$code][0] . ').'];
+                $flash = ['success', t('A moeda passou a {name} ({symbol}).', ['name' => t(CURRENCIES[$code][1]), 'symbol' => CURRENCIES[$code][0]])];
             } else {
-                $flash = ['danger', 'Escolhe uma moeda da lista.'];
+                $flash = ['danger', t('Escolhe uma moeda da lista.')];
             }
         }
         elseif ($action === 'update_notifications') {
@@ -305,7 +316,7 @@ $months       = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 
 $since        = strtotime($user['created_at']);
 ?>
 <!doctype html>
-<html lang="pt-PT" data-theme="<?= $currentTheme ?>">
+<html lang="<?= html_lang() ?>" data-theme="<?= $currentTheme ?>">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -607,7 +618,7 @@ include __DIR__ . '/../components/sidebar.php';
 
   <!-- APARÊNCIA -->
   <section class="pg-card st-card" aria-labelledby="sec-apar" style="--tone:var(--cat-7)">
-    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-palette"></i></span><div><h2 id="sec-apar">Aparência e moeda</h2><p>Fica guardado assim que escolhes.</p></div></header>
+    <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-palette"></i></span><div><h2 id="sec-apar"><?= te('Aparência, língua e moeda') ?></h2><p>Fica guardado assim que escolhes.</p></div></header>
       <form method="post" id="themeForm">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_theme">
@@ -639,17 +650,32 @@ include __DIR__ . '/../components/sidebar.php';
         </fieldset>
         <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary">Guardar tema</button></div></noscript>
       </form>
+      <form method="post" id="languageForm" class="st-row">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="update_language">
+        <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-translate"></i></span>
+        <div class="pg-grow">
+          <label class="st-label" for="language"><?= te('Língua') ?></label>
+          <p class="st-sub" id="languageHelp"><?= te('Algumas páginas ainda só existem em português.') ?></p>
+        </div>
+        <select class="form-select st-currency" id="language" name="language" aria-describedby="languageHelp">
+          <?php foreach (LANGS as $code => [$name]): ?>
+            <option value="<?= $code ?>" lang="<?= LANGS[$code][1] ?>" <?= current_lang() === $code ? 'selected' : '' ?>><?= htmlspecialchars($name) ?></option>
+          <?php endforeach; ?>
+        </select>
+        <noscript><button type="submit" class="btn-s"><?= te('Guardar') ?></button></noscript>
+      </form>
       <form method="post" id="currencyForm" class="st-row">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_currency">
         <span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-cash-coin"></i></span>
         <div class="pg-grow">
-          <label class="st-label" for="currency">Moeda</label>
-          <p class="st-sub" id="currencyHelp">Os valores aparecem nesta moeda em toda a app. Não são convertidos: muda só o símbolo.</p>
+          <label class="st-label" for="currency"><?= te('Moeda') ?></label>
+          <p class="st-sub" id="currencyHelp"><?= te('Os valores aparecem nesta moeda em toda a app. Não são convertidos: muda só o símbolo.') ?></p>
         </div>
         <select class="form-select st-currency" id="currency" name="currency" aria-describedby="currencyHelp">
           <?php foreach (CURRENCIES as $code => [$sym, $name]): ?>
-            <option value="<?= $code ?>" <?= user_currency() === $code ? 'selected' : '' ?>><?= htmlspecialchars("$name ($sym)") ?></option>
+            <option value="<?= $code ?>" <?= user_currency() === $code ? 'selected' : '' ?>><?= htmlspecialchars(t($name) . " ($sym)") ?></option>
           <?php endforeach; ?>
         </select>
         <noscript><button type="submit" class="btn-s">Guardar</button></noscript>
@@ -755,6 +781,7 @@ include __DIR__ . '/../components/sidebar.php';
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // Tema: mostra logo e grava
+document.getElementById('language').addEventListener('change', () => document.getElementById('languageForm').submit());
 document.getElementById('currency').addEventListener('change', () => document.getElementById('currencyForm').submit());
 document.querySelectorAll('#themeForm input[name="theme"]').forEach(r => r.addEventListener('change', () => {
   document.documentElement.setAttribute('data-theme', r.value);

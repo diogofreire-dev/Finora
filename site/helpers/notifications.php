@@ -54,7 +54,7 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
             $has = $pdo->prepare('SELECT 1 FROM user_settings WHERE user_id = :u');
             $has->execute([':u' => $uid]);
             if ($has->fetchColumn()) return;                                   // já verificado hoje
-            $pdo->prepare('INSERT IGNORE INTO user_settings (user_id, notif_checked_on) VALUES (:u, CURDATE())')->execute([':u' => $uid]);
+            $pdo->prepare('INSERT IGNORE INTO user_settings (user_id, notif_checked_on, language) VALUES (:u, CURDATE(), :lang)')->execute([':u' => $uid, ':lang' => current_lang()]);
         }
     }
     $on = fn(string $t) => !empty($prefs[$t]);
@@ -207,9 +207,9 @@ function notif_recent(PDO $pdo, int $uid, int $limit = 8): array {
 }
 
 function notif_ago(int $mins): string {
-    if ($mins < 1)    return 'agora';
-    if ($mins < 60)   return "há $mins min";
-    if ($mins < 1440) return 'há ' . intdiv($mins, 60) . ' h';
+    if ($mins < 1)    return t('agora');
+    if ($mins < 60)   return t('há {n} min', ['n' => $mins]);
+    if ($mins < 1440) return t('há {n} h', ['n' => intdiv($mins, 60)]);
     $d = intdiv($mins, 1440);
-    return $d === 1 ? 'ontem' : "há $d dias";
+    return $d === 1 ? t('ontem') : t('há {n} dias', ['n' => $d]);
 }

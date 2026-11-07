@@ -29,6 +29,8 @@ jobs:
                     | xargs -0 -n1 php -l 2>&1 | grep -v '^No syntax errors' || true)"
           if [ -n "$errors" ]; then echo "$errors"; exit 1; fi
           echo "Todos os ficheiros PHP sem erros de sintaxe."
+      - name: Ficheiros de língua
+        run: php tests/i18n_check.php
 
   secrets:
     name: Segredos (gitleaks)

@@ -39,11 +39,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // CSRF no login: sem isto, um site podia pôr a vítima a entrar na conta do atacante
     // e tudo o que ela registasse ficava visível para ele (login CSRF).
     if (!hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-        $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+        $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     } elseif ($email === '' || $password === '') {
-        $errors[] = 'Preenche o email e a palavra-passe.';
+        $errors[] = t('Preenche o email e a palavra-passe.');
     } elseif (throttle_count($pdo, 'login', client_ip(), LOGIN_IP_MINUTES) >= LOGIN_IP_MAX) {
-        $errors[] = 'Demasiadas tentativas a partir desta ligação. Espera ' . LOGIN_IP_MINUTES . ' minutos.';
+        $errors[] = t('Demasiadas tentativas a partir desta ligação. Espera {n} minutos.', ['n' => LOGIN_IP_MINUTES]);
     } else {
         // O tempo de bloqueio é calculado pelo MySQL (mesmo relógio que grava o NOW())
         $stmt = $pdo->prepare('SELECT id, username, email, password_hash, email_verified,
@@ -57,7 +57,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user && $user['lock_seconds'] > 0) {
             // Conta bloqueada: recusar mesmo que a palavra-passe esteja certa
             $min = (int) ceil($user['lock_seconds'] / 60);
-            $errors[] = "Demasiadas tentativas. Tenta novamente daqui a $min minuto" . ($min > 1 ? 's' : '') . '.';
+            $errors[] = $min > 1 ? t('Demasiadas tentativas. Tenta novamente daqui a {n} minutos.', ['n' => $min])
+                               : t('Demasiadas tentativas. Tenta novamente daqui a 1 minuto.');
         } elseif ($user && $passwordOk) {
             // Login certo: o contador volta a zero
             $pdo->prepare('UPDATE users SET failed_login_attempts = 0, login_locked_until = NULL WHERE id = :id')
@@ -86,35 +87,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ->execute([':id' => $user['id'], ':max' => LOGIN_MAX_ATTEMPTS]);
             }
             // Mesma mensagem para email inexistente e palavra-passe errada (evita enumeração de contas)
-            $errors[] = 'Email ou palavra-passe incorretos.';
+            $errors[] = t('Email ou palavra-passe incorretos.');
         }
     }
 }
 
-auth_page_start('Entrar', [
-    'description' => 'Entra na tua conta Finora e controla os teus cartões, transações e orçamentos.',
+auth_page_start(t('Entrar'), [
+    'description' => t('Entra na tua conta Finora e controla os teus cartões, transações e orçamentos.'),
     'robots'      => 'noindex, follow',
     'panel'       => [
-        'title' => 'Bem-vindo de volta.',
-        'text'  => 'Os teus cartões, gastos e orçamentos estão onde os deixaste.',
+        'title' => t('Bem-vindo de volta.'),
+        'text'  => t('Os teus cartões, gastos e orçamentos estão onde os deixaste.'),
     ],
 ]);
 ?>
       <div class="au-card">
         <div class="au-head">
-          <h2>Entrar na conta</h2>
-          <p>Usa o email e a palavra-passe com que te registaste.</p>
+          <h2><?= te('Entrar na conta') ?></h2>
+          <p><?= te('Usa o email e a palavra-passe com que te registaste.') ?></p>
         </div>
 
         <?= auth_alert('err', $errors) ?>
 
-        <?= auth_google_button('Continuar com Google') ?>
-        <div class="au-or">ou com email</div>
+        <?= auth_google_button(t('Continuar com Google')) ?>
+        <div class="au-or"><?= te('ou com email') ?></div>
 
         <form method="post" data-once>
           <?= csrf_field() ?>
           <div class="au-field">
-            <label class="au-label" for="email">Email</label>
+            <label class="au-label" for="email"><?= te('Email') ?></label>
             <div class="au-input-wrap">
               <i class="bi bi-envelope au-input-ico" aria-hidden="true"></i>
               <input type="email" id="email" name="email" class="au-input" maxlength="255"
@@ -124,14 +125,14 @@ auth_page_start('Entrar', [
           </div>
           <div class="au-field">
             <div class="au-label">
-              <label for="password">Palavra-passe</label>
-              <a href="forgot_password.php">Esqueci-me</a>
+              <label for="password"><?= te('Palavra-passe') ?></label>
+              <a href="forgot_password.php"><?= te('Esqueci-me') ?></a>
             </div>
             <?= auth_password_input('password', 'password', 'current-password', $email !== '' ? 'autofocus' : '') ?>
           </div>
-          <button type="submit" class="au-btn">Entrar</button>
+          <button type="submit" class="au-btn"><?= te('Entrar') ?></button>
         </form>
 
-        <p class="au-foot">Ainda não tens conta? <a href="register.php">Criar conta</a></p>
+        <p class="au-foot"><?= te('Ainda não tens conta?') ?> <a href="register.php"><?= te('Criar conta') ?></a></p>
       </div>
 <?php auth_page_end(); ?>

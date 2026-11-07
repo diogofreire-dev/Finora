@@ -5,6 +5,7 @@
 //   $sidebarPrefix — '' para dashboard.php, '../' para pages/*.php
 
 require_once __DIR__ . '/../helpers/brand.php';
+require_once __DIR__ . '/../helpers/i18n.php';
 
 $_sp  = $sidebarPrefix ?? '../';
 $_ap  = $activePage    ?? '';
@@ -18,22 +19,22 @@ function _ariaCurrent($page, $current) {
 
 // Título mostrado no cabeçalho, para saberes onde estás com o menu fechado
 $_pageTitles = [
-    'dashboard'    => 'Dashboard',
-    'transactions' => 'Transações',
-    'cards'        => 'Cartões',
-    'budgets'      => 'Orçamentos',
-    'savings'      => 'Poupanças',
-    'futuro'       => 'Metas',
-    'investments'  => 'Investimentos',
-    'bolsa'        => 'Bolsa',
-    'reminders'    => 'Lembretes',
-    'analytics'    => 'Análise',
-    'persona'      => 'Personalidade financeira',
-    'ai'           => 'Assistente IA',
-    'scan_fatura'  => 'Ler fatura',
-    'dados'        => 'Dados e relatórios',
-    'settings'     => 'Definições',
-    'notifications' => 'Notificações',
+    'dashboard'    => t('Dashboard'),
+    'transactions' => t('Transações'),
+    'cards'        => t('Cartões'),
+    'budgets'      => t('Orçamentos'),
+    'savings'      => t('Poupanças'),
+    'futuro'       => t('Metas'),
+    'investments'  => t('Investimentos'),
+    'bolsa'        => t('Bolsa'),
+    'reminders'    => t('Lembretes'),
+    'analytics'    => t('Análise'),
+    'persona'      => t('Personalidade financeira'),
+    'ai'           => t('Assistente IA'),
+    'scan_fatura'  => t('Ler fatura'),
+    'dados'        => t('Dados e relatórios'),
+    'settings'     => t('Definições'),
+    'notifications' => t('Notificações'),
 ];
 $_pageTitle = $_pageTitles[$_ap] ?? '';
 
@@ -67,11 +68,11 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
 <header class="app-header">
   <button class="app-header-menu" id="appMenuBtn" type="button"
-          aria-controls="appSidebar" aria-expanded="false" aria-label="Abrir menu">
+          aria-controls="appSidebar" aria-expanded="false" aria-label="<?= te('Abrir menu') ?>">
     <i class="bi bi-list"></i>
   </button>
 
-  <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="Finora — início">
+  <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="<?= te('Finora — início') ?>">
     <?= finora_logo('app-logo') ?>
   </a>
 
@@ -80,26 +81,26 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   <?php endif; ?>
 
   <div class="app-header-actions">
-    <a href="<?= $_sp ?>pages/scan_fatura.php" class="app-header-btn app-header-btn-ghost" title="Ler fatura">
-      <i class="bi bi-qr-code-scan"></i><span>Ler fatura</span>
+    <a href="<?= $_sp ?>pages/scan_fatura.php" class="app-header-btn app-header-btn-ghost" title="<?= te('Ler fatura') ?>">
+      <i class="bi bi-qr-code-scan"></i><span><?= te('Ler fatura') ?></span>
     </a>
     <a href="<?= $_sp ?>pages/create_transaction.php" class="app-header-btn app-header-btn-primary">
-      <i class="bi bi-plus-lg"></i><span>Nova transação</span>
+      <i class="bi bi-plus-lg"></i><span><?= te('Nova transação') ?></span>
     </a>
 
     <div class="app-notif">
       <button class="app-notif-btn" id="appNotifBtn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="appNotifPanel"
-              aria-label="Notificações<?= $_notifCount ? ', ' . $_notifCount . ' por ler' : '' ?>">
+              aria-label="<?= $_notifCount ? te('Notificações, {n} por ler', ['n' => $_notifCount]) : te('Notificações') ?>">
         <i class="bi bi-bell" aria-hidden="true"></i>
         <span class="app-notif-badge" id="appNotifBadge" <?= $_notifCount ? '' : 'hidden' ?>><?= $_notifCount > 9 ? '9+' : $_notifCount ?></span>
       </button>
       <div class="app-notif-panel" id="appNotifPanel" hidden>
         <div class="app-notif-head">
-          <b>Notificações</b>
-          <button type="button" id="appNotifReadAll" <?= $_notifCount ? '' : 'hidden' ?>>Marcar todas como lidas</button>
+          <b><?= te('Notificações') ?></b>
+          <button type="button" id="appNotifReadAll" <?= $_notifCount ? '' : 'hidden' ?>><?= te('Marcar todas como lidas') ?></button>
         </div>
         <?php if (!$_notifs): ?>
-          <p class="app-notif-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i> Está tudo em dia.</p>
+          <p class="app-notif-empty"><i class="bi bi-check2-circle" aria-hidden="true"></i> <?= te('Está tudo em dia.') ?></p>
         <?php else: ?>
           <ul class="app-notif-list">
             <?php foreach ($_notifs as $_n): [$_lbl, $_ic, $_tone] = NOTIF_TYPES[$_n['type']] ?? ['', 'bell', 'cat-1']; ?>
@@ -116,7 +117,7 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
             <?php endforeach; ?>
           </ul>
         <?php endif; ?>
-        <a class="app-notif-all" href="<?= $_sp ?>pages/notifications.php">Ver todas</a>
+        <a class="app-notif-all" href="<?= $_sp ?>pages/notifications.php"><?= te('Ver todas') ?></a>
       </div>
     </div>
 
@@ -134,81 +135,81 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
         <i class="bi bi-chevron-down"></i>
       </button>
       <div class="app-user-menu" id="appUserMenu" role="menu" hidden>
-        <a href="<?= $_sp ?>pages/settings.php" role="menuitem"><i class="bi bi-gear"></i> Definições</a>
-        <a href="<?= $_sp ?>pages/dados.php" role="menuitem"><i class="bi bi-database"></i> Dados e relatórios</a>
-        <a href="<?= $_sp ?>auth/logout.php" role="menuitem" class="app-user-logout"><i class="bi bi-box-arrow-right"></i> Terminar sessão</a>
+        <a href="<?= $_sp ?>pages/settings.php" role="menuitem"><i class="bi bi-gear"></i> <?= te('Definições') ?></a>
+        <a href="<?= $_sp ?>pages/dados.php" role="menuitem"><i class="bi bi-database"></i> <?= te('Dados e relatórios') ?></a>
+        <a href="<?= $_sp ?>auth/logout.php" role="menuitem" class="app-user-logout"><i class="bi bi-box-arrow-right"></i> <?= te('Terminar sessão') ?></a>
       </div>
     </div>
   </div>
 </header>
 
-<aside class="sidebar" id="appSidebar" aria-label="Menu principal" aria-hidden="true">
+<aside class="sidebar" id="appSidebar" aria-label="<?= te('Menu principal') ?>" aria-hidden="true">
   <div class="sidebar-top">
-    <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="Finora — início">
+    <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="<?= te('Finora — início') ?>">
       <?= finora_logo('app-logo') ?>
     </a>
-    <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fechar menu">
+    <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="<?= te('Fechar menu') ?>">
       <i class="bi bi-x-lg"></i>
     </button>
   </div>
 
   <nav class="sidebar-nav">
     <a href="<?= $_sp ?>dashboard.php"          class="<?= _sidebarClass('dashboard',    $_ap) ?>"<?= _ariaCurrent('dashboard', $_ap) ?>>
-      <i class="bi bi-grid-1x2"></i> Dashboard
+      <i class="bi bi-grid-1x2"></i> <?= te('Dashboard') ?>
     </a>
     <a href="<?= $_sp ?>pages/transactions.php" class="<?= _sidebarClass('transactions', $_ap) ?>"<?= _ariaCurrent('transactions', $_ap) ?>>
-      <i class="bi bi-arrow-left-right"></i> Transações
+      <i class="bi bi-arrow-left-right"></i> <?= te('Transações') ?>
     </a>
     <a href="<?= $_sp ?>pages/cards.php"        class="<?= _sidebarClass('cards',        $_ap) ?>"<?= _ariaCurrent('cards', $_ap) ?>>
-      <i class="bi bi-credit-card-2-front"></i> Cartões
+      <i class="bi bi-credit-card-2-front"></i> <?= te('Cartões') ?>
     </a>
 
-    <div class="sidebar-section-label">Planeamento</div>
+    <div class="sidebar-section-label"><?= te('Planeamento') ?></div>
     <a href="<?= $_sp ?>pages/budgets.php"      class="<?= _sidebarClass('budgets',      $_ap) ?>"<?= _ariaCurrent('budgets', $_ap) ?>>
-      <i class="bi bi-pie-chart"></i> Orçamentos
+      <i class="bi bi-pie-chart"></i> <?= te('Orçamentos') ?>
     </a>
     <a href="<?= $_sp ?>pages/savings.php"      class="<?= _sidebarClass('savings',      $_ap) ?>"<?= _ariaCurrent('savings', $_ap) ?>>
-      <i class="bi bi-piggy-bank"></i> Poupanças
+      <i class="bi bi-piggy-bank"></i> <?= te('Poupanças') ?>
     </a>
     <a href="<?= $_sp ?>pages/futuro.php"       class="<?= _sidebarClass('futuro',       $_ap) ?>"<?= _ariaCurrent('futuro', $_ap) ?>>
-      <i class="bi bi-flag"></i> Metas
+      <i class="bi bi-flag"></i> <?= te('Metas') ?>
     </a>
     <a href="<?= $_sp ?>pages/investments.php"  class="<?= _sidebarClass('investments',  $_ap) ?>"<?= _ariaCurrent('investments', $_ap) ?>>
-      <i class="bi bi-graph-up-arrow"></i> Investimentos
+      <i class="bi bi-graph-up-arrow"></i> <?= te('Investimentos') ?>
     </a>
     <a href="<?= $_sp ?>pages/bolsa.php"        class="<?= _sidebarClass('bolsa',        $_ap) ?>"<?= _ariaCurrent('bolsa', $_ap) ?>>
-      <i class="bi bi-activity"></i> Bolsa
+      <i class="bi bi-activity"></i> <?= te('Bolsa') ?>
     </a>
     <a href="<?= $_sp ?>pages/reminders.php"    class="<?= _sidebarClass('reminders',    $_ap) ?>"<?= _ariaCurrent('reminders', $_ap) ?>>
-      <i class="bi bi-calendar-check"></i> Lembretes
+      <i class="bi bi-calendar-check"></i> <?= te('Lembretes') ?>
     </a>
 
-    <div class="sidebar-section-label">Perceber os gastos</div>
+    <div class="sidebar-section-label"><?= te('Perceber os gastos') ?></div>
     <a href="<?= $_sp ?>pages/analytics.php"    class="<?= _sidebarClass('analytics',    $_ap) ?>"<?= _ariaCurrent('analytics', $_ap) ?>>
-      <i class="bi bi-bar-chart-line"></i> Análise
+      <i class="bi bi-bar-chart-line"></i> <?= te('Análise') ?>
     </a>
     <a href="<?= $_sp ?>pages/persona.php"      class="<?= _sidebarClass('persona',      $_ap) ?>"<?= _ariaCurrent('persona', $_ap) ?>>
-      <i class="bi bi-person-hearts"></i> Personalidade financeira
+      <i class="bi bi-person-hearts"></i> <?= te('Personalidade financeira') ?>
     </a>
     <a href="<?= $_sp ?>pages/ai.php"           class="<?= _sidebarClass('ai',           $_ap) ?>"<?= _ariaCurrent('ai', $_ap) ?>>
-      <i class="bi bi-stars"></i> Assistente IA
+      <i class="bi bi-stars"></i> <?= te('Assistente IA') ?>
     </a>
 
-    <div class="sidebar-section-label">Ferramentas</div>
+    <div class="sidebar-section-label"><?= te('Ferramentas') ?></div>
     <a href="<?= $_sp ?>pages/scan_fatura.php"  class="<?= _sidebarClass('scan_fatura',  $_ap) ?>"<?= _ariaCurrent('scan_fatura', $_ap) ?>>
-      <i class="bi bi-qr-code-scan"></i> Ler fatura
+      <i class="bi bi-qr-code-scan"></i> <?= te('Ler fatura') ?>
     </a>
     <a href="<?= $_sp ?>pages/dados.php"        class="<?= _sidebarClass('dados',        $_ap) ?>"<?= _ariaCurrent('dados', $_ap) ?>>
-      <i class="bi bi-database"></i> Dados e relatórios
+      <i class="bi bi-database"></i> <?= te('Dados e relatórios') ?>
     </a>
   </nav>
 
   <div class="sidebar-footer">
     <a href="<?= $_sp ?>pages/settings.php" class="<?= _sidebarClass('settings', $_ap) ?>"<?= _ariaCurrent('settings', $_ap) ?>>
-      <i class="bi bi-gear"></i> Definições
+      <i class="bi bi-gear"></i> <?= te('Definições') ?>
     </a>
     <a href="<?= $_sp ?>auth/logout.php" class="sidebar-logout">
-      <i class="bi bi-box-arrow-right"></i> Terminar sessão
+      <i class="bi bi-box-arrow-right"></i> <?= te('Terminar sessão') ?>
     </a>
   </div>
 </aside>
@@ -263,7 +264,7 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   function setBadge(n) {
     const b = document.getElementById('appNotifBadge');
     b.hidden = n <= 0; b.textContent = n > 9 ? '9+' : String(n);
-    nBtn.setAttribute('aria-label', 'Notificações' + (n > 0 ? ', ' + n + ' por ler' : ''));
+    nBtn.setAttribute('aria-label', n > 0 ? <?= tj('Notificações, {n} por ler') ?>.replace('{n}', n) : <?= tj('Notificações') ?>);
     document.getElementById('appNotifReadAll').hidden = n <= 0;
   }
   nBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleNotif(); });

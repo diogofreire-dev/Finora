@@ -21,7 +21,7 @@ $errors   = [];
 
 $isPost = $_SERVER['REQUEST_METHOD'] === 'POST';
 if ($isPost && !hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-    $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+    $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     $isPost = false;
 }
 
@@ -31,9 +31,9 @@ if ($isPost && !isset($_POST['resend'])) {
     $digits = preg_replace('/\s+/', '', (string) ($_POST['code'] ?? ''));
 
     if ($email === '') {
-        $errors[] = 'Sessão expirada. Faz login para receberes um novo código.';
+        $errors[] = t('Sessão expirada. Faz login para receberes um novo código.');
     } elseif (strlen($digits) !== 6 || !ctype_digit($digits)) {
-        $errors[] = 'Por favor, introduz um código válido de 6 dígitos.';
+        $errors[] = t('Por favor, introduz um código válido de 6 dígitos.');
     } else {
         // Procurar a conta pelo email da sessão — nunca só pelo código
         $stmt = $pdo->prepare('SELECT id, username, email, email_verified, verification_token, verification_attempts,
@@ -54,13 +54,13 @@ if ($isPost && !isset($_POST['resend'])) {
         }
 
         if (!$user) {
-            $errors[] = 'Código de verificação inválido.';
+            $errors[] = t('Código de verificação inválido.');
         } elseif ($user['email_verified'] == 1) {
             $status = 'already_verified';
         } elseif (!$reserved && $user['verification_token'] !== null && $user['is_expired']) {
             $status = 'expired';
         } elseif (!$reserved) {
-            $errors[] = 'Demasiadas tentativas. Pede um novo código.';
+            $errors[] = t('Demasiadas tentativas. Pede um novo código.');
         } elseif (hash_equals($user['verification_token'], $digits)) {
             $pdo->prepare('UPDATE users SET email_verified = 1, verification_token = NULL, verification_expires = NULL, verification_attempts = 0 WHERE id = :id')
                 ->execute([':id' => $user['id']]);
@@ -76,7 +76,7 @@ if ($isPost && !isset($_POST['resend'])) {
             if ($remaining <= 0) {
                 // Esgotou as tentativas: o código deixa de existir
                 $pdo->prepare('UPDATE users SET verification_token = NULL WHERE id = :id')->execute([':id' => $user['id']]);
-                $errors[] = 'Demasiadas tentativas. Pede um novo código.';
+                $errors[] = t('Demasiadas tentativas. Pede um novo código.');
             } else {
                 $errors[] = "Código de verificação inválido. Restam $remaining tentativa" . ($remaining > 1 ? 's' : '') . '.';
             }
@@ -102,53 +102,53 @@ if ($isPost && isset($_POST['resend']) && $email) {
                                   verification_attempts = 0, verification_sent_at = NOW() WHERE id = :id')
                 ->execute([':code' => $newCode, ':id' => $user['id']]);
             try {
-                if ((new EmailService())->sendVerificationEmail($email, $user['username'], $newCode)) $message = 'Novo código enviado!';
-                else $errors[] = 'Erro ao enviar email. Tenta novamente.';
-            } catch (Exception $e) { $errors[] = 'Erro ao enviar email.'; }
+                if ((new EmailService())->sendVerificationEmail($email, $user['username'], $newCode)) $message = t('Novo código enviado!');
+                else $errors[] = t('Erro ao enviar email. Tenta novamente.');
+            } catch (Exception $e) { $errors[] = t('Erro ao enviar email.'); }
         }
     }
 }
 
-auth_page_start('Verificar email');
+auth_page_start(t('Verificar email'));
 ?>
       <div class="au-card">
 <?php if ($status === 'success'): ?>
         <div class="au-head au-head-center">
           <div class="au-status ok"><i class="bi bi-check-lg" aria-hidden="true"></i></div>
-          <h2>Conta confirmada</h2>
-          <p>Bem-vindo à Finora, <?= htmlspecialchars($username) ?>. Vamos levar-te ao painel.</p>
+          <h2><?= te('Conta confirmada') ?></h2>
+          <p><?= te('Bem-vindo à Finora, {name}. Vamos levar-te ao painel.', ['name' => $username]) ?></p>
         </div>
-        <a href="../dashboard.php" class="au-btn">Ir para o painel</a>
+        <a href="../dashboard.php" class="au-btn"><?= te('Ir para o painel') ?></a>
 <?php elseif ($status === 'already_verified'): ?>
         <div class="au-head au-head-center">
           <div class="au-status ok"><i class="bi bi-patch-check" aria-hidden="true"></i></div>
-          <h2>Esta conta já está confirmada</h2>
-          <p>Podes entrar normalmente.</p>
+          <h2><?= te('Esta conta já está confirmada') ?></h2>
+          <p><?= te('Podes entrar normalmente.') ?></p>
         </div>
-        <a href="login.php" class="au-btn">Entrar</a>
+        <a href="login.php" class="au-btn"><?= te('Entrar') ?></a>
 <?php elseif ($status === 'expired'): ?>
         <div class="au-head au-head-center">
           <div class="au-status bad"><i class="bi bi-hourglass-bottom" aria-hidden="true"></i></div>
-          <h2>O código expirou</h2>
-          <p>Os códigos valem <?= VERIFY_CODE_MINUTES ?> minutos. Pede um novo e usa-o logo.</p>
+          <h2><?= te('O código expirou') ?></h2>
+          <p><?= te('Os códigos valem {n} minutos. Pede um novo e usa-o logo.', ['n' => VERIFY_CODE_MINUTES]) ?></p>
         </div>
         <?= auth_alert('err', $errors) ?>
         <form method="post" data-once>
           <?= csrf_field() ?>
-          <button type="submit" name="resend" value="1" class="au-btn">Enviar código novo</button>
+          <button type="submit" name="resend" value="1" class="au-btn"><?= te('Enviar código novo') ?></button>
         </form>
 <?php elseif ($email === ''): ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-envelope" aria-hidden="true"></i></div>
-          <h2>Entra para confirmar o email</h2>
-          <p>A tua sessão terminou. Entra com o email e a palavra-passe e enviamos-te para aqui outra vez.</p>
+          <h2><?= te('Entra para confirmar o email') ?></h2>
+          <p><?= te('A tua sessão terminou. Entra com o email e a palavra-passe e enviamos-te para aqui outra vez.') ?></p>
         </div>
-        <a href="login.php" class="au-btn">Entrar</a>
+        <a href="login.php" class="au-btn"><?= te('Entrar') ?></a>
 <?php else: ?>
         <div class="au-head au-head-center">
           <div class="au-status"><i class="bi bi-envelope-open" aria-hidden="true"></i></div>
-          <h2>Confirma o teu email</h2>
-          <p>Enviámos um código de 6 dígitos para <b><?= htmlspecialchars($email) ?></b>.</p>
+          <h2><?= te('Confirma o teu email') ?></h2>
+          <p><?= t('Enviámos um código de 6 dígitos para {email}.', ['email' => '<b>' . htmlspecialchars($email) . '</b>']) ?></p>
         </div>
 
         <?= auth_alert('err', $errors) ?>
@@ -157,20 +157,20 @@ auth_page_start('Verificar email');
         <form method="post" id="codeForm" data-once>
           <?= csrf_field() ?>
           <div class="au-field">
-            <label class="au-label" for="code">Código</label>
+            <label class="au-label" for="code"><?= te('Código') ?></label>
             <input type="text" id="code" name="code" class="au-input au-otp" inputmode="numeric"
                    autocomplete="one-time-code" pattern="[0-9 ]{6,7}" maxlength="7" required autofocus>
           </div>
-          <button type="submit" class="au-btn">Confirmar</button>
+          <button type="submit" class="au-btn"><?= te('Confirmar') ?></button>
         </form>
         <form method="post" class="au-foot">
           <?= csrf_field() ?>
-          Não chegou? Vê o spam ou
-          <button type="submit" name="resend" value="1" class="au-linkbtn">envia outro código</button>.
+          <?= te('Não chegou? Vê o spam ou') ?>
+          <button type="submit" name="resend" value="1" class="au-linkbtn"><?= te('envia outro código') ?></button>.
         </form>
 <?php endif; ?>
 <?php if (!in_array($status, ['success', 'already_verified'], true)): ?>
-        <p class="au-foot au-muted"><a href="login.php">Voltar ao login</a></p>
+        <p class="au-foot au-muted"><a href="login.php"><?= te('Voltar ao login') ?></a></p>
 <?php endif; ?>
       </div>
 <?php

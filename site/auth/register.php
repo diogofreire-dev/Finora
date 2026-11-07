@@ -34,26 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password2    = (string) ($_POST['password2'] ?? '');
 
     if (!hash_equals(csrf_token(), (string) ($_POST['csrf_token'] ?? ''))) {
-        $errors[] = 'A página esteve aberta demasiado tempo. Tenta outra vez.';
+        $errors[] = t('A página esteve aberta demasiado tempo. Tenta outra vez.');
     } else {
         $len = mb_strlen($username);
-        if ($len < 3 || $len > 50)                                    $errors[] = 'O nome tem de ter entre 3 e 50 caracteres.';
-        if (strlen($email) > 255 || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = 'Esse email não parece válido.';
-        elseif (!email_domain_ok($email))                             $errors[] = 'O domínio desse email não recebe mensagens. Confirma se está bem escrito.';
-        if ($email !== $emailConfirm)                                 $errors[] = 'Os dois emails não são iguais.';
+        if ($len < 3 || $len > 50)                                    $errors[] = t('O nome tem de ter entre 3 e 50 caracteres.');
+        if (strlen($email) > 255 || !filter_var($email, FILTER_VALIDATE_EMAIL)) $errors[] = t('Esse email não parece válido.');
+        elseif (!email_domain_ok($email))                             $errors[] = t('O domínio desse email não recebe mensagens. Confirma se está bem escrito.');
+        if ($email !== $emailConfirm)                                 $errors[] = t('Os dois emails não são iguais.');
         if ($msg = password_problem_message($password))               $errors[] = $msg;
-        if ($password !== $password2)                                 $errors[] = 'As duas palavras-passe não são iguais.';
+        if ($password !== $password2)                                 $errors[] = t('As duas palavras-passe não são iguais.');
     }
 
     if (!$errors && !throttle_allow($pdo, 'register', client_ip(), REGISTER_IP_MAX, REGISTER_IP_MINUTES)) {
-        $errors[] = 'Foram criadas demasiadas contas a partir desta ligação. Tenta daqui a uma hora.';
+        $errors[] = t('Foram criadas demasiadas contas a partir desta ligação. Tenta daqui a uma hora.');
     }
 
     if (!$errors) {
         $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :e LIMIT 1');
         $stmt->execute([':e' => $email]);
         if ($stmt->fetch()) {
-            $errors[] = 'Já existe uma conta com este email. Entra ou recupera a palavra-passe.';
+            $errors[] = t('Já existe uma conta com este email. Entra ou recupera a palavra-passe.');
         } else {
             $hash = password_hash($password, PASSWORD_DEFAULT);
             $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
@@ -73,36 +73,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } catch (Throwable $e) {
                 if ($pdo->inTransaction()) $pdo->rollBack();
                 error_log('[register] ' . $e->getMessage());
-                $errors[] = 'Não conseguimos enviar o email com o código, por isso a conta não foi criada. Tenta outra vez.';
+                $errors[] = t('Não conseguimos enviar o email com o código, por isso a conta não foi criada. Tenta outra vez.');
             }
         }
     }
 }
 
-auth_page_start('Criar conta', [
-    'description' => 'Cria a tua conta Finora gratuitamente e começa a gerir os teus cartões e despesas hoje.',
+auth_page_start(t('Criar conta'), [
+    'description' => t('Cria a tua conta Finora gratuitamente e começa a gerir os teus cartões e despesas hoje.'),
     'robots'      => 'noindex, follow',
     'panel'       => [
-        'title' => 'O teu dinheiro, com clareza.',
-        'text'  => 'Cria a conta em dois minutos, confirma o email com um código e começa a registar.',
+        'title' => t('O teu dinheiro, com clareza.'),
+        'text'  => t('Cria a conta em dois minutos, confirma o email com um código e começa a registar.'),
     ],
 ]);
 ?>
       <div class="au-card">
         <div class="au-head">
-          <h2>Criar conta</h2>
-          <p>É grátis. Vais receber um código no email para confirmar.</p>
+          <h2><?= te('Criar conta') ?></h2>
+          <p><?= te('É grátis. Vais receber um código no email para confirmar.') ?></p>
         </div>
 
         <?= auth_alert('err', $errors) ?>
 
-        <?= auth_google_button('Registar com Google') ?>
-        <div class="au-or">ou com email</div>
+        <?= auth_google_button(t('Registar com Google')) ?>
+        <div class="au-or"><?= te('ou com email') ?></div>
 
         <form method="post" data-once>
           <?= csrf_field() ?>
           <div class="au-field">
-            <label class="au-label" for="username">Nome</label>
+            <label class="au-label" for="username"><?= te('Nome') ?></label>
             <div class="au-input-wrap">
               <i class="bi bi-person au-input-ico" aria-hidden="true"></i>
               <input type="text" id="username" name="username" class="au-input" minlength="3" maxlength="50"
@@ -112,7 +112,7 @@ auth_page_start('Criar conta', [
 
           <div class="au-row">
             <div class="au-field">
-              <label class="au-label" for="email">Email</label>
+              <label class="au-label" for="email"><?= te('Email') ?></label>
               <div class="au-input-wrap">
                 <i class="bi bi-envelope au-input-ico" aria-hidden="true"></i>
                 <input type="email" id="email" name="email" class="au-input" maxlength="255"
@@ -120,7 +120,7 @@ auth_page_start('Criar conta', [
               </div>
             </div>
             <div class="au-field">
-              <label class="au-label" for="email_confirm">Repetir email</label>
+              <label class="au-label" for="email_confirm"><?= te('Repetir email') ?></label>
               <div class="au-input-wrap">
                 <i class="bi bi-envelope-check au-input-ico" aria-hidden="true"></i>
                 <input type="email" id="email_confirm" name="email_confirm" class="au-input" maxlength="255"
@@ -130,20 +130,20 @@ auth_page_start('Criar conta', [
           </div>
 
           <div class="au-field">
-            <label class="au-label" for="password">Palavra-passe</label>
+            <label class="au-label" for="password"><?= te('Palavra-passe') ?></label>
             <?= auth_password_input('password', 'password', 'new-password', 'minlength="8" maxlength="72" aria-describedby="passwordReqs"') ?>
             <?= auth_password_rules('password') ?>
           </div>
 
           <div class="au-field">
-            <label class="au-label" for="password2">Repetir palavra-passe</label>
+            <label class="au-label" for="password2"><?= te('Repetir palavra-passe') ?></label>
             <?= auth_password_input('password2', 'password2', 'new-password', 'maxlength="72"') ?>
           </div>
 
-          <button type="submit" class="au-btn">Criar conta</button>
-          <p class="au-hint au-legal">Ao criar conta, aceitas a forma como tratamos os teus dados, descrita na <a href="../privacidade.php">Política de privacidade</a>.</p>
+          <button type="submit" class="au-btn"><?= te('Criar conta') ?></button>
+          <p class="au-hint au-legal"><?= te('Ao criar conta, aceitas a forma como tratamos os teus dados, descrita na') ?> <a href="../privacidade.php"><?= te('Política de privacidade') ?></a>.</p>
         </form>
 
-        <p class="au-foot">Já tens conta? <a href="login.php">Entrar</a></p>
+        <p class="au-foot"><?= te('Já tens conta?') ?> <a href="login.php"><?= te('Entrar') ?></a></p>
       </div>
 <?php auth_page_end(); ?>
