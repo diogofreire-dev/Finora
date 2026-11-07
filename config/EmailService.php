@@ -113,14 +113,17 @@ class EmailService {
     }
     // "Olá, <nome>!" com o nome a azul
     private function hi(string $username, string $end = '!'): string {
-        $name = '<span style="color:#3498db">' . $this->e($username) . '</span>';
+        $name = '<span style="color:#c48a12">' . $this->e($username) . '</span>';
         return $end === '!' ? t('Olá, {name}!', ['name' => $name]) : t('Olá, {name}.', ['name' => $name]);
     }
     private function lang(): string { return html_lang(); }
 
     // ── Base HTML ────────────────────────────────────────────────────────
 
+    // Identidade da app: azul-marinho #14213d, dourado #c48a12, creme #f3e7c8, papel #f4f6fa.
+    // O "logótipo" é texto serifado: muitos clientes de email bloqueiam imagens e o Gmail não mostra SVG.
     private function base(string $preheader, string $body): string {
+        $year = date('Y');
         return <<<HTML
 <!DOCTYPE html>
 <html lang="{$this->lang()}">
@@ -130,41 +133,32 @@ class EmailService {
   <meta name="color-scheme" content="light">
   <title>Finora</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     body,table,td,a{-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%}
     table,td{mso-table-lspace:0;mso-table-rspace:0}
-    img{-ms-interpolation-mode:bicubic;border:0;outline:none;text-decoration:none}
-    body{margin:0;padding:0;background-color:#f0f2f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
-    a{color:#3498db}
-    @media(prefers-color-scheme:dark){
-      body{background-color:#0e1420 !important}
-      .wrap{background-color:#252936 !important;border-color:#34495e !important}
-      .txt-main{color:#ecf0f1 !important}
-      .txt-muted{color:#9ca3af !important}
-      .info-box{background-color:#1e2535 !important;border-color:#34495e !important}
-    }
+    body{margin:0;padding:0;background-color:#f4f6fa;font-family:'Figtree',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+    a{color:#14213d}
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f0f2f5">
-  <!-- preheader -->
-  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#f0f2f5;line-height:1px">{$preheader}&nbsp;‌​‍‎‏‌​‌​‍‎‏</div>
+<body style="margin:0;padding:0;background-color:#f4f6fa">
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;font-size:1px;color:#f4f6fa;line-height:1px">{$preheader}&nbsp;‌​‍‎‏‌​‌​‍‎‏</div>
 
-  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f0f2f5;padding:32px 16px">
+  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f6fa;padding:32px 16px;font-family:'Figtree',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
     <tr><td align="center">
-      <table class="wrap" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden">
+      <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:18px;border:1px solid #dfe4ee;overflow:hidden">
 
         {$body}
 
-        <!-- Footer -->
-        <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:28px 32px;text-align:center;border-radius:0 0 16px 16px">
-          <div style="font-size:20px;font-weight:700;color:#ffffff;letter-spacing:-0.3px;margin-bottom:6px">Finora</div>
-          <div style="font-size:12px;color:rgba(255,255,255,0.55);line-height:1.7">
-            {$this->L('Gestor de finanças pessoais')}<br>
-            {$this->L('Este email foi enviado automaticamente — não respondas.')}<br>
-            {$this->L('© 2025 Finora. Todos os direitos reservados.')}
-          </div>
-        </td></tr>
+      </table>
 
+      <!-- Rodapé, fora do cartão -->
+      <table width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%">
+        <tr><td style="padding:22px 8px 0;text-align:center;font-size:12px;line-height:1.7;color:#8a93a8">
+          <span style="font-family:Georgia,'Times New Roman',serif;font-size:15px;color:#14213d">Finora</span><br>
+          {$this->L('Gestor de finanças pessoais')} · {$this->L('Este email foi enviado automaticamente — não respondas.')}<br>
+          © {$year} Finora
+        </td></tr>
       </table>
     </td></tr>
   </table>
@@ -173,15 +167,16 @@ class EmailService {
 HTML;
     }
 
+    // Faixa azul-marinho com o nome Finora em creme e o título do email. O $emoji fica como pequeno símbolo.
     private function header(string $emoji, string $title, string $subtitle = ''): string {
         $title = $this->L($title); $subtitle = $subtitle !== '' ? $this->L($subtitle) : '';
-        $sub = $subtitle ? "<div style='font-size:14px;color:rgba(255,255,255,0.7);margin-top:6px'>{$subtitle}</div>" : '';
+        $sub = $subtitle ? "<div style='font-size:15px;line-height:1.5;color:#c9cfdc;margin-top:8px'>{$subtitle}</div>" : '';
         return <<<HTML
-        <tr><td style="background:linear-gradient(135deg,#1e3a5f 0%,#2c5282 100%);padding:40px 32px;text-align:center;border-radius:16px 16px 0 0">
-          <div style="font-size:36px;margin-bottom:14px">{$emoji}</div>
-          <div style="font-size:22px;font-weight:700;color:#ffffff;letter-spacing:-0.3px">{$title}</div>
+        <tr><td style="background:#14213d;padding:28px 32px 30px;border-radius:18px 18px 0 0">
+          <div style="font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1;color:#f3e7c8;letter-spacing:0.2px">Finora<span style="color:#e2b04a">&#8599;</span></div>
+          <div style="height:2px;width:40px;background:#e2b04a;margin:16px 0 18px;border-radius:2px"></div>
+          <div style="font-size:24px;font-weight:700;line-height:1.25;color:#ffffff;letter-spacing:-0.3px">{$title}</div>
           {$sub}
-          <div style="margin-top:18px;font-size:16px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:2px;text-transform:uppercase">FINORA</div>
         </td></tr>
 HTML;
     }
@@ -193,15 +188,15 @@ HTML;
     // ── Templates ────────────────────────────────────────────────────────
 
     private function tplVerification(string $username, string $code): string {
-        $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares o Finora');
+        $h = $this->header('✉️', 'Confirma a tua conta', 'Introduz o código abaixo para ativares a tua conta');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Obrigado por te registares. Para ativares a tua conta, usa o código de verificação abaixo:')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('Obrigado por te registares. Para ativares a tua conta, usa o código de verificação abaixo:')}</p>
 
           <!-- Código -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center" style="padding:8px 0 28px">
-            <div style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;font-size:36px;font-weight:700;letter-spacing:12px;padding:20px 36px;border-radius:14px;font-family:'Courier New',monospace">{$code}</div>
+            <div style="display:inline-block;background:#14213d;color:#f3e7c8;font-size:36px;font-weight:700;letter-spacing:12px;padding:20px 36px;border-radius:14px;font-family:'Courier New',monospace">{$code}</div>
           </td></tr></table>
 
           <!-- Info box -->
@@ -218,37 +213,37 @@ HTML;
 
     private function tplWelcome(string $username): string {
         $dashUrl = $this->baseUrl . '/dashboard.php';
-        $h = $this->header('🎉', 'Bem-vindo ao Finora!', 'A tua conta está verificada e pronta a usar');
+        $h = $this->header('🎉', 'Bem-vindo à Finora!', 'A tua conta está verificada e pronta a usar');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A tua conta foi verificada com sucesso. Podes começar agora a gerir os teus cartões, transações e orçamentos.')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('A tua conta foi verificada com sucesso. Podes começar agora a gerir os teus cartões, transações e orçamentos.')}</p>
 
           <!-- Feature list -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:32px">
-            <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eef1f6">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
-                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">💳</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Adiciona os teus cartões e contas')}</td>
+                <td style="width:36px;height:36px;background:#fbf5e6;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">💳</td>
+                <td style="padding-left:14px;font-size:14px;color:#5f6982">{$this->L('Adiciona os teus cartões e contas')}</td>
               </tr></table>
             </td></tr>
-            <tr><td style="padding:10px 0;border-bottom:1px solid #f0f2f5">
+            <tr><td style="padding:10px 0;border-bottom:1px solid #eef1f6">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
-                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">📊</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Regista transações e analisa os teus gastos')}</td>
+                <td style="width:36px;height:36px;background:#fbf5e6;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">📊</td>
+                <td style="padding-left:14px;font-size:14px;color:#5f6982">{$this->L('Regista transações e analisa os teus gastos')}</td>
               </tr></table>
             </td></tr>
             <tr><td style="padding:10px 0">
               <table cellpadding="0" cellspacing="0" border="0"><tr>
-                <td style="width:36px;height:36px;background:#ebf5fb;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">🔔</td>
-                <td style="padding-left:14px;font-size:14px;color:#5d6778">{$this->L('Define orçamentos e lembretes de pagamento')}</td>
+                <td style="width:36px;height:36px;background:#fbf5e6;border-radius:9px;text-align:center;vertical-align:middle;font-size:16px">🔔</td>
+                <td style="padding-left:14px;font-size:14px;color:#5f6982">{$this->L('Define orçamentos e lembretes de pagamento')}</td>
               </tr></table>
             </td></tr>
           </table>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">{$this->L('Ir para o meu Finora →')}</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:#14213d;color:#f3e7c8;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px;letter-spacing:0.2px">{$this->L('Ir para o meu Finora →')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
@@ -259,12 +254,12 @@ HTML;
         $h = $this->header('🔑', 'Recuperar palavra-passe', 'Recebemos um pedido para redefinir a tua palavra-passe');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 28px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Recebemos um pedido para redefinir a palavra-passe da tua conta Finora. Clica no botão abaixo para definires uma nova:')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 28px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('Recebemos um pedido para redefinir a palavra-passe da tua conta Finora. Clica no botão abaixo para definires uma nova:')}</p>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:28px"><tr><td align="center">
-            <a href="{$resetLink}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Definir nova palavra-passe')}</a>
+            <a href="{$resetLink}" style="display:inline-block;background:#14213d;color:#f3e7c8;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Definir nova palavra-passe')}</a>
           </td></tr></table>
 
           <!-- Info boxes -->
@@ -278,7 +273,7 @@ HTML;
             <div style="font-size:13px;color:#b91c1c">{$this->L('Se não pediste esta recuperação, ignora este email. A tua palavra-passe não será alterada.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Se o botão não funcionar, copia e cola este link no teu browser:')}<br><span style="color:#3498db;word-break:break-all">{$resetLink}</span></p>
+          <p style="margin:0;font-size:12px;color:#9ca3af;line-height:1.6">{$this->L('Se o botão não funcionar, copia e cola este link no teu browser:')}<br><span style="color:#c48a12;word-break:break-all">{$resetLink}</span></p>
         </td></tr>
 HTML;
         return $this->base($this->L('Pedido de recuperação de palavra-passe Finora'), $body);
@@ -290,11 +285,11 @@ HTML;
         $urgency   = $isOverdue ? '🔴 ' . $this->L('Pagamento em atraso') : ($isToday ? '🟠 ' . $this->L('Vence hoje') : '🔔 ' . $this->L('Vence em {n} dias', ['n' => $r['days_until']]));
         $emoji     = $isOverdue ? '⚠️' : '🔔';
         $subtitle  = $isOverdue ? 'Tens um pagamento em atraso' : 'Tens um pagamento a vencer em breve';
-        $boxBg     = $isOverdue ? '#fdf2f2' : ($isToday ? '#fef9e7' : '#f0f9ff');
-        $boxBorder = $isOverdue ? '#fca5a5' : ($isToday ? '#f59e0b' : '#93c5fd');
-        $boxColor  = $isOverdue ? '#991b1b'  : ($isToday ? '#92400e'  : '#1e40af');
+        $boxBg     = $isOverdue ? '#fdf2f2' : ($isToday ? '#fef9e7' : '#f4f6fa');
+        $boxBorder = $isOverdue ? '#fca5a5' : ($isToday ? '#f59e0b' : '#dfe4ee');
+        $boxColor  = $isOverdue ? '#991b1b'  : ($isToday ? '#92400e'  : '#14213d');
 
-        $h = $this->header($emoji, 'Lembrete de Pagamento', $subtitle);
+        $h = $this->header($emoji, 'Lembrete de pagamento', $subtitle);
         $dashUrl = $this->baseUrl . '/pages/reminders.php';
 
         // Valor em número e a moeda da conta (o cron corre sem sessão, por isso a moeda vem nos dados)
@@ -304,19 +299,19 @@ HTML;
 
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Tens um pagamento que requer a tua atenção:')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('Tens um pagamento que requer a tua atenção:')}</p>
 
           <!-- Payment card -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
             <div style="font-size:11px;font-weight:600;color:{$boxColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">{$urgency}</div>
-            <div style="font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px">{$this->e($r['name'])}</div>
-            <div style="font-size:28px;font-weight:800;color:#3498db;margin-bottom:12px">{$amount}</div>
+            <div style="font-size:20px;font-weight:700;color:#14213d;margin-bottom:4px">{$this->e($r['name'])}</div>
+            <div style="font-size:28px;font-weight:800;color:#c48a12;margin-bottom:12px">{$amount}</div>
             <table cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="font-size:13px;color:#5d6778;padding-right:24px">📅 <strong>{$this->L('Data:')}</strong> {$dueDate}</td>
+              <td style="font-size:13px;color:#5f6982;padding-right:24px">📅 <strong>{$this->L('Data:')}</strong> {$dueDate}</td>
 HTML;
         if (!empty($r['category'])) {
-            $body .= "<td style='font-size:13px;color:#5d6778'>🏷 <strong>" . $this->L('Categoria:') . '</strong> ' . $this->L($r['category']) . '</td>';
+            $body .= "<td style='font-size:13px;color:#5f6982'>🏷 <strong>" . $this->L('Categoria:') . '</strong> ' . $this->L($r['category']) . '</td>';
         }
         $body .= <<<HTML
             </tr></table>
@@ -324,7 +319,7 @@ HTML;
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver lembretes')}</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:#14213d;color:#f3e7c8;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver lembretes')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
@@ -338,7 +333,7 @@ HTML;
         $subtitle = $exceeded ? 'Ultrapassaste o limite definido' : t('Já usaste {pct}% do teu orçamento', ['pct' => $b['percentage']]);
 
         $pct     = min((int)$b['percentage'], 100);
-        $barColor = $exceeded ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#3498db');
+        $barColor = $exceeded ? '#ef4444' : ($pct >= 80 ? '#f59e0b' : '#14213d');
         $boxBg    = $exceeded ? '#fdf2f2' : '#fef9e7';
         $boxBorder = $exceeded ? '#fca5a5' : '#f59e0b';
         $boxColor  = $exceeded ? '#991b1b' : '#92400e';
@@ -350,8 +345,8 @@ HTML;
         $h = $this->header($emoji, $title, $subtitle);
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('O teu orçamento «{name}» atingiu {pct}% do limite definido.', ['name' => $b['name'], 'pct' => $b['percentage']])}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('O teu orçamento «{name}» atingiu {pct}% do limite definido.', ['name' => $b['name'], 'pct' => $b['percentage']])}</p>
 
           <!-- Budget card -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
@@ -363,14 +358,14 @@ HTML;
             </div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="font-size:14px;color:#5d6778">💸 {$this->L('Gasto:')} <strong style="color:{$barColor}">{$spent}</strong></td>
-              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 {$this->L('Limite:')} <strong style="color:#2c3e50">{$limit}</strong></td>
+              <td style="font-size:14px;color:#5f6982">💸 {$this->L('Gasto:')} <strong style="color:{$barColor}">{$spent}</strong></td>
+              <td style="font-size:14px;color:#5f6982;text-align:right">🎯 {$this->L('Limite:')} <strong style="color:#14213d">{$limit}</strong></td>
             </tr></table>
           </td></tr></table>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td align="center">
-            <a href="{$dashUrl}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver orçamentos')}</a>
+            <a href="{$dashUrl}" style="display:inline-block;background:#14213d;color:#f3e7c8;text-decoration:none;font-size:15px;font-weight:600;padding:13px 36px;border-radius:10px">{$this->L('Ver orçamentos')}</a>
           </td></tr></table>
         </td></tr>
 HTML;
@@ -381,14 +376,14 @@ HTML;
         $h = $this->header('📧', 'Confirmar novo email', 'Verifica que és tu antes de alterarmos o email');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 16px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Recebemos um pedido para alterar o email da tua conta para:')}</p>
-          <div style="background:#f0f9ff;border:1px solid #93c5fd;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:16px;font-weight:600;color:#1e40af;text-align:center">{$this->e($newEmail)}</div>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('Clica no botão abaixo para confirmares a alteração:')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 16px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('Recebemos um pedido para alterar o email da tua conta para:')}</p>
+          <div style="background:#f4f6fa;border:1px solid #dfe4ee;border-radius:10px;padding:14px 20px;margin-bottom:24px;font-size:16px;font-weight:600;color:#14213d;text-align:center">{$this->e($newEmail)}</div>
+          <p style="margin:0 0 24px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('Clica no botão abaixo para confirmares a alteração:')}</p>
 
           <!-- CTA -->
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px"><tr><td align="center">
-            <a href="{$link}" style="display:inline-block;background:linear-gradient(135deg,#2980b9,#3498db);color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Confirmar novo email')}</a>
+            <a href="{$link}" style="display:inline-block;background:#14213d;color:#f3e7c8;text-decoration:none;font-size:15px;font-weight:600;padding:14px 40px;border-radius:10px">{$this->L('Confirmar novo email')}</a>
           </td></tr></table>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fef9e7;border:1px solid #f59e0b;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
@@ -401,7 +396,7 @@ HTML;
             <div style="font-size:13px;color:#b91c1c">{$this->L('Se não pediste esta alteração, o teu email atual continua ativo. Não precisas de fazer nada.')}</div>
           </td></tr></table>
 
-          <p style="margin:0;font-size:12px;color:#9ca3af">{$this->L('Se o botão não funcionar:')} <span style="color:#3498db;word-break:break-all">{$link}</span></p>
+          <p style="margin:0;font-size:12px;color:#9ca3af">{$this->L('Se o botão não funcionar:')} <span style="color:#c48a12;word-break:break-all">{$link}</span></p>
         </td></tr>
 HTML;
         return $this->base($this->L('Confirma o teu novo email na Finora'), $body);
@@ -411,8 +406,8 @@ HTML;
         $h = $this->header('🔒', 'Palavra-passe alterada', 'A tua palavra-passe foi atualizada com sucesso');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username)}</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A palavra-passe da tua conta Finora foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username)}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('A palavra-passe da tua conta Finora foi alterada com sucesso. Podes entrar normalmente com a nova palavra-passe.')}</p>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;margin-bottom:12px"><tr><td style="padding:14px 18px">
             <div style="font-size:13px;font-weight:600;color:#166534;margin-bottom:3px">{$this->L('✅ Alteração confirmada')}</div>
@@ -434,8 +429,8 @@ HTML;
         $h = $this->header('👋', 'Conta apagada', 'A tua conta e todos os dados foram apagados');
         $body = $h . <<<HTML
         <tr><td style="padding:40px 32px 32px">
-          <p style="margin:0 0 12px;font-size:16px;color:#2c3e50;font-weight:600">{$this->hi($username, '.')}</p>
-          <p style="margin:0 0 24px;font-size:15px;color:#5d6778;line-height:1.7">{$this->L('A tua conta Finora foi apagada, com todos os cartões, transações, orçamentos, lembretes, poupanças e metas. Não guardámos cópia.')}</p>
+          <p style="margin:0 0 12px;font-size:16px;color:#14213d;font-weight:600">{$this->hi($username, '.')}</p>
+          <p style="margin:0 0 24px;font-size:15px;color:#5f6982;line-height:1.7">{$this->L('A tua conta Finora foi apagada, com todos os cartões, transações, orçamentos, lembretes, poupanças e metas. Não guardámos cópia.')}</p>
 
           <table class="info-box" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#fdf2f2;border:1px solid #fca5a5;border-radius:10px;margin-bottom:28px"><tr><td style="padding:14px 18px">
             <div style="font-size:13px;font-weight:600;color:#991b1b;margin-bottom:3px">{$this->L('🚫 Não foste tu?')}</div>

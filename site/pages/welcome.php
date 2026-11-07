@@ -102,7 +102,10 @@ $firstName = explode(' ', trim($me['username']))[0];
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=10">
   <style>
-    body { background: var(--fn-paper); }
+    /* O sidebar.css fecha o scroll da página (nas outras páginas quem faz scroll é o .main-content);
+       aqui não há .main-content, por isso a página volta a ter scroll normal */
+    html { overflow: auto; height: auto; }
+    body { background: var(--fn-paper); overflow: auto; height: auto; min-height: 100vh; }
     .wl { max-width: 720px; margin: 0 auto; padding: 28px 16px 64px; }
     .wl-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 28px; }
     .wl-top .fn-logo { height: 30px; width: auto; }

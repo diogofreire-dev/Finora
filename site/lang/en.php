@@ -1373,4 +1373,8 @@ return [
     'Rendimento guardado.' => 'Income saved.',
     'Rendimento mensal (opcional)' => 'Monthly income (optional)',
     'Líquido, já sem impostos. Usado para prever as metas.' => 'Net, after tax. Used to forecast your goals.',
+
+    // ── Emails (redesenho) ──
+    'Lembrete de pagamento' => 'Payment reminder',
+    'Introduz o código abaixo para ativares a tua conta' => 'Enter the code below to activate your account',
 ];
