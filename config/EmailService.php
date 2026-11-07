@@ -8,9 +8,17 @@ require_once __DIR__ . '/../site/helpers/format.php';
 class EmailService {
     private $apiKey    = BREVO_API_KEY;
     private $apiUrl    ='https://api.brevo.com/v3/smtp/email';
-    private $fromEmail = 'freecardadmin@gmail.com';
+    // O remetente tem de estar validado na conta Brevo da chave (Settings → Remetentes, domínio, IPs);
+    // senão a Brevo aceita o pedido mas recusa enviar ("sender … is not valid") e o email nunca sai.
+    // Muda-se em config/brevo.php com MAIL_FROM_EMAIL / MAIL_FROM_NAME, sem mexer aqui.
+    private $fromEmail = 'freecardssuporte@gmail.com';
     private $fromName  = 'Finora';
     private $baseUrl   = APP_URL;
+
+    public function __construct() {
+        if (defined('MAIL_FROM_EMAIL') && filter_var(MAIL_FROM_EMAIL, FILTER_VALIDATE_EMAIL)) $this->fromEmail = MAIL_FROM_EMAIL;
+        if (defined('MAIL_FROM_NAME') && MAIL_FROM_NAME !== '') $this->fromName = MAIL_FROM_NAME;
+    }
 
     private function sendMail($to, $subject, $htmlBody, $textBody = '') {
         $data = [
