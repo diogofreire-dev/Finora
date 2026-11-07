@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'pay')
                 $pdo->prepare("INSERT INTO card_payments (user_id, card_id, amount, paid_on) VALUES (:uid, :id, :a, :d)")
                     ->execute([':uid' => $uid, ':id' => $cardId, ':a' => $amount, ':d' => $paidOn]);
                 $pdo->commit();
-                $flash = ['success', 'Pagamento de ' . fmt_eur($amount) . ' registado.'];
+                $flash = ['success', 'Pagamento de ' . fmt_money($amount) . ' registado.'];
             } else {
                 $pdo->rollBack();
                 $flash = ['danger', 'O valor é maior do que o que está em uso no cartão.'];
@@ -318,7 +318,7 @@ $walletCards = array_map(fn($c) => [
   <?php if ($activeCount > 0): ?>
     <p class="cd-summary">
       <?php if ($activeTotalLimit > 0): ?>
-        Tens <strong><?= fmt_eur(max($activeAvailable, 0)) ?> disponíveis</strong> de <?= fmt_eur($activeTotalLimit) ?>
+        Tens <strong><?= fmt_money(max($activeAvailable, 0)) ?> disponíveis</strong> de <?= fmt_money($activeTotalLimit) ?>
         <?php $nLimited = count($limitedCards); ?>
         <?= $nLimited === 1 ? 'no teu cartão com limite' : "nos {$nLimited} cartões com limite" ?>.
       <?php else: ?>
@@ -349,7 +349,7 @@ $walletCards = array_map(fn($c) => [
           <div>
             <div class="nm"><?= htmlspecialchars($oc['name']) ?></div>
             <div class="mt">
-              Excedido em <?= fmt_eur(abs($oc['available'])) ?> · <?= fmt_eur($oc['balance']) ?> de <?= fmt_eur($oc['limit_amount']) ?>
+              Excedido em <?= fmt_money(abs($oc['available'])) ?> · <?= fmt_money($oc['balance']) ?> de <?= fmt_money($oc['limit_amount']) ?>
               <?= $oc['since_label'] ? ' · ' . htmlspecialchars($oc['since_label']) : '' ?>
             </div>
           </div>
@@ -368,7 +368,7 @@ $walletCards = array_map(fn($c) => [
     try { last = parseInt(localStorage.getItem(KEY) || '0'); } catch (e) {}
     const now  = Date.now();
     const WEEK = 7 * 24 * 60 * 60 * 1000;
-    const eur  = v => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+    const eur  = <?= money_js() ?>;
     const notify = () => {
       overdrafts.forEach(o => new Notification('Finora — cartão acima do limite', {
         body: `${o.name}: excedido em ${eur(o.excess)} há ${o.days} dias`, icon: '/favicon.ico'
@@ -428,15 +428,15 @@ $walletCards = array_map(fn($c) => [
           <div class="cd-body">
             <?php if ($limit > 0): ?>
               <div class="cd-avail-label"><?= $available < 0 ? 'Acima do limite' : 'Disponível' ?></div>
-              <div class="cd-avail <?= $available < 0 ? 'over' : '' ?>"><?= fmt_eur(abs($available)) ?></div>
+              <div class="cd-avail <?= $available < 0 ? 'over' : '' ?>"><?= fmt_money(abs($available)) ?></div>
               <div class="cd-meter"><span class="<?= $state ?>" style="width:<?= min(round($pct, 1), 100) ?>%"></span></div>
               <div class="cd-line">
-                <span><?= fmt_eur($c['balance']) ?> usados de <?= fmt_eur($limit) ?></span>
+                <span><?= fmt_money($c['balance']) ?> usados de <?= fmt_money($limit) ?></span>
                 <span><?= round($pct) ?>%</span>
               </div>
             <?php else: ?>
               <div class="cd-avail-label">Usado</div>
-              <div class="cd-avail"><?= fmt_eur($c['balance']) ?></div>
+              <div class="cd-avail"><?= fmt_money($c['balance']) ?></div>
               <div class="cd-line" style="margin-top:8px"><span>Sem limite definido</span></div>
             <?php endif; ?>
             <div class="cd-line" style="margin-top:6px">
@@ -444,7 +444,7 @@ $walletCards = array_map(fn($c) => [
               <span>desde <?= mb_substr(month_name_pt((int) date('n', strtotime($c['created_at']))), 0, 3) ?>. <?= date('Y', strtotime($c['created_at'])) ?></span>
             </div>
             <?php if ($lp = $lastPay[(int) $c['id']] ?? null): ?>
-              <div class="cd-line cd-paid"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Pago <?= fmt_eur($lp['amount']) ?> a <?= (int) date('j', strtotime($lp['paid_on'])) ?> <?= mb_substr(month_name_pt((int) date('n', strtotime($lp['paid_on']))), 0, 3) ?>.</span></div>
+              <div class="cd-line cd-paid"><span><i class="bi bi-check2-circle" aria-hidden="true"></i> Pago <?= fmt_money($lp['amount']) ?> a <?= (int) date('j', strtotime($lp['paid_on'])) ?> <?= mb_substr(month_name_pt((int) date('n', strtotime($lp['paid_on']))), 0, 3) ?>.</span></div>
             <?php endif; ?>
           </div>
 
@@ -474,7 +474,7 @@ $walletCards = array_map(fn($c) => [
             <span class="mini" style="background:<?= card_gradient($c, $BANKS, $cardColors) ?>"></span>
             <div class="main">
               <div class="nm"><?= htmlspecialchars($c['name']) ?></div>
-              <div class="mt"><?= fmt_eur($c['balance']) ?> de <?= fmt_eur($c['limit_amount']) ?> · <?= (int) $c['transaction_count'] ?> transações</div>
+              <div class="mt"><?= fmt_money($c['balance']) ?> de <?= fmt_money($c['limit_amount']) ?> · <?= (int) $c['transaction_count'] ?> transações</div>
             </div>
             <a href="edit_card.php?id=<?= $c['id'] ?>" class="btn-s" aria-label="Editar <?= htmlspecialchars($c['name']) ?>"><i class="bi bi-pencil"></i></a>
             <form method="post">
@@ -503,7 +503,7 @@ $walletCards = array_map(fn($c) => [
     <p class="sub" id="paySub"></p>
     <div class="row2">
       <div>
-        <label class="form-label" for="payAmount">Valor pago (€)</label>
+        <label class="form-label" for="payAmount">Valor pago (<?= currency_symbol() ?>)</label>
         <input type="number" class="form-control" id="payAmount" name="amount" step="0.01" min="0.01" required inputmode="decimal">
         <div class="quick"><button type="button" data-frac="1">Tudo</button><button type="button" data-frac="0.5">Metade</button></div>
       </div>
@@ -522,7 +522,7 @@ $walletCards = array_map(fn($c) => [
 <script>
 (function () {
   const dlg = document.getElementById('payDialog'), amt = document.getElementById('payAmount');
-  const eur = (v) => v.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+  const eur = <?= money_js() ?>;
   let bal = 0;
   document.querySelectorAll('[data-pay]').forEach((b) => b.addEventListener('click', () => {
     bal = parseFloat(b.dataset.balance);

@@ -7,6 +7,7 @@
 // importação inteira corre numa transação — ou entra tudo, ou não entra nada.
 
 require_once __DIR__ . '/categories.php';
+require_once __DIR__ . '/format.php';
 
 const IMPORT_MAX_BYTES  = 2 * 1024 * 1024; // 2 MB chega para dezenas de milhares de linhas
 const IMPORT_MAX_ROWS   = 5000;
@@ -39,7 +40,8 @@ function import_date($raw): ?string {
 function import_amount($raw): ?float {
     if (is_int($raw) || is_float($raw)) $raw = (string) $raw;
     if (!is_string($raw)) return null;
-    $s = str_replace([' ', "\u{00A0}", '€'], '', trim($raw));
+    // Tira espaços e o símbolo de qualquer moeda da lista (o CSV pode vir de uma conta noutra moeda)
+    $s = str_replace(array_merge([' ', "\u{00A0}", "\u{202F}"], array_column(CURRENCIES, 0)), '', trim($raw));
     if (preg_match('/^\d{1,3}(\.\d{3})+,\d{1,2}$/', $s)) $s = str_replace('.', '', $s); // 1.234,56
     $s = str_replace(',', '.', $s);
     if (!preg_match('/^\d+(\.\d{1,2})?$/', $s)) return null;

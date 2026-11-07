@@ -251,14 +251,14 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
     <div>
       <p class="dsh-greet"><?= $greeting ?>, <?= htmlspecialchars($firstName) ?></p>
       <?php if ($spentToDate > 0): ?>
-        <h1 class="dsh-headline" id="dshHeadline">Em <?= $monthName ?> já gastaste <?= fmt_eur($spentToDate) ?></h1>
+        <h1 class="dsh-headline" id="dshHeadline">Em <?= $monthName ?> já gastaste <?= fmt_money($spentToDate) ?></h1>
         <p class="dsh-compare">
           <?php if ($prevToDate == 0): ?>
             Até dia <?= $today ?> de <?= $prevName ?> não tinhas gastos registados.
           <?php elseif (abs($diffToDate) < 0.005): ?>
             Exatamente o mesmo que até dia <?= $today ?> de <?= $prevName ?>.
           <?php else: ?>
-            <strong><?= fmt_eur(abs($diffToDate)) ?> <?= $diffToDate > 0 ? 'mais' : 'menos' ?></strong>
+            <strong><?= fmt_money(abs($diffToDate)) ?> <?= $diffToDate > 0 ? 'mais' : 'menos' ?></strong>
             do que até dia <?= $today ?> de <?= $prevName ?>.
           <?php endif; ?>
         </p>
@@ -271,7 +271,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
 
     <figure class="dsh-chart" style="margin:0">
       <svg viewBox="0 0 <?= $chartW ?> <?= $chartH ?>" role="img"
-           aria-label="Gasto acumulado: <?= fmt_eur($spentToDate) ?> até dia <?= $today ?> de <?= $monthName ?>, contra <?= fmt_eur($prevToDate) ?> no mesmo ponto de <?= $prevName ?>">
+           aria-label="Gasto acumulado: <?= fmt_money($spentToDate) ?> até dia <?= $today ?> de <?= $monthName ?>, contra <?= fmt_money($prevToDate) ?> no mesmo ponto de <?= $prevName ?>">
         <line class="base" x1="0" y1="<?= $chartH - $chartPad ?>" x2="<?= $chartW ?>" y2="<?= $chartH - $chartPad ?>"/>
         <?php if ($prevPath): ?><path class="prev" d="<?= $prevPath ?>"/><?php endif; ?>
         <?php if ($thisPath): ?>
@@ -311,7 +311,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
                   <span class="sw" style="background:<?= $catColor($cat['category']) ?>"></span>
                   <span class="nm"><?= htmlspecialchars($cat['category']) ?></span>
                   <span class="pc"><?= round($cat['total'] / $categoryTotal * 100) ?>%</span>
-                  <span class="am"><?= fmt_eur($cat['total']) ?></span>
+                  <span class="am"><?= fmt_money($cat['total']) ?></span>
                 </li>
               <?php endforeach; ?>
             </ul>
@@ -342,7 +342,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
                     <?= $r['card_name'] ? ' · ' . htmlspecialchars($r['card_name']) : '' ?>
                   </div>
                 </div>
-                <span class="amt">−<?= fmt_eur($r['amount']) ?></span>
+                <span class="amt">−<?= fmt_money($r['amount']) ?></span>
               </li>
             <?php endforeach; ?>
           </ul>
@@ -376,7 +376,7 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
                   <?php else: ?>Vence em <?= $days ?> dia<?= $days > 1 ? 's' : '' ?><?php endif; ?>
                 </div>
               </div>
-              <span class="amt"><?= fmt_eur($r['amount']) ?></span>
+              <span class="amt"><?= fmt_money($r['amount']) ?></span>
             </li>
           <?php endforeach; ?>
         </ul>
@@ -405,9 +405,9 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
                   <div class="t1"><?= htmlspecialchars($c['name']) ?></div>
                   <?php if ($limit > 0): ?>
                     <div class="dsh-meter"><span class="<?= $state ?>" style="width:<?= min(round($pct, 1), 100) ?>%"></span></div>
-                    <div class="t2"><?= fmt_eur(max($limit - $c['balance'], 0)) ?> disponíveis de <?= fmt_eur($limit, 0) ?></div>
+                    <div class="t2"><?= fmt_money(max($limit - $c['balance'], 0)) ?> disponíveis de <?= fmt_money($limit, 0) ?></div>
                   <?php else: ?>
-                    <div class="t2">Sem limite definido · <?= fmt_eur($c['balance']) ?> usados</div>
+                    <div class="t2">Sem limite definido · <?= fmt_money($c['balance']) ?> usados</div>
                   <?php endif; ?>
                 </div>
                 <?php if ($state === 'over'): ?><span class="dsh-flag over">Limite excedido</span>
@@ -431,14 +431,14 @@ $greeting      = $hour < 12 ? 'Bom dia' : ($hour < 20 ? 'Boa tarde' : 'Boa noite
         ?>
           <div class="dsh-panel-body dsh-budget">
             <div class="dsh-budget-top">
-              <b><?= fmt_eur($mainBudget['current_spent'], 0) ?></b>
-              <span>de <?= fmt_eur($mainBudget['amount'], 0) ?> · <?= htmlspecialchars($mainBudget['name']) ?></span>
+              <b><?= fmt_money($mainBudget['current_spent'], 0) ?></b>
+              <span>de <?= fmt_money($mainBudget['amount'], 0) ?> · <?= htmlspecialchars($mainBudget['name']) ?></span>
             </div>
             <div class="dsh-meter"><span class="<?= $state ?>" style="width:<?= min(round($budgetPercentage, 1), 100) ?>%"></span></div>
             <?php if ($left < 0): ?>
-              <p class="dsh-note over">Passaste o orçamento em <?= fmt_eur(abs($left)) ?>.</p>
+              <p class="dsh-note over">Passaste o orçamento em <?= fmt_money(abs($left)) ?>.</p>
             <?php else: ?>
-              <p class="dsh-note">Ainda podes gastar <?= fmt_eur($left) ?><?= $activeBudgetsCount > 1 ? ' · mais ' . ($activeBudgetsCount - 1) . ' orçamento' . ($activeBudgetsCount > 2 ? 's' : '') . ' ativo' . ($activeBudgetsCount > 2 ? 's' : '') : '' ?>.</p>
+              <p class="dsh-note">Ainda podes gastar <?= fmt_money($left) ?><?= $activeBudgetsCount > 1 ? ' · mais ' . ($activeBudgetsCount - 1) . ' orçamento' . ($activeBudgetsCount > 2 ? 's' : '') . ' ativo' . ($activeBudgetsCount > 2 ? 's' : '') : '' ?>.</p>
             <?php endif; ?>
           </div>
         <?php endif; ?>

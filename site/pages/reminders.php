@@ -416,8 +416,8 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
 
   <?php if (!empty($reminders)): ?>
     <p class="lm-summary">
-      A pagar até ao fim do mês: <strong><?= fmt_eur($total_month) ?></strong> ·
-      já pago este mês: <strong><?= fmt_eur($paid_month_total) ?></strong>
+      A pagar até ao fim do mês: <strong><?= fmt_money($total_month) ?></strong> ·
+      já pago este mês: <strong><?= fmt_money($paid_month_total) ?></strong>
       <?php if ($overdue_count): ?> · <span class="late"><?= $overdue_count ?> em atraso</span><?php endif; ?>
     </p>
   <?php else: ?>
@@ -453,7 +453,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
         <span class="pg-ico" aria-hidden="true"><i class="bi bi-calendar3"></i></span>
         <div class="pg-grow">
           <h2 id="lcTitle"><?= $monthLabel ?></h2>
-          <p>Por pagar <strong><?= fmt_eur($calDue) ?></strong><?php if ($calPaid > 0): ?> · já pago <strong><?= fmt_eur($calPaid) ?></strong><?php endif; ?></p>
+          <p>Por pagar <strong><?= fmt_money($calDue) ?></strong><?php if ($calPaid > 0): ?> · já pago <strong><?= fmt_money($calPaid) ?></strong><?php endif; ?></p>
         </div>
         <nav class="lc-nav" aria-label="Mudar de mês">
           <a class="lc-arrow" href="?m=<?= $calPrev ?>#calendario" aria-label="Mês anterior"><i class="bi bi-chevron-left"></i></a>
@@ -471,14 +471,14 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
             $items = $calDays[$ymd] ?? [];
             $late  = array_filter($items, fn($i) => $i['state'] === 'overdue');
             $cls   = 'lc-day heat-' . $heat($ymd) . ($ymd === $todayYmd ? ' is-today' : '') . ($ymd < $todayYmd ? ' is-past' : '') . ($late ? ' has-late' : '');
-            $aria  = $dayLabel($ymd) . ($items ? ': ' . count($items) . ' pagamento' . (count($items) > 1 ? 's' : '') . ', ' . fmt_eur(array_sum(array_column($items, 'amount'))) : ': sem pagamentos');
+            $aria  = $dayLabel($ymd) . ($items ? ': ' . count($items) . ' pagamento' . (count($items) > 1 ? 's' : '') . ', ' . fmt_money(array_sum(array_column($items, 'amount'))) : ': sem pagamentos');
           ?>
             <button type="button" class="<?= $cls ?>" data-day="<?= $ymd ?>" aria-pressed="<?= $ymd === $calSelected ? 'true' : 'false' ?>" aria-label="<?= htmlspecialchars($aria) ?>">
               <span class="lc-num"><?= $d->format('j') ?></span>
               <?php if ($items): ?>
                 <span class="lc-chips" aria-hidden="true">
                   <?php foreach (array_slice($items, 0, 2) as $it): ?>
-                    <span class="lc-chip is-<?= $it['state'] ?>" style="--c: <?= category_color($it['category'] ?? 'Outros') ?>"><span class="nm"><?= htmlspecialchars($it['name']) ?></span><span class="am"><?= fmt_eur($it['amount']) ?></span></span>
+                    <span class="lc-chip is-<?= $it['state'] ?>" style="--c: <?= category_color($it['category'] ?? 'Outros') ?>"><span class="nm"><?= htmlspecialchars($it['name']) ?></span><span class="am"><?= fmt_money($it['amount']) ?></span></span>
                   <?php endforeach; ?>
                   <?php if (count($items) > 2): ?><span class="lc-more">+<?= count($items) - 2 ?></span><?php endif; ?>
                 </span>
@@ -504,7 +504,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                         <div class="lc-name"><?= htmlspecialchars($it['name']) ?></div>
                         <div class="lc-meta"><?= $stateLabel[$it['state']] ?><?= $it['category'] ? ' · ' . htmlspecialchars($it['category']) : '' ?><?= $it['card'] ? ' · ' . htmlspecialchars($it['card']) : '' ?></div>
                       </div>
-                      <span class="lc-amt"><?= fmt_eur($it['amount']) ?></span>
+                      <span class="lc-amt"><?= fmt_money($it['amount']) ?></span>
                       <?php if ($it['canPay']): ?>
                         <button type="button" class="btn-s btn-s-success lc-pay" onclick="openMarkPaidModal(<?= $it['id'] ?>)"><i class="bi bi-check2"></i> Pago</button>
                       <?php endif; ?>
@@ -534,7 +534,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
       <section class="lm-group <?= $g['key'] ?>" aria-labelledby="g-<?= $g['key'] ?>">
         <div class="lm-group-head">
           <h2 id="g-<?= $g['key'] ?>"><?= $g['title'] ?></h2>
-          <span><?= fmt_eur(array_sum(array_column($g['items'], 'amount'))) ?></span>
+          <span><?= fmt_money(array_sum(array_column($g['items'], 'amount'))) ?></span>
         </div>
         <ul class="lm-list">
           <?php foreach ($g['items'] as $r): $ts = strtotime($r['due_date']); ?>
@@ -549,7 +549,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                   <?php if ($r['card_name']): ?>·<span><?= htmlspecialchars($r['card_name']) ?></span><?php endif; ?>
                 </div>
               </div>
-              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
                 <button type="button" class="btn-s btn-s-success lm-pay" onclick="openMarkPaidModal(<?= (int) $r['id'] ?>)"><i class="bi bi-check2"></i> Marcar como pago</button>
                 <button type="button" class="ico" onclick="openEditModal(<?= htmlspecialchars(json_encode($r)) ?>)" aria-label="Editar <?= htmlspecialchars($r['name']) ?>" title="Editar"><i class="bi bi-pencil"></i></button>
@@ -583,7 +583,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                 <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
                 <div class="lm-meta"><span>Pago a <?= date('j', $ts) ?> de <?= month_name_pt((int) date('n', $ts)) ?></span></div>
               </div>
-              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
                 <form method="post" onsubmit="return confirm('Voltar a marcar este pagamento como pendente?')">
                   <?= csrf_field() ?>
@@ -615,7 +615,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                 <div class="lm-name"><?= htmlspecialchars($r['name']) ?></div>
                 <div class="lm-meta"><span><?= $recurrenceLabels[$r['recurrence']] ?? '' ?> · sem avisos enquanto estiver em pausa</span></div>
               </div>
-              <span class="lm-amt"><?= fmt_eur($r['amount']) ?></span>
+              <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
                 <form method="post">
                   <?= csrf_field() ?>
@@ -653,7 +653,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
           <div><label class="form-label">Nome do Pagamento *</label><input type="text" name="name" class="form-control" placeholder="ex: Netflix, Renda, Conta da Luz" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
+            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" class="form-control" step="0.01" min="0.01" placeholder="15.99" required></div>
             <div><label class="form-label">Data de Vencimento *</label><input type="date" name="due_date" class="form-control" min="<?=date('Y-m-d')?>" required></div>
           </div>
           <div><label class="form-label">Recorrência</label><select name="recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly" selected>Mensal</option><option value="yearly">Anual</option></select></div>
@@ -715,7 +715,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
         <div class="modal-body" style="display:flex;flex-direction:column;gap:14px;padding:20px">
           <div><label class="form-label">Nome *</label><input type="text" name="name" id="edit_name" class="form-control" required></div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div><label class="form-label">Valor (€) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
+            <div><label class="form-label">Valor (<?= currency_symbol() ?>) *</label><input type="number" name="amount" id="edit_amount" class="form-control" step="0.01" min="0.01" required></div>
             <div><label class="form-label">Data *</label><input type="date" name="due_date" id="edit_due_date" class="form-control" required></div>
           </div>
           <div><label class="form-label">Recorrência</label><select name="recurrence" id="edit_recurrence" class="form-select"><option value="once">Única vez</option><option value="weekly">Semanal</option><option value="monthly">Mensal</option><option value="yearly">Anual</option></select></div>

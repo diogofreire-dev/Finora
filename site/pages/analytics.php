@@ -329,19 +329,19 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   <?php else: ?>
 
   <section class="an-hero" aria-labelledby="anHeadline">
-    <h2 id="anHeadline">Em <?= (int) $year ?> gastaste <?= fmt_eur($totalYear) ?></h2>
+    <h2 id="anHeadline">Em <?= (int) $year ?> gastaste <?= fmt_money($totalYear) ?></h2>
     <p>
       <?php if ($diffPct === null): ?>
         Sem gastos em <?= (int) $compareYear ?> para comparar.
       <?php else: ?>
         <strong><?= round(abs($diffPct)) ?>% <?= $diffPct >= 0 ? 'mais' : 'menos' ?></strong>
-        do que em <?= (int) $compareYear ?> <?= $periodLabel ?> (<?= fmt_eur($curToDate, 0) ?> contra <?= fmt_eur($prevToDate, 0) ?>).
+        do que em <?= (int) $compareYear ?> <?= $periodLabel ?> (<?= fmt_money($curToDate, 0) ?> contra <?= fmt_money($prevToDate, 0) ?>).
       <?php endif; ?>
     </p>
     <div class="an-facts">
       <div><strong><?= (int) $stats['total_transactions'] ?></strong>transações</div>
-      <div><strong><?= fmt_eur($stats['avg_amount']) ?></strong>média por transação</div>
-      <div><strong><?= ucfirst(month_name_pt((int) $maxMonth)) ?></strong>mês com mais gastos (<?= fmt_eur($maxMonthVal, 0) ?>)</div>
+      <div><strong><?= fmt_money($stats['avg_amount']) ?></strong>média por transação</div>
+      <div><strong><?= ucfirst(month_name_pt((int) $maxMonth)) ?></strong>mês com mais gastos (<?= fmt_money($maxMonthVal, 0) ?>)</div>
       <div><strong><?= htmlspecialchars($categoryTotals[0]['category']) ?></strong>categoria principal</div>
     </div>
   </section>
@@ -401,7 +401,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
           <li>
             <div class="row1">
               <span class="nm"><i style="background:<?= category_color($cat['category']) ?>"></i><?= htmlspecialchars($cat['category']) ?></span>
-              <span class="val"><?= fmt_eur($cat['total']) ?><small><?= round($share) ?>%</small></span>
+              <span class="val"><?= fmt_money($cat['total']) ?><small><?= round($share) ?>%</small></span>
             </div>
             <div class="an-track"><span style="width:<?= round($cat['total'] / $maxCatTotal * 100, 1) ?>%;background:<?= category_color($cat['category']) ?>"></span></div>
           </li>
@@ -441,7 +441,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
                 <div class="d"><?= htmlspecialchars($t['description'] ?: 'Sem descrição') ?></div>
                 <div class="m"><?= htmlspecialchars($t['category'] ?: 'Outros') ?> · <?= date('j', $ts) ?> <?= mb_substr(month_name_pt((int) date('n', $ts)), 0, 3) ?><?= $t['card_name'] ? ' · ' . htmlspecialchars($t['card_name']) : '' ?></div>
               </div>
-              <div class="a"><?= fmt_eur($t['amount']) ?><small><?= number_format($pct, 1, ',', '') ?>% do período</small></div>
+              <div class="a"><?= fmt_money($t['amount']) ?><small><?= number_format($pct, 1, ',', '') ?>% do período</small></div>
             </li>
           <?php endforeach; ?>
         </ol>
@@ -460,7 +460,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
             <li>
               <div class="row1">
                 <span class="nm"><?= htmlspecialchars($c['name']) ?></span>
-                <span class="val"><?= fmt_eur($c['total']) ?><small><?= $cardTotal > 0 ? round($c['total'] / $cardTotal * 100) : 0 ?>%</small></span>
+                <span class="val"><?= fmt_money($c['total']) ?><small><?= $cardTotal > 0 ? round($c['total'] / $cardTotal * 100) : 0 ?>%</small></span>
               </div>
               <div class="an-track"><span style="width:<?= round($c['total'] / $maxCard * 100, 1) ?>%;background:var(--fn-accent)"></span></div>
             </li>
@@ -486,8 +486,8 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
   const css  = getComputedStyle(document.documentElement);
   const v    = name => css.getPropertyValue(name).trim();
   const ink  = v('--fn-text'), muted = v('--fn-muted'), line = v('--fn-line'), surface = v('--fn-surface');
-  const eur  = n => n.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 });
-  const eur2 = n => n.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+  const eur  = <?= money_js(0) ?>;
+  const eur2 = <?= money_js() ?>;
 
   Chart.defaults.font.family = getComputedStyle(document.body).fontFamily;
   Chart.defaults.font.size = 13;

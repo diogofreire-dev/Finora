@@ -3,6 +3,7 @@
 
 // A chave fica em brevo.php (ignorado pelo git) — ver brevo.example.php
 require_once __DIR__ . '/brevo.php';
+require_once __DIR__ . '/../site/helpers/format.php';
 
 class EmailService {
     private $apiKey    = BREVO_API_KEY;
@@ -272,7 +273,8 @@ HTML;
         $h = $this->header($emoji, 'Lembrete de Pagamento', $subtitle);
         $dashUrl = $this->baseUrl . '/pages/reminders.php';
 
-        $amount    = number_format((float)$r['amount'], 2, ',', '.');
+        // Valor em número e a moeda da conta (o cron corre sem sessão, por isso a moeda vem nos dados)
+        $amount    = fmt_money($r['amount'], 2, $r['currency'] ?? 'EUR');
         $dueDate   = date('d/m/Y', strtotime($r['due_date']));
 
         $body = $h . <<<HTML
@@ -284,7 +286,7 @@ HTML;
           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{$boxBg};border:1px solid {$boxBorder};border-radius:12px;margin-bottom:24px"><tr><td style="padding:20px 24px">
             <div style="font-size:11px;font-weight:600;color:{$boxColor};text-transform:uppercase;letter-spacing:0.8px;margin-bottom:10px">{$urgency}</div>
             <div style="font-size:20px;font-weight:700;color:#2c3e50;margin-bottom:4px">{$r['name']}</div>
-            <div style="font-size:28px;font-weight:800;color:#3498db;margin-bottom:12px">{$amount} €</div>
+            <div style="font-size:28px;font-weight:800;color:#3498db;margin-bottom:12px">{$amount}</div>
             <table cellpadding="0" cellspacing="0" border="0"><tr>
               <td style="font-size:13px;color:#5d6778;padding-right:24px">📅 <strong>Data:</strong> {$dueDate}</td>
 HTML;
@@ -301,7 +303,7 @@ HTML;
           </td></tr></table>
         </td></tr>
 HTML;
-        return $this->base("Lembrete de pagamento: {$r['name']} — {$amount} €", $body);
+        return $this->base("Lembrete de pagamento: {$r['name']} — {$amount}", $body);
     }
 
     private function tplBudgetAlert(string $username, array $b): string {
@@ -316,8 +318,8 @@ HTML;
         $boxBorder = $exceeded ? '#fca5a5' : '#f59e0b';
         $boxColor  = $exceeded ? '#991b1b' : '#92400e';
 
-        $spent  = number_format((float)$b['amount_spent'], 2, ',', '.');
-        $limit  = number_format((float)$b['limit'], 2, ',', '.');
+        $spent  = fmt_money($b['amount_spent'], 2, $b['currency'] ?? 'EUR');
+        $limit  = fmt_money($b['limit'], 2, $b['currency'] ?? 'EUR');
         $dashUrl = $this->baseUrl . '/pages/budgets.php';
 
         $h = $this->header($emoji, $title, $subtitle);
@@ -336,8 +338,8 @@ HTML;
             </div>
 
             <table width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
-              <td style="font-size:14px;color:#5d6778">💸 Gasto: <strong style="color:{$barColor}">{$spent} €</strong></td>
-              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 Limite: <strong style="color:#2c3e50">{$limit} €</strong></td>
+              <td style="font-size:14px;color:#5d6778">💸 Gasto: <strong style="color:{$barColor}">{$spent}</strong></td>
+              <td style="font-size:14px;color:#5d6778;text-align:right">🎯 Limite: <strong style="color:#2c3e50">{$limit}</strong></td>
             </tr></table>
           </td></tr></table>
 

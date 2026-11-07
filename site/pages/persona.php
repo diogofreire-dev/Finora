@@ -64,12 +64,12 @@ if ($totalTx >= PERSONA_MIN_TX && $total > 0) {
 
     $smallShare = $s['small'] / $totalTx;
     if ($totalTx >= 20 && $smallShare > 0.6) {
-        $traits['pequenos'] = [$scale($smallShare, 0.6, 0.9), $s['small'] . ' das ' . $totalTx . ' compras foram abaixo de 15 €.'];
+        $traits['pequenos'] = [$scale($smallShare, 0.6, 0.9), $s['small'] . ' das ' . $totalTx . ' compras foram abaixo de ' . fmt_money(15, 0) . '.'];
     }
 
     $perMonth = $totalTx / (PERSONA_DAYS / 30);
     if ($perMonth <= 6 && $avg > 60) {
-        $traits['minimalista'] = [$scale($avg, 60, 200), 'Cerca de ' . (int) round($perMonth) . ' compras por mês, de ' . fmt_eur($avg) . ' em média.'];
+        $traits['minimalista'] = [$scale($avg, 60, 200), 'Cerca de ' . (int) round($perMonth) . ' compras por mês, de ' . fmt_money($avg) . ' em média.'];
     }
 
     $topShare = $catData ? $catData[0]['total'] / $total : 0;
@@ -97,7 +97,7 @@ $defs = [
         ['Junta as compras: uma ida ao supermercado por semana em vez de várias.', 'Experimenta uma semana por mês sem compras pequenas e vê a diferença.', 'Repara quando acontecem: tédio, pressa, cansaço?']],
     'minimalista' => ['O Minimalista Decidido', 3, 'bullseye',
         'Poucas compras, mas pensadas. Gastas pouco no dia a dia; o teu risco é uma compra grande que não estava planeada.',
-        ['Para compras acima de 100 €, espera 72 horas antes de decidir.', 'Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.', 'Revê as últimas compras grandes: quais repetias?']],
+        ['Para compras acima de ' . fmt_money(100, 0) . ', espera 72 horas antes de decidir.', 'Cria uma meta na Finora para as compras grandes que já sabes que vêm aí.', 'Revê as últimas compras grandes: quais repetias?']],
     'concentrado' => ['O Especialista de Uma Categoria', 8, 'pie-chart',
         'Mais de metade do teu dinheiro vai para uma única categoria. Pode ser normal (a renda, por exemplo) ou um ponto cego.',
         ['Pergunta-te se essa categoria reflete as tuas prioridades ou só um hábito.', 'Põe um orçamento nessa categoria durante um mês e vê como te sentes.', 'Procura alternativas mais baratas só para essa categoria: é onde o impacto é maior.']],
@@ -242,11 +242,11 @@ include __DIR__ . '/../components/sidebar.php';
   <?php if ($totalTx > 0): ?>
   <div class="ps-stats">
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
-      <div><b><?= fmt_eur($total / 3, 0) ?></b><span>por mês, em média</span></div></div>
+      <div><b><?= fmt_money($total / 3, 0) ?></b><span>por mês, em média</span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-7)" aria-hidden="true"><i class="bi bi-receipt"></i></span>
       <div><b><?= $totalTx ?></b><span>transações em <?= PERSONA_DAYS ?> dias</span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-calculator"></i></span>
-      <div><b><?= fmt_eur($avg) ?></b><span>por transação</span></div></div>
+      <div><b><?= fmt_money($avg) ?></b><span>por transação</span></div></div>
     <div class="ps-stat"><span class="pg-ico sm" style="--tone:var(--cat-3)" aria-hidden="true"><i class="bi bi-graph-up-arrow"></i></span>
       <div>
         <?php if ($trendPct === null): ?>
@@ -274,7 +274,7 @@ include __DIR__ . '/../components/sidebar.php';
             <div class="ps-cat-head">
               <span class="dot" style="background:<?= category_color($c['category']) ?>"></span>
               <span class="name"><?= htmlspecialchars($c['category']) ?></span>
-              <span class="val"><?= fmt_eur($c['total']) ?> · <?= number_format($p, 0, ',', '') ?>%</span>
+              <span class="val"><?= fmt_money($c['total']) ?> · <?= number_format($p, 0, ',', '') ?>%</span>
             </div>
             <div class="ps-cat-bar"><i style="width:<?= round($p, 1) ?>%;background:<?= category_color($c['category']) ?>"></i></div>
           </div>
@@ -307,7 +307,7 @@ const toneV = v('--cat-<?= $pSlot ?>');
 const data  = <?= json_encode($dowTotals) ?>;
 const ctx   = document.getElementById('dowChart');
 if (ctx) {
-  const eur = n => n.toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+  const eur = <?= money_js() ?>;
   new Chart(ctx, {
     type: 'bar',
     data: {
@@ -320,7 +320,7 @@ if (ctx) {
       plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => eur(c.parsed.y) } } },
       scales: {
         x: { grid: { display: false }, ticks: { color: v('--fn-muted') } },
-        y: { grid: { color: v('--fn-line') }, border: { display: false }, ticks: { color: v('--fn-muted'), callback: n => n + ' €' } }
+        y: { grid: { color: v('--fn-line') }, border: { display: false }, ticks: { color: v('--fn-muted'), callback: n => <?= money_js(0) ?>(n) } }
       }
     }
   });

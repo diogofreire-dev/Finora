@@ -198,7 +198,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <!-- Valor -->
         <div class="form-section">
-          <label class="form-label" style="text-align:center;width:100%">Valor (€) *</label>
+          <label class="form-label" style="text-align:center;width:100%">Valor (<?= currency_symbol() ?>) *</label>
           <input type="number" name="amount" step="0.01" min="0" class="form-control amount-input"
                  placeholder="0.00" value="<?=htmlspecialchars($amount)?>" required>
         </div>
@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <option value="">Nenhum / Dinheiro</option>
             <?php foreach($cards as $c): ?>
               <option value="<?=$c['id']?>" <?=($card_id==$c['id'])?'selected':''?>>
-                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_eur($c['limit_amount']-$c['balance'])?>
+                <?=htmlspecialchars($c['name'])?> — Disponível: <?=fmt_money($c['limit_amount']-$c['balance'])?>
               </option>
             <?php endforeach; ?>
           </select>
@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <span style="font-size:12px;color:var(--text-secondary)"><?=round($pct)?>%</span>
         </div>
         <div class="card-bar"><div class="card-bar-fill" style="width:<?=min($pct,100)?>%;background:<?=$barColor?>"></div></div>
-        <div style="font-size:12px;color:var(--text-secondary)">Disponível: <strong style="color:var(--text-primary)"><?=fmt_eur($available)?></strong></div>
+        <div style="font-size:12px;color:var(--text-secondary)">Disponível: <strong style="color:var(--text-primary)"><?=fmt_money($available)?></strong></div>
       </div>
       <?php endforeach; ?>
     </div>

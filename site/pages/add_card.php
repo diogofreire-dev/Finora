@@ -164,8 +164,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="cv-name" id="preview-name"><?=strtoupper(htmlspecialchars($name ?: 'NOME DO CARTAO'))?></div>
           </div>
           <div class="cv-meta">
-            <span>Limite: <strong id="preview-limit"><?=fmt_eur($limit)?></strong></span>
-            <span>Gasto: <strong id="preview-balance"><?=fmt_eur($balance)?></strong></span>
+            <span>Limite: <strong id="preview-limit"><?=fmt_money($limit)?></strong></span>
+            <span>Gasto: <strong id="preview-balance"><?=fmt_money($balance)?></strong></span>
           </div>
         </div>
         <div style="margin-top:16px">
@@ -175,8 +175,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div class="usage-track"><div class="usage-bar" id="usage-bar" style="width:0%"></div></div>
           <div class="usage-labels">
-            <span id="usage-spent">€0.00 gasto</span>
-            <span id="usage-limit-lbl">€0.00 limite</span>
+            <span id="usage-spent"><?= fmt_money(0) ?> gasto</span>
+            <span id="usage-limit-lbl"><?= fmt_money(0) ?> limite</span>
           </div>
         </div>
       </div>
@@ -229,14 +229,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="form-section">
             <div class="input-row">
               <div>
-                <label class="form-label">Limite (€) *</label>
+                <label class="form-label">Limite (<?= currency_symbol() ?>) *</label>
                 <input type="number" name="limit_amount" id="cardLimit" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($limit)?>" required>
                 <p class="form-hint">Limite maximo de gastos</p>
               </div>
               <div>
-                <label class="form-label">Gasto Inicial (€)</label>
+                <label class="form-label">Gasto Inicial (<?= currency_symbol() ?>)</label>
                 <input type="number" name="balance" id="cardBalance" class="form-control"
                        placeholder="0.00" step="0.01" min="0"
                        value="<?=htmlspecialchars($balance)?>">
@@ -264,6 +264,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+const money = <?= money_js() ?>;
 const cardColors = <?=json_encode(array_map(fn($c) => $c['gradient'], $cardColors))?>;
 
 // Logos dos bancos para a pré-visualização
@@ -333,10 +334,10 @@ document.getElementById('cardBalance').addEventListener('input', updatePreview);
 function updatePreview() {
   const lim = parseFloat(document.getElementById('cardLimit').value) || 0;
   const bal = parseFloat(document.getElementById('cardBalance').value) || 0;
-  document.getElementById('preview-limit').textContent = '€' + lim.toFixed(2);
-  document.getElementById('preview-balance').textContent = '€' + bal.toFixed(2);
-  document.getElementById('usage-spent').textContent = '€' + bal.toFixed(2) + ' gasto';
-  document.getElementById('usage-limit-lbl').textContent = '€' + lim.toFixed(2) + ' limite';
+  document.getElementById('preview-limit').textContent = money(lim);
+  document.getElementById('preview-balance').textContent = money(bal);
+  document.getElementById('usage-spent').textContent = money(bal) + ' gasto';
+  document.getElementById('usage-limit-lbl').textContent = money(lim) + ' limite';
   const pct = lim > 0 ? Math.min((bal / lim) * 100, 100) : 0;
   const bar = document.getElementById('usage-bar');
   bar.style.width = pct + '%';

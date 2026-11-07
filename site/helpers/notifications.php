@@ -70,10 +70,10 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
             $d = (int) $r['d'];
             if ($d < 0 && $on('payment_overdue')) {
                 notif_add($pdo, $uid, 'payment_overdue', "late:{$r['id']}:{$r['due_date']}", $r['name'] . ' está em atraso',
-                    fmt_eur($r['amount']) . ' venceram há ' . abs($d) . ' dia' . (abs($d) > 1 ? 's' : '') . '. Marca como pago quando pagares.', ['reminder_id' => (int) $r['id']]);
+                    fmt_money($r['amount']) . ' venceram há ' . abs($d) . ' dia' . (abs($d) > 1 ? 's' : '') . '. Marca como pago quando pagares.', ['reminder_id' => (int) $r['id']]);
             } elseif ($d >= 0 && $d <= (int) $r['notify_days_before'] && $on('payment_due')) {
                 notif_add($pdo, $uid, 'payment_due', "due:{$r['id']}:{$r['due_date']}", $r['name'] . ($d === 0 ? ' vence hoje' : ($d === 1 ? ' vence amanhã' : " vence em $d dias")),
-                    fmt_eur($r['amount']) . ' a pagar.', ['reminder_id' => (int) $r['id']]);
+                    fmt_money($r['amount']) . ' a pagar.', ['reminder_id' => (int) $r['id']]);
             }
         }
     }
@@ -95,10 +95,10 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
             $pct = $b['spent'] / $b['amount'] * 100;
             if ($pct >= 100 && $on('budget_exceeded')) {
                 notif_add($pdo, $uid, 'budget_exceeded', "bud100:{$b['id']}:{$b['ps']}", 'Passaste o orçamento "' . $b['name'] . '"',
-                    'Já gastaste ' . fmt_eur($b['spent']) . ' de ' . fmt_eur($b['amount']) . '.', ['budget_id' => (int) $b['id']]);
+                    'Já gastaste ' . fmt_money($b['spent']) . ' de ' . fmt_money($b['amount']) . '.', ['budget_id' => (int) $b['id']]);
             } elseif ($pct >= 80 && $on('budget_warning')) {
                 notif_add($pdo, $uid, 'budget_warning', "bud80:{$b['id']}:{$b['ps']}", 'Orçamento "' . $b['name'] . '" a ' . floor($pct) . '%',
-                    'Restam ' . fmt_eur($b['amount'] - $b['spent']) . ' até ao fim do período.', ['budget_id' => (int) $b['id']]);
+                    'Restam ' . fmt_money($b['amount'] - $b['spent']) . ' até ao fim do período.', ['budget_id' => (int) $b['id']]);
             }
         }
     }
@@ -109,7 +109,7 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
         $st->execute([':u' => $uid]);
         foreach ($st as $c) {
             notif_add($pdo, $uid, 'card_over_limit', 'card:' . $c['id'] . ':' . substr($today, 0, 7), $c['name'] . ' passou o limite',
-                'Estás ' . fmt_eur($c['balance'] - $c['limit_amount']) . ' acima de ' . fmt_eur($c['limit_amount']) . '.', ['card_id' => (int) $c['id']]);
+                'Estás ' . fmt_money($c['balance'] - $c['limit_amount']) . ' acima de ' . fmt_money($c['limit_amount']) . '.', ['card_id' => (int) $c['id']]);
         }
     }
 
@@ -122,11 +122,11 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
         foreach ($st as $g) {
             $saved = max($byGoal[(int) $g['id']] ?? 0, 0);
             if ($saved >= $g['target_amount'] && $on('goal_done')) {
-                notif_add($pdo, $uid, 'goal_done', 'goal_done:' . $g['id'], 'Meta cumprida: ' . $g['name'], 'Juntaste ' . fmt_eur($saved) . '. Parabéns!', ['goal_id' => (int) $g['id']]);
+                notif_add($pdo, $uid, 'goal_done', 'goal_done:' . $g['id'], 'Meta cumprida: ' . $g['name'], 'Juntaste ' . fmt_money($saved) . '. Parabéns!', ['goal_id' => (int) $g['id']]);
             } elseif ($saved < goal_expected_today($g, $today) && $on('goal_behind')) {
                 $months = max(1, (strtotime($g['target_date']) - strtotime($today)) / (30 * 86400));
                 notif_add($pdo, $uid, 'goal_behind', 'goal_late:' . $g['id'] . ':' . substr($today, 0, 7), 'A meta "' . $g['name'] . '" está atrasada',
-                    'Junta ' . fmt_eur(($g['target_amount'] - $saved) / $months, 0) . ' por mês para chegares a tempo.', ['goal_id' => (int) $g['id']]);
+                    'Junta ' . fmt_money(($g['target_amount'] - $saved) / $months, 0) . ' por mês para chegares a tempo.', ['goal_id' => (int) $g['id']]);
             }
         }
     }
@@ -159,7 +159,7 @@ function notif_generate(PDO $pdo, int $uid, bool $force = false): void {
             $name = month_name_pt((int) $prevMonth->format('n'));
             $diff = $m['prev'] > 0 ? ($m['last'] - $m['prev']) / $m['prev'] * 100 : null;
             notif_add($pdo, $uid, 'month_summary', 'month:' . $prevMonth->format('Y-m'), 'O teu ' . $name . ' em números',
-                'Gastaste ' . fmt_eur($m['last']) . ($diff === null ? '.' : ' (' . ($diff > 0 ? '+' : '−') . number_format(abs($diff), 0, ',', '') . '% que no mês anterior).'), ['month' => $prevMonth->format('Y-m')]);
+                'Gastaste ' . fmt_money($m['last']) . ($diff === null ? '.' : ' (' . ($diff > 0 ? '+' : '−') . number_format(abs($diff), 0, ',', '') . '% que no mês anterior).'), ['month' => $prevMonth->format('Y-m')]);
         }
     }
 
@@ -173,8 +173,8 @@ function notif_savings_milestone(PDO $pdo, int $uid, ?array $byGoal = null): voi
     $passed = 0;
     foreach (SAVINGS_MILESTONES as $m) if ($total >= $m) $passed = $m;
     if ($passed > 0) {
-        notif_add($pdo, $uid, 'savings_milestone', 'save_ms:' . $passed, 'Chegaste aos ' . fmt_eur($passed, 0) . ' poupados!',
-            'O próximo marco é ' . fmt_eur(savings_next_milestone($total), 0) . '.', ['milestone' => $passed]);
+        notif_add($pdo, $uid, 'savings_milestone', 'save_ms:' . $passed, 'Chegaste aos ' . fmt_money($passed, 0) . ' poupados!',
+            'O próximo marco é ' . fmt_money(savings_next_milestone($total), 0) . '.', ['milestone' => $passed]);
     }
 }
 

@@ -53,9 +53,11 @@ try {
             c.name as card_name,
             u.email,
             u.username,
+            s.currency,
             DATEDIFF(pr.due_date, CURDATE()) as days_until
         FROM payment_reminders pr
         JOIN users u ON u.id = pr.user_id
+        LEFT JOIN user_settings s ON s.user_id = pr.user_id
         LEFT JOIN cards c ON c.id = pr.card_id
         WHERE pr.active = 1
         AND pr.due_date >= CURDATE()
@@ -79,7 +81,8 @@ try {
             // Dados para o template
             $reminderData = [
                 'name' => $reminder['name'],
-                'amount' => number_format($reminder['amount'], 2, ',', '.'),
+                'amount' => $reminder['amount'],
+                'currency' => valid_currency($reminder['currency']),
                 'category' => $reminder['category'] ?? 'Sem categoria',
                 'due_date' => date('d/m/Y', strtotime($reminder['due_date'])),
                 'days_until' => $daysUntil,
@@ -116,7 +119,7 @@ try {
                         ':uid' => $reminder['user_id'],
                         ':type' => 'payment_reminder',
                         ':title' => 'Lembrete de Pagamento: ' . $reminder['name'],
-                        ':message' => 'O pagamento "' . $reminder['name'] . '" (€' . $reminderData['amount'] . ') vence em ' . $daysUntil . ' dias',
+                        ':message' => 'O pagamento "' . $reminder['name'] . '" (' . fmt_money($reminder['amount'], 2, $reminderData['currency']) . ') vence em ' . $daysUntil . ' dias',
                         ':data' => json_encode([
                             'reminder_id' => $reminder['id'],
                             'name' => $reminder['name'],
