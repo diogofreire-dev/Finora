@@ -97,6 +97,8 @@ CREATE TABLE IF NOT EXISTS user_settings (
   notifications TINYINT(1)   DEFAULT 1,
   notif_prefs   JSON         NULL,               -- tipos de notificação ligados/desligados
   notif_checked_on DATE      NULL,               -- última verificação diária
+  monthly_income DECIMAL(10,2) NULL,             -- rendimento mensal líquido (opcional, pedido nas boas-vindas)
+  onboarded     TINYINT(1)   NOT NULL DEFAULT 1, -- 0 = conta nova que ainda não passou pelas boas-vindas
   created_at    DATETIME     DEFAULT CURRENT_TIMESTAMP,
   updated_at    DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   CONSTRAINT fk_settings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
@@ -412,3 +414,12 @@ INSERT INTO nif_empresas (nif, nome_empresa, id_categoria, fonte) VALUES
   ('500115932', 'ÁGUAS DE PORTUGAL SA',                 8, 'vies'),
   ('500077058', 'EPAL - EMPRESA PORTUGUESA DAS ÁGUAS LIVRES SA', 8, 'vies')
 ON DUPLICATE KEY UPDATE nome_empresa = VALUES(nome_empresa), id_categoria = VALUES(id_categoria), fonte = VALUES(fonte);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Colunas acrescentadas depois de a tabela já existir. O CREATE TABLE IF NOT EXISTS
+-- não mexe numa tabela que já existe, por isso uma base antiga recebe-as aqui.
+-- ─────────────────────────────────────────────────────────────────────────────
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS monthly_income DECIMAL(10,2) NULL AFTER notif_checked_on;
+-- DEFAULT 1: as contas que já existem não são mandadas para as boas-vindas.
+-- O código põe 0 explicitamente quando cria as definições de uma conta nova.
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS onboarded TINYINT(1) NOT NULL DEFAULT 1 AFTER monthly_income;

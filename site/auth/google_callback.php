@@ -177,7 +177,7 @@ try {
     $newId = $pdo->lastInsertId();
     try {
         // A conta nova fica na língua em que a pessoa estava a ver o site
-        $pdo->prepare('INSERT INTO user_settings (user_id, language) VALUES (:uid, :lang)')->execute([':uid' => $newId, ':lang' => current_lang()]);
+        $pdo->prepare('INSERT INTO user_settings (user_id, language, onboarded) VALUES (:uid, :lang, 0)')->execute([':uid' => $newId, ':lang' => current_lang()]);
     } catch (PDOException $e) {}
     session_regenerate_id(true);
     $_SESSION['user_id']  = $newId;

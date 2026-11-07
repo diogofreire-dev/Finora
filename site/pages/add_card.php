@@ -119,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .form-actions { display: flex; gap: 8px; padding: 16px 20px; }
     .form-actions .btn-s { flex: 1; justify-content: center; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=9">
+  <link rel="stylesheet" href="../css/finora.css?v=10">
 </head>
 <body>
 <div class="app-layout">

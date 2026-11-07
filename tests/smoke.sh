@@ -47,7 +47,7 @@ echo "✓ login"
 for p in dashboard.php pages/transactions.php pages/create_transaction.php pages/cards.php pages/add_card.php \
          pages/budgets.php pages/add_budget.php pages/reminders.php pages/savings.php pages/futuro.php \
          pages/analytics.php pages/investments.php pages/bolsa.php pages/notifications.php pages/settings.php \
-         pages/dados.php pages/ai.php pages/persona.php pages/scan_fatura.php; do
+         pages/dados.php pages/ai.php pages/persona.php pages/scan_fatura.php pages/welcome.php; do
   check "$p"
 done
 

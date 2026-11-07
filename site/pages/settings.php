@@ -41,7 +41,7 @@ $stmt = $pdo->prepare("SELECT * FROM user_settings WHERE user_id = :uid");
 $stmt->execute([':uid' => $uid]);
 $settings = $stmt->fetch();
 if (!$settings) {
-    $pdo->prepare("INSERT INTO user_settings (user_id, language) VALUES (:uid, :lang)")->execute([':uid' => $uid, ':lang' => current_lang()]);
+    $pdo->prepare("INSERT INTO user_settings (user_id, language, onboarded) VALUES (:uid, :lang, 0)")->execute([':uid' => $uid, ':lang' => current_lang()]);
     $settings = ['theme' => 'light', 'notifications' => 1];
 }
 
@@ -90,6 +90,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $flash = ['success', t('Língua alterada.')];
             } else {
                 $flash = ['danger', t('Escolhe uma língua da lista.')];
+            }
+        }
+        elseif ($action === 'update_income') {
+            // Vazio = não dizer; senão um número entre 0 e 10 milhões (o mesmo limite das boas-vindas)
+            $raw = str_replace([' ', "\u{00A0}", ','], ['', '', '.'], trim((string) ($_POST['monthly_income'] ?? '')));
+            if ($raw === '') {
+                $pdo->prepare('UPDATE user_settings SET monthly_income = NULL WHERE user_id = :uid')->execute([':uid' => $uid]);
+                $flash = ['success', t('Rendimento removido.')];
+            } elseif (is_numeric($raw) && (float) $raw >= 0 && (float) $raw <= 10000000) {
+                $pdo->prepare('UPDATE user_settings SET monthly_income = :i WHERE user_id = :uid')->execute([':i' => round((float) $raw, 2), ':uid' => $uid]);
+                $flash = ['success', t('Rendimento guardado.')];
+            } else {
+                $flash = ['danger', t('O rendimento tem de ser um número entre 0 e 10 000 000, ou ficar vazio.')];
             }
         }
         elseif ($action === 'update_currency') {
@@ -397,11 +410,6 @@ $since        = strtotime($user['created_at']);
     .st-theme input:checked ~ .name i { color: var(--fn-accent); }
 
     /* Interruptor (checkbox verdadeira com aspeto de switch) */
-    .st-switch { appearance: none; -webkit-appearance: none; width: 46px; height: 26px; border-radius: 999px; background: var(--fn-line); position: relative; cursor: pointer; flex-shrink: 0; margin: 0; transition: background .2s; }
-    .st-switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .2s; }
-    .st-switch:checked { background: var(--fn-accent); }
-    .st-switch:checked::after { transform: translateX(20px); }
-    .st-switch:focus-visible { outline: 2px solid var(--fn-gold); outline-offset: 2px; }
 
     .st-google { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--fn-line); display: grid; place-items: center; flex-shrink: 0; background: #fff; }
     .st-foot { margin-top: 8px; font-size: 13px; color: var(--fn-muted); text-align: right; }
@@ -429,7 +437,7 @@ $since        = strtotime($user['created_at']);
     .st-form .st-sub a, .st-foot a { color: inherit; text-underline-offset: 3px; }
     #apagar-conta { scroll-margin-top: 90px; }
   </style>
-  <link rel="stylesheet" href="../css/finora.css?v=9">
+  <link rel="stylesheet" href="../css/finora.css?v=10">
 </head>
 <body>
 <div class="app-layout">
@@ -679,6 +687,18 @@ include __DIR__ . '/../components/sidebar.php';
           <?php endforeach; ?>
         </select>
         <noscript><button type="submit" class="btn-s"><?= te('Guardar') ?></button></noscript>
+      </form>
+      <form method="post" class="st-row">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="update_income">
+        <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-wallet2"></i></span>
+        <div class="pg-grow">
+          <label class="st-label" for="monthlyIncome"><?= te('Rendimento mensal (opcional)') ?></label>
+          <p class="st-sub" id="incomeHelp"><?= te('Líquido, já sem impostos. Usado para prever as metas.') ?></p>
+        </div>
+        <input type="text" inputmode="decimal" class="form-control st-currency" id="monthlyIncome" name="monthly_income" style="min-width:0;width:130px"
+               value="<?= isset($settings['monthly_income']) ? htmlspecialchars((string) (float) $settings['monthly_income']) : '' ?>" placeholder="—" aria-describedby="incomeHelp">
+        <button type="submit" class="btn-s"><?= te('Guardar') ?></button>
       </form>
 
   </section>

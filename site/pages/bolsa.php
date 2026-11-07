@@ -62,7 +62,7 @@ function price_txt(float $v, string $cur = 'EUR'): string { return fmt_price_in(
   <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
-  <link rel="stylesheet" href="../css/finora.css?v=9">
+  <link rel="stylesheet" href="../css/finora.css?v=10">
   <style>
     .bk { max-width: 1120px; margin: 0 auto; padding-bottom: 56px; }
     .bk h1 { margin: 0 0 4px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
