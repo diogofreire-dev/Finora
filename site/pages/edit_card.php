@@ -50,6 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($balance < 0)              { $errors[] = t('O saldo não pode ser negativo.'); }
     if ($balance > $limit)         { $errors[] = t('O saldo não pode ser superior ao limite.'); }
     if (!array_key_exists($color, $cardColors)) { $color = 'purple'; }
+    if ($active && !(int) $card['active'] && !can_activate_card($pdo, (int) $uid, (int) $card_id)) { $errors[] = card_limit_message(); }
 
     if (empty($errors)) {
         try {

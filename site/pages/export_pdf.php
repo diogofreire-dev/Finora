@@ -1,6 +1,7 @@
 <?php
 // site/pages/export_pdf.php
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro('reports');   // Finora Pro (ver helpers/plan.php)
 require_once __DIR__ . '/../../config/db.php';
 $uid = $_SESSION['user_id'] ?? null;
 require_once __DIR__ . '/../helpers/theme_helper.php';

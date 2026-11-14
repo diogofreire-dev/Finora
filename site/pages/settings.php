@@ -7,6 +7,7 @@ require_once __DIR__ . '/../../config/EmailService.php';
 require_once __DIR__ . '/../helpers/theme_helper.php';
 require_once __DIR__ . '/../helpers/password_rules.php';
 require_once __DIR__ . '/../helpers/notifications.php';
+require_once __DIR__ . '/../helpers/stripe.php';
 $uid = $_SESSION['user_id'] ?? null;
 
 // Iguais ao login: errar a palavra-passe aqui conta para o mesmo bloqueio,
@@ -286,6 +287,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (mb_strtolower(trim($confirm)) !== mb_strtolower($user['email'])) $err = t('O email não corresponde ao da tua conta.');
             } else {
                 $err = check_current_password($pdo, $uid, $confirm);
+            }
+            // Uma subscrição do Pro ainda ativa é cancelada no Stripe antes de apagar a conta:
+            // sem isto, o Stripe continuava a cobrar todos os meses uma conta que já não existe.
+            if (!$err) {
+                $subRow = user_subscription($pdo, (int) $uid);
+                if ($subRow && !empty($subRow['stripe_subscription_id']) && !in_array($subRow['status'], ['canceled', 'incomplete_expired'], true)) {
+                    try {
+                        stripe_request('DELETE', '/subscriptions/' . $subRow['stripe_subscription_id']);
+                    } catch (Throwable $e) {
+                        error_log('[settings] Cancelar subscrição da conta ' . (int) $uid . ': ' . $e->getMessage());
+                        $err = t('Não foi possível cancelar a subscrição do Pro. A conta não foi apagada; tenta outra vez.');
+                    }
+                }
             }
             if ($err) {
                 $flash = ['danger', $err];
@@ -742,6 +756,14 @@ include __DIR__ . '/../components/sidebar.php';
   <section class="pg-card st-card" id="os-teus-dados" aria-labelledby="sec-dados" style="--tone:var(--cat-8)">
     <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-shield-check"></i></span><div><h2 id="sec-dados"><?= te('Os teus dados') ?></h2><p><?= te('Leva os teus dados contigo ou apaga a conta de vez.') ?></p></div></header>
       <div class="st-row">
+        <span class="pg-ico sm" style="--tone:var(--fn-gold)" aria-hidden="true"><i class="bi bi-gem"></i></span>
+        <div class="pg-grow">
+          <p class="st-label"><?= te('Plano') ?></p>
+          <p class="st-sub"><?= is_pro() ? te('Finora Pro') : te('Grátis') ?></p>
+        </div>
+        <a class="btn-s" href="pro.php"><?= is_pro() ? te('Gerir') : te('Ver o Pro') ?></a>
+      </div>
+      <div class="st-row">
         <span class="pg-ico sm" style="--tone:var(--cat-1)" aria-hidden="true"><i class="bi bi-box-arrow-up"></i></span>
         <div class="pg-grow">
           <p class="st-label"><?= te('Exportar') ?></p>
@@ -761,7 +783,7 @@ include __DIR__ . '/../components/sidebar.php';
         <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-trash3"></i></span>
         <div class="pg-grow">
           <p class="st-label"><?= te('Apagar conta') ?></p>
-          <p class="st-sub"><?= te('Apaga a conta e tudo o que registaste. Não dá para voltar atrás.') ?></p>
+          <p class="st-sub"><?= te('Apaga a conta e tudo o que registaste. Não dá para voltar atrás.') ?><?= is_pro() ? ' ' . te('A subscrição do Pro é cancelada logo.') : '' ?></p>
         </div>
         <button type="button" class="btn-s btn-s-danger" data-bs-toggle="collapse" data-bs-target="#formDelete" aria-expanded="<?= $openForm === 'apagar-conta' ? 'true' : 'false' ?>" aria-controls="formDelete">
           <i class="bi bi-trash3"></i> <?= te('Apagar') ?>

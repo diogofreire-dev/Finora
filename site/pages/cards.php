@@ -70,7 +70,14 @@ if (!empty($_SESSION['flash_cards'])) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && !empty($_POST['action']) && $_POST['action'] === 'toggle') {
     $cardId = intval($_POST['card_id'] ?? 0);
-    try {
+    // Reativar um cartão conta para o limite do plano grátis (desativar é sempre possível)
+    $isActive = $pdo->prepare("SELECT active FROM cards WHERE id = :id AND user_id = :uid");
+    $isActive->execute([':id' => $cardId, ':uid' => $uid]);
+    $wasActive = $isActive->fetchColumn();
+    if ($wasActive !== false && !(int) $wasActive && !can_activate_card($pdo, (int) $uid, $cardId)) {
+        $message = card_limit_message();
+        $messageType = 'danger';
+    } else try {
         $stmt = $pdo->prepare("UPDATE cards SET active = NOT active WHERE id = :id AND user_id = :uid");
         $stmt->execute([':id' => $cardId, ':uid' => $uid]);
         $message = t('Estado do cartão alterado com sucesso!');
@@ -312,7 +319,11 @@ $walletCards = array_map(fn($c) => [
 
   <div class="cd-head">
     <h1><?= te('Cartões') ?></h1>
-    <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Adicionar cartão') ?></a>
+    <?php if (!is_pro() && $activeCount >= FREE_CARD_LIMIT): ?>
+      <a href="pro.php?feature=cards" class="btn-s"><i class="bi bi-gem" style="color:var(--fn-gold)"></i> <?= te('Mais cartões com o Pro') ?></a>
+    <?php else: ?>
+      <a href="add_card.php" class="btn-s btn-s-primary"><i class="bi bi-plus-lg"></i> <?= te('Adicionar cartão') ?></a>
+    <?php endif; ?>
   </div>
 
   <?php if ($activeCount > 0): ?>

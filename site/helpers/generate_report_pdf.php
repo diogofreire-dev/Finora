@@ -1,6 +1,7 @@
 <?php
 // site/helpers/generate_report_pdf.php
 require_once __DIR__ . '/auth.php';
+require_pro('reports');   // Finora Pro (ver plan.php)
 require_once __DIR__ . '/../../config/db.php';
 
 $uid = $_SESSION['user_id'] ?? null;

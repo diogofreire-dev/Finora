@@ -1,6 +1,7 @@
 <?php
 // site/pages/investments.php — carteira de investimentos registada à mão
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro('investments');   // Finora Pro (ver helpers/plan.php)
 require_once __DIR__ . '/../../config/db.php';
 $uid = (int) ($_SESSION['user_id'] ?? 0);
 require_once __DIR__ . '/../helpers/theme_helper.php';

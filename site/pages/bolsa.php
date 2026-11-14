@@ -1,6 +1,7 @@
 <?php
 // site/pages/bolsa.php — Bolsa: pesquisar títulos e acompanhar cotações (lista de acompanhamento)
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro('bolsa');   // Finora Pro (ver helpers/plan.php)
 require_once __DIR__ . '/../../config/db.php';
 $uid = (int) ($_SESSION['user_id'] ?? 0);
 require_once __DIR__ . '/../helpers/theme_helper.php';

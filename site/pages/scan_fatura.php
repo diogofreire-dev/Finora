@@ -1,6 +1,7 @@
 <?php
 // site/pages/scan_fatura.php
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro('scan');   // Finora Pro (ver helpers/plan.php)
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/theme_helper.php';
 require_once __DIR__ . '/../helpers/categories.php';

@@ -5,6 +5,7 @@ ini_set('display_errors', 0);
 
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro_json();   // o assistente é do Finora Pro
 
 // Limites: cada pedido custa quota da Groq, por isso ninguém pode fazer pedidos sem fim
 const AI_MAX_PER_HOUR    = 30;

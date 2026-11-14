@@ -27,6 +27,9 @@ $cardColors = [
     'indigo' => ['name' => 'Indigo',   'gradient' => 'linear-gradient(135deg, #3F51B5 0%, #1A237E 100%)'],
 ];
 
+// Plano grátis: até FREE_CARD_LIMIT cartões ativos. No limite, a página do Pro explica porquê.
+if (!can_activate_card($pdo, (int) $uid)) require_pro('cards');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $name    = trim($_POST['name'] ?? '');
     $limit   = floatval($_POST['limit_amount'] ?? 0);

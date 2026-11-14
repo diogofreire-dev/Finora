@@ -35,6 +35,7 @@ $_pageTitles = [
     'dados'        => t('Dados e relatórios'),
     'settings'     => t('Definições'),
     'notifications' => t('Notificações'),
+    'pro'          => t('Finora Pro'),
 ];
 $_pageTitle = $_pageTitles[$_ap] ?? '';
 
@@ -60,9 +61,18 @@ if (isset($pdo) && !empty($_SESSION['user_id'])) {
         $_notifs     = notif_recent($pdo, (int) $_SESSION['user_id'], 8);
     } catch (Throwable $_e) { error_log('[notifications] ' . $_e->getMessage()); }   // nunca deita a página abaixo
 }
+// Plano grátis: as entradas do Finora Pro levam uma etiqueta (ao abrir, a página explica o Pro)
+$_isPro  = function_exists('is_pro') && is_pro();
+$_proTag = $_isPro ? '' : ' <span class="sidebar-pro">' . te('Pro') . '</span>';
 $_username = $_SESSION['username'] ?? '';
 $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 ?>
+<style>
+  .sidebar-pro { margin-left: auto; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .2px;
+                 background: var(--fn-gold-soft); color: #9a6a0b; }
+  [data-theme="dark"] .sidebar-pro { color: var(--fn-gold); }
+  .sidebar-link-pro > i { color: var(--fn-gold); }
+</style>
 <!-- Particles canvas (visible in all post-login pages) -->
 <canvas id="particles-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 
@@ -175,10 +185,10 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
       <i class="bi bi-flag"></i> <?= te('Metas') ?>
     </a>
     <a href="<?= $_sp ?>pages/investments.php"  class="<?= _sidebarClass('investments',  $_ap) ?>"<?= _ariaCurrent('investments', $_ap) ?>>
-      <i class="bi bi-graph-up-arrow"></i> <?= te('Investimentos') ?>
+      <i class="bi bi-graph-up-arrow"></i> <?= te('Investimentos') ?><?= $_proTag ?>
     </a>
     <a href="<?= $_sp ?>pages/bolsa.php"        class="<?= _sidebarClass('bolsa',        $_ap) ?>"<?= _ariaCurrent('bolsa', $_ap) ?>>
-      <i class="bi bi-activity"></i> <?= te('Bolsa') ?>
+      <i class="bi bi-activity"></i> <?= te('Bolsa') ?><?= $_proTag ?>
     </a>
     <a href="<?= $_sp ?>pages/reminders.php"    class="<?= _sidebarClass('reminders',    $_ap) ?>"<?= _ariaCurrent('reminders', $_ap) ?>>
       <i class="bi bi-calendar-check"></i> <?= te('Lembretes') ?>
@@ -192,12 +202,12 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
       <i class="bi bi-person-hearts"></i> <?= te('Personalidade financeira') ?>
     </a>
     <a href="<?= $_sp ?>pages/ai.php"           class="<?= _sidebarClass('ai',           $_ap) ?>"<?= _ariaCurrent('ai', $_ap) ?>>
-      <i class="bi bi-stars"></i> <?= te('Assistente IA') ?>
+      <i class="bi bi-stars"></i> <?= te('Assistente IA') ?><?= $_proTag ?>
     </a>
 
     <div class="sidebar-section-label"><?= te('Ferramentas') ?></div>
     <a href="<?= $_sp ?>pages/scan_fatura.php"  class="<?= _sidebarClass('scan_fatura',  $_ap) ?>"<?= _ariaCurrent('scan_fatura', $_ap) ?>>
-      <i class="bi bi-qr-code-scan"></i> <?= te('Ler fatura') ?>
+      <i class="bi bi-qr-code-scan"></i> <?= te('Ler fatura') ?><?= $_proTag ?>
     </a>
     <a href="<?= $_sp ?>pages/dados.php"        class="<?= _sidebarClass('dados',        $_ap) ?>"<?= _ariaCurrent('dados', $_ap) ?>>
       <i class="bi bi-database"></i> <?= te('Dados e relatórios') ?>
@@ -205,6 +215,9 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   </nav>
 
   <div class="sidebar-footer">
+    <a href="<?= $_sp ?>pages/pro.php" class="<?= _sidebarClass('pro', $_ap) ?> sidebar-link-pro"<?= _ariaCurrent('pro', $_ap) ?>>
+      <i class="bi bi-gem"></i> <?= $_isPro ? te('Finora Pro') : te('Passar para o Pro') ?>
+    </a>
     <a href="<?= $_sp ?>pages/settings.php" class="<?= _sidebarClass('settings', $_ap) ?>"<?= _ariaCurrent('settings', $_ap) ?>>
       <i class="bi bi-gear"></i> <?= te('Definições') ?>
     </a>
