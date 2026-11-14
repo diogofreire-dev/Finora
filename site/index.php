@@ -194,6 +194,7 @@ $features = [
       <a href="auth/login.php"><?= te('Entrar') ?></a>
       <a href="#seguranca"><?= te('Segurança') ?></a>
       <a href="privacidade.php"><?= te('Privacidade') ?></a>
+      <a href="termos.php"><?= te('Termos') ?></a>
     </nav>
     <p>&copy; <?= date('Y') ?> Finora. <?= te('Prova de Aptidão Profissional de Diogo Freire e Jandro Antunes.') ?></p>
   </div>

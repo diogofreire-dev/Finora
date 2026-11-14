@@ -15,7 +15,7 @@ $updated = fmt_date_long(mktime(0, 0, 0, 11, 14, 2026), true);
 $partners = [
     ['Brevo',            t('Envio de emails (verificação, recuperação de palavra-passe, alertas).'), t('O teu email, nome e o conteúdo do email.')],
     ['Google',           t('Entrar com a conta Google, se escolheres essa opção.'),                 t('O teu email, nome e identificador Google.')],
-    ['Stripe',           t('Pagamento do Finora Pro, se subscreveres.'),                              t('O teu email e os dados do pagamento, que introduzes diretamente no Stripe. A Finora nunca vê o número do cartão.')],
+    [t('Stripe (Link)'), t('Pagamento do Finora Pro, se subscreveres. O Link é o vendedor registado e envia os recibos.'),                              t('O teu email e os dados do pagamento, que introduzes diretamente no Stripe. A Finora nunca vê o número do cartão.')],
     ['Groq',             t('Responder às perguntas no Assistente.'),                                t('A tua pergunta e um resumo dos gastos do mês (categorias, descrições e valores). Sem nome nem email.')],
     [t('VIES (Comissão Europeia)'), t('Saber o nome da empresa quando lês o QR de uma fatura.'), t('Só o NIF da empresa que emitiu a fatura.')],
     ['Yahoo Finance',    t('Cotações na Bolsa e nos Investimentos.'),                               t('Só os símbolos (ex.: VWCE.DE). Nada sobre ti.')],
@@ -192,6 +192,7 @@ $partners = [
     <a href="index.php" class="ln-brand" aria-label="<?= te('Finora — início') ?>"><?= finora_logo('ln-logo') ?></a>
     <nav aria-label="<?= te('Rodapé') ?>">
       <a href="index.php"><?= te('Início') ?></a>
+      <a href="termos.php"><?= te('Termos') ?></a>
       <a href="auth/register.php"><?= te('Criar conta') ?></a>
       <a href="auth/login.php"><?= te('Entrar') ?></a>
     </nav>

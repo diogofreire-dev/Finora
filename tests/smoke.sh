@@ -29,7 +29,7 @@ check() {   # check <caminho> [estado esperado]
 }
 
 # Páginas públicas
-for p in index.php privacidade.php auth/login.php auth/register.php auth/forgot_password.php; do check "$p"; done
+for p in index.php privacidade.php termos.php auth/login.php auth/register.php auth/forgot_password.php; do check "$p"; done
 
 # Sem sessão, as páginas da app redirecionam para o login
 check dashboard.php 302

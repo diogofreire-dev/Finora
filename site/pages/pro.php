@@ -260,7 +260,7 @@ $free = [
           <button class="pro-go" type="submit" <?= stripe_configured() ? '' : 'disabled' ?>><?= te('Passar para o Pro') ?></button>
         </form>
         <p class="pro-fine"><?= stripe_configured()
-            ? te('Pagamento seguro pelo Stripe. Cancelas quando quiseres e manténs o Pro até ao fim do mês pago.')
+            ? te('Pagamento seguro pelo Stripe. Cancelas quando quiseres e manténs o Pro até ao fim do mês pago.') . ' <a href="../termos.php#pro">' . te('Termos') . '</a>'
             : te('Os pagamentos ainda não estão disponíveis.') ?></p>
       <?php endif; ?>
     </section>

@@ -141,7 +141,7 @@ auth_page_start(t('Criar conta'), [
           </div>
 
           <button type="submit" class="au-btn"><?= te('Criar conta') ?></button>
-          <p class="au-hint au-legal"><?= te('Ao criar conta, aceitas a forma como tratamos os teus dados, descrita na') ?> <a href="../privacidade.php"><?= te('Política de privacidade') ?></a>.</p>
+          <p class="au-hint au-legal"><?= t('Ao criar conta, aceitas os {terms} e a forma como tratamos os teus dados, descrita na {privacy}.', ['terms' => '<a href="../termos.php">' . te('Termos de serviço') . '</a>', 'privacy' => '<a href="../privacidade.php">' . te('Política de privacidade') . '</a>']) ?></p>
         </form>
 
         <p class="au-foot"><?= te('Já tens conta?') ?> <a href="login.php"><?= te('Entrar') ?></a></p>
