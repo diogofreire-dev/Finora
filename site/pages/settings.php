@@ -825,7 +825,7 @@ include __DIR__ . '/../components/sidebar.php';
       </div>
   </section>
 
-  <p class="st-foot"><a href="../privacidade.php"><?= te('Privacidade') ?></a> · <?= te('Membro desde {date}', ['date' => fmt_date_long($since, true)]) ?> · Finora 2.0.0</p>
+  <p class="st-foot"><a href="../privacidade.php"><?= te('Privacidade') ?></a> · <a href="../termos.php"><?= te('Termos') ?></a> · <?= te('Membro desde {date}', ['date' => fmt_date_long($since, true)]) ?> · Finora 2.0.0</p>
 
 </div>
 </div>
