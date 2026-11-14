@@ -1499,4 +1499,13 @@ return [
     'Ao criar conta, aceitas os {terms} e a forma como tratamos os teus dados, descrita na {privacy}.' => 'By creating an account, you accept the {terms} and the way we handle your data, described in the {privacy}.',
     'Stripe (Link)' => 'Stripe (Link)',
     'Pagamento do Finora Pro, se subscreveres. O Link é o vendedor registado e envia os recibos.' => 'Finora Pro payments, if you subscribe. Link is the merchant of record and sends the receipts.',
+
+    // ── Assistente com ferramentas ──
+    'Sobre gastos, orçamentos, metas, cartões ou se uma compra cabe no teu mês.' => 'About spending, budgets, goals, cards or whether a purchase fits your month.',
+    'Posso gastar {amount} em {month} sem atrasar as metas?' => 'Can I spend {amount} in {month} without delaying my goals?',
+    'Qual foi o meu maior gasto este ano?' => 'What was my biggest expense this year?',
+    'Como estão os meus orçamentos?' => 'How are my budgets doing?',
+    'Para responder, a Finora envia à Groq (o serviço de IA) a tua pergunta, um resumo deste mês e, quando o assistente precisa, as transações, orçamentos, metas ou cartões que procura. Não envia o teu nome nem o teu email. O assistente só consegue ler os teus dados, nunca alterá-los. As respostas podem ter erros e não são aconselhamento financeiro.' => 'To answer, Finora sends Groq (the AI service) your question, a summary of this month and, when the assistant needs them, the transactions, budgets, goals or cards it looks up. It doesn’t send your name or email. The assistant can only read your data, never change it. Answers may contain mistakes and are not financial advice.',
+    'A tua pergunta, um resumo do mês e, quando o assistente precisa, transações, orçamentos, metas e cartões (descrições, nomes e valores). Sem nome nem email.' => 'Your question, a summary of the month and, when the assistant needs them, transactions, budgets, goals and cards (descriptions, names and amounts). No name or email.',
+    'O assistente está com muitos pedidos. Tenta outra vez daqui a um minuto.' => 'The assistant is busy. Please try again in a minute.',
 ];

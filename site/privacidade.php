@@ -16,7 +16,7 @@ $partners = [
     ['Brevo',            t('Envio de emails (verificação, recuperação de palavra-passe, alertas).'), t('O teu email, nome e o conteúdo do email.')],
     ['Google',           t('Entrar com a conta Google, se escolheres essa opção.'),                 t('O teu email, nome e identificador Google.')],
     [t('Stripe (Link)'), t('Pagamento do Finora Pro, se subscreveres. O Link é o vendedor registado e envia os recibos.'),                              t('O teu email e os dados do pagamento, que introduzes diretamente no Stripe. A Finora nunca vê o número do cartão.')],
-    ['Groq',             t('Responder às perguntas no Assistente.'),                                t('A tua pergunta e um resumo dos gastos do mês (categorias, descrições e valores). Sem nome nem email.')],
+    ['Groq',             t('Responder às perguntas no Assistente.'),                                t('A tua pergunta, um resumo do mês e, quando o assistente precisa, transações, orçamentos, metas e cartões (descrições, nomes e valores). Sem nome nem email.')],
     [t('VIES (Comissão Europeia)'), t('Saber o nome da empresa quando lês o QR de uma fatura.'), t('Só o NIF da empresa que emitiu a fatura.')],
     ['Yahoo Finance',    t('Cotações na Bolsa e nos Investimentos.'),                               t('Só os símbolos (ex.: VWCE.DE). Nada sobre ti.')],
     [t('Frankfurter (BCE)'), t('Câmbios para converter cotações para euros.'),                         t('Nada sobre ti.')],
