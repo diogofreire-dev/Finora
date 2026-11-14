@@ -22,6 +22,7 @@ define('STRIPE_SECRET_KEY',     'sk_test_COLOCA_AQUI');
 define('STRIPE_WEBHOOK_SECRET', 'whsec_COLOCA_AQUI');
 
 // Opcional: o id de um preço criado no Stripe (Product catalog → Finora Pro → 2,99 € / mês).
-// Com o Managed Payments, esse produto tem de ter o código fiscal "SaaS - personal use" (txcd_10103000).
+// Com o Managed Payments, esse produto tem de ter o código fiscal "SaaS - personal use" (txcd_10103000)
+// e o preço tem de estar marcado como "IVA incluído" (tax behavior: inclusive), senão o IVA é somado por cima.
 // Sem ele, cada checkout cria o preço a partir de PRO_PRICE_CENTS (site/helpers/plan.php).
 // define('STRIPE_PRICE_ID', 'price_…');

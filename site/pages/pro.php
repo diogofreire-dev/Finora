@@ -40,6 +40,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ...(defined('STRIPE_PRICE_ID')
                         ? ['price' => STRIPE_PRICE_ID]
                         : ['price_data' => ['currency' => strtolower(PRO_CURRENCY), 'unit_amount' => PRO_PRICE_CENTS,
+                                            // O preço anunciado já inclui o IVA: sem isto o Stripe soma-o por cima (2,99 € → 3,68 €)
+                                            'tax_behavior' => 'inclusive',
                                             'recurring' => ['interval' => 'month'], 'product_data' => ['name' => 'Finora Pro', 'tax_code' => PRO_TAX_CODE]]]),
                 ]],
             ];
