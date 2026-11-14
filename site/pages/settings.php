@@ -387,6 +387,16 @@ $since        = strtotime($user['created_at']);
     .st-avatar img, .st-avatar .letter { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; display: grid; place-items: center; }
     .st-avatar .letter { background: var(--fn-ink); color: var(--fn-gold); font-family: var(--fn-font-brand); font-size: 30px; font-weight: 700; }
     [data-theme="dark"] .st-avatar .letter { background: var(--fn-gold-soft); }
+    .st-avatar.is-pro img, .st-avatar.is-pro .letter { box-shadow: 0 0 0 3px var(--fn-surface), 0 0 0 5px #e2b04a; }
+    .st-pro-tag { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); padding: 2px 8px; border-radius: 999px;
+                  background: #14213d; color: #e2b04a; font-size: 10.5px; font-weight: 800; letter-spacing: .6px; white-space: nowrap;
+                  box-shadow: 0 0 0 2px var(--fn-surface); }
+    .st-pro-tag i { font-size: 9.5px; margin-right: 1px; }
+    .st-plan { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px; border-radius: 999px; width: fit-content;
+               font-size: 12.5px; font-weight: 700; text-decoration: none; background: var(--fn-paper); color: var(--fn-muted); border: 1px solid var(--fn-line); }
+    .st-plan:hover { color: var(--fn-text); border-color: var(--fn-muted); }
+    .st-plan.pro { background: #14213d; color: #e2b04a; border-color: #14213d; }
+    .st-plan.pro:hover { color: #f0c260; }
     .st-profile .who { flex: 1; min-width: 0; }
     .st-profile .who b { display: block; font-size: 18px; color: var(--fn-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .st-profile .acts { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -477,16 +487,18 @@ include __DIR__ . '/../components/sidebar.php';
   <section class="pg-card st-card" aria-labelledby="sec-perfil" style="--tone:var(--cat-1)">
     <header class="pg-card-head"><span class="pg-ico" aria-hidden="true"><i class="bi bi-person"></i></span><div><h2 id="sec-perfil"><?= te('Perfil') ?></h2><p><?= te('O nome e a foto que aparecem no topo da Finora.') ?></p></div></header>
       <div class="st-profile">
-        <div class="st-avatar">
+        <div class="st-avatar<?= is_pro() ? ' is-pro' : '' ?>">
           <?php if ($avatarUrl): ?>
             <img src="<?= htmlspecialchars($avatarUrl) ?>" alt="<?= te('A tua foto de perfil') ?>">
           <?php else: ?>
             <span class="letter" aria-hidden="true"><?= htmlspecialchars($initial) ?></span>
           <?php endif; ?>
+          <?php if (is_pro()): ?><span class="st-pro-tag" aria-hidden="true"><i class="bi bi-gem"></i> PRO</span><?php endif; ?>
         </div>
         <div class="who">
           <b><?= htmlspecialchars($user['username']) ?></b>
           <span class="st-sub"><?= htmlspecialchars($user['email']) ?></span>
+          <a class="st-plan<?= is_pro() ? ' pro' : '' ?>" href="pro.php"><i class="bi bi-gem" aria-hidden="true"></i> <?= is_pro() ? te('Finora Pro') : te('Plano grátis') ?></a>
         </div>
         <div class="acts">
           <form method="post" enctype="multipart/form-data" id="avatarForm">

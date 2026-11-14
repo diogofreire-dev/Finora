@@ -1436,4 +1436,5 @@ return [
     'O teu email e os dados do pagamento, que introduzes diretamente no Stripe. A Finora nunca vê o número do cartão.' => 'Your email and payment details, which you enter directly with Stripe. Finora never sees your card number.',
     'Plano:' => 'Plan:',
     'se subscreveres o Finora Pro, o estado da subscrição, até quando está paga e os identificadores do Stripe (cliente e subscrição). Os dados do cartão ficam só no Stripe.' => 'if you subscribe to Finora Pro, the subscription status, the date it’s paid until and the Stripe identifiers (customer and subscription). Card details stay with Stripe only.',
+    'Plano grátis' => 'Free plan',
 ];
