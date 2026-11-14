@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ...(defined('STRIPE_PRICE_ID')
                         ? ['price' => STRIPE_PRICE_ID]
                         : ['price_data' => ['currency' => strtolower(PRO_CURRENCY), 'unit_amount' => PRO_PRICE_CENTS,
-                                            'recurring' => ['interval' => 'month'], 'product_data' => ['name' => 'Finora Pro']]]),
+                                            'recurring' => ['interval' => 'month'], 'product_data' => ['name' => 'Finora Pro', 'tax_code' => PRO_TAX_CODE]]]),
                 ]],
             ];
             // Se já pagou antes, usa o mesmo cliente do Stripe (histórico de faturas num só sítio)
