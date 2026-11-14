@@ -8,6 +8,9 @@ require_once __DIR__ . '/paths.php';
 const FREE_CARD_LIMIT  = 2;     // cartões ativos no plano grátis (os que já existem nunca são apagados)
 const PRO_PRICE_CENTS  = 299;   // 2,99 € por mês, IVA incluído
 const PRO_CURRENCY     = 'EUR'; // o preço é sempre em euros, seja qual for a moeda da conta
+// Código fiscal do produto no Stripe: "Software as a service (SaaS) - personal use".
+// Obrigatório com o Managed Payments (o Stripe vende como comerciante e calcula o IVA de cada país).
+const PRO_TAX_CODE     = 'txcd_10103000';
 
 // Estados do Stripe que dão acesso ao Pro. past_due: o pagamento falhou e o Stripe está a tentar outra vez;
 // o Pro continua durante essas tentativas e acaba quando a subscrição passa a canceled/unpaid.
