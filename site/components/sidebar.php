@@ -72,6 +72,12 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
                  background: var(--fn-gold-soft); color: #9a6a0b; }
   [data-theme="dark"] .sidebar-pro { color: var(--fn-gold); }
   .sidebar-link-pro > i { color: var(--fn-gold); }
+  /* Conta Pro: diamante dourado no canto da foto, no cabeçalho */
+  .app-user-av { position: relative; display: inline-flex; flex-shrink: 0; }
+  .app-user-pro { position: absolute; right: -4px; bottom: -3px; width: 17px; height: 17px; border-radius: 50%;
+                  display: grid; place-items: center; background: #14213d; color: #e2b04a; font-size: 9px;
+                  box-shadow: 0 0 0 2px var(--fn-surface); }
+  .app-user-pro i { line-height: 1; }
 </style>
 <!-- Particles canvas (visible in all post-login pages) -->
 <canvas id="particles-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
@@ -134,12 +140,15 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     <div class="app-user">
       <button class="app-user-btn" id="appUserBtn" type="button"
               aria-haspopup="menu" aria-expanded="false" aria-controls="appUserMenu">
-        <span class="app-user-avatar">
-          <?php if ($_avatarPath): ?>
-            <img src="<?= $_sp ?><?= htmlspecialchars($_avatarPath) ?>" alt="">
-          <?php else: ?>
-            <?= htmlspecialchars($_initial) ?>
-          <?php endif; ?>
+        <span class="app-user-av">
+          <span class="app-user-avatar">
+            <?php if ($_avatarPath): ?>
+              <img src="<?= $_sp ?><?= htmlspecialchars($_avatarPath) ?>" alt="">
+            <?php else: ?>
+              <?= htmlspecialchars($_initial) ?>
+            <?php endif; ?>
+          </span>
+          <?php if ($_isPro): ?><span class="app-user-pro" title="<?= te('Finora Pro') ?>"><i class="bi bi-gem" aria-hidden="true"></i><span class="visually-hidden"><?= te('Finora Pro') ?></span></span><?php endif; ?>
         </span>
         <span class="app-user-name"><?= htmlspecialchars($_username) ?></span>
         <i class="bi bi-chevron-down"></i>
