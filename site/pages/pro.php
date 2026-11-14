@@ -47,8 +47,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!empty($sub['stripe_customer_id'])) $params['customer'] = $sub['stripe_customer_id'];
             else $params['customer_email'] = (string) $email->fetchColumn();
 
-            $session = stripe_request('POST', '/checkout/sessions', $params);
+            // Um duplo clique (ou voltar atrás e carregar outra vez) não pode abrir dois checkouts:
+            // se os dois fossem pagos, ficavam duas subscrições a cobrar e a Finora só conhecia uma.
+            // 1) nesta sessão, reutiliza o checkout que ainda está aberto;
+            // 2) a Idempotency-Key faz o Stripe devolver a mesma sessão a pedidos iguais nos mesmos 30 min.
+            $pending = $_SESSION['pro_checkout'] ?? null;
+            if (is_array($pending) && ($pending['uid'] ?? 0) === $uid && ($pending['until'] ?? 0) > time()) {
+                header('Location: ' . $pending['url'], true, 303);
+                exit;
+            }
+            $key = 'finora-checkout-' . $uid . '-' . intdiv(time(), 1800) . '-' . substr(hash('sha256', json_encode($params)), 0, 16);
+            $session = stripe_request('POST', '/checkout/sessions', $params, $key);
             if (empty($session['url']) || !str_starts_with($session['url'], 'https://checkout.stripe.com/')) throw new RuntimeException('URL de checkout inesperado');
+            $_SESSION['pro_checkout'] = ['uid' => $uid, 'url' => $session['url'],
+                                         'until' => min((int) ($session['expires_at'] ?? 0), time() + 1800)];
             header('Location: ' . $session['url'], true, 303);
             exit;
         }
@@ -73,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // O webhook é quem manda, mas pode demorar uns segundos; aqui confirmamos já a sessão de checkout
 // (lida ao Stripe pelo servidor, e só se for desta conta) para o Pro aparecer logo.
 if (isset($_GET['session_id'])) {
+    unset($_SESSION['pro_checkout']);   // esse checkout já foi usado
     $sid = (string) $_GET['session_id'];
     if (stripe_configured() && preg_match('/^cs_(test|live)_\w+$/', $sid)) {
         try {
@@ -241,7 +254,7 @@ $free = [
         <?php endforeach; ?>
       </ul>
       <?php if (!is_pro()): ?>
-        <form method="post"><?= csrf_field() ?><input type="hidden" name="action" value="checkout">
+        <form method="post" id="proCheckout"><?= csrf_field() ?><input type="hidden" name="action" value="checkout">
           <button class="pro-go" type="submit" <?= stripe_configured() ? '' : 'disabled' ?>><?= te('Passar para o Pro') ?></button>
         </form>
         <p class="pro-fine"><?= stripe_configured()
@@ -261,5 +274,13 @@ $free = [
 </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // Um clique chega: o botão fica desativado enquanto o Stripe prepara o pagamento
+  document.getElementById('proCheckout')?.addEventListener('submit', e => {
+    const b = e.target.querySelector('button');
+    if (b.disabled) { e.preventDefault(); return; }
+    setTimeout(() => { b.disabled = true; }, 0);
+  });
+</script>
 </body>
 </html>
