@@ -194,6 +194,9 @@ try {
         $addInv->execute([':u' => $uid, ':n' => $n, ':t' => $t, ':k' => $k, ':q' => $q, ':b' => $b, ':c' => $c, ':d' => $start->format('Y-m-d 10:00:00')]);
     }
 
+    // A demo mostra tudo: Pro oferecido (status 'comp', sem Stripe). O smoke test abre também as páginas do Pro.
+    $pdo->prepare("INSERT INTO subscriptions (user_id, status) VALUES (:u, 'comp')")->execute([':u' => $uid]);
+
     $pdo->commit();
 } catch (Throwable $e) {
     $pdo->rollBack();

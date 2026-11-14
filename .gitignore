@@ -10,3 +10,4 @@ site/test.php
 !/site/assets/avatars/.htaccess
 /config/google_oauth.php
 /config/brevo.php
+/config/stripe.php

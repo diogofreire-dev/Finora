@@ -9,12 +9,13 @@ $contact = defined('APP_CONTACT_EMAIL') ? APP_CONTACT_EMAIL : '';
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: strict-origin-when-cross-origin');
 
-$updated = fmt_date_long(mktime(0, 0, 0, 11, 3, 2026), true);
+$updated = fmt_date_long(mktime(0, 0, 0, 11, 14, 2026), true);
 
 // Quem recebe dados para a Finora funcionar (subcontratantes / serviços externos)
 $partners = [
     ['Brevo',            t('Envio de emails (verificação, recuperação de palavra-passe, alertas).'), t('O teu email, nome e o conteúdo do email.')],
     ['Google',           t('Entrar com a conta Google, se escolheres essa opção.'),                 t('O teu email, nome e identificador Google.')],
+    ['Stripe',           t('Pagamento do Finora Pro, se subscreveres.'),                              t('O teu email e os dados do pagamento, que introduzes diretamente no Stripe. A Finora nunca vê o número do cartão.')],
     ['Groq',             t('Responder às perguntas no Assistente.'),                                t('A tua pergunta e um resumo dos gastos do mês (categorias, descrições e valores). Sem nome nem email.')],
     [t('VIES (Comissão Europeia)'), t('Saber o nome da empresa quando lês o QR de uma fatura.'), t('Só o NIF da empresa que emitiu a fatura.')],
     ['Yahoo Finance',    t('Cotações na Bolsa e nos Investimentos.'),                               t('Só os símbolos (ex.: VWCE.DE). Nada sobre ti.')],
@@ -115,6 +116,7 @@ $partners = [
     <ul>
       <li><b><?= te('Conta:') ?></b> <?= te('nome, email, palavra-passe (guardada como hash, nunca em texto), foto de perfil se a carregares e, se entrares com o Google, o identificador da tua conta Google.') ?></li>
       <li><b><?= te('O que registas:') ?></b> <?= te('cartões (nome e limite — nunca o número do cartão) e pagamentos de extrato, transações, orçamentos, lembretes, poupanças, metas, investimentos e a lista de títulos que segues.') ?></li>
+      <li><b><?= te('Plano:') ?></b> <?= te('se subscreveres o Finora Pro, o estado da subscrição, até quando está paga e os identificadores do Stripe (cliente e subscrição). Os dados do cartão ficam só no Stripe.') ?></li>
       <li><b><?= te('Preferências:') ?></b> <?= te('tema, notificações e as notificações geradas para ti.') ?></li>
       <li><b><?= te('Segurança:') ?></b> <?= te('tentativas de entrada falhadas e pedidos ao Assistente (só a hora, para limitar abusos). Os endereços IP usados para travar ataques são guardados como hash e apagados ao fim de 1 dia.') ?></li>
     </ul>

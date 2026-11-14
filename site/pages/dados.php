@@ -165,12 +165,12 @@ include __DIR__ . '/../components/sidebar.php';
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-8)" aria-hidden="true"><i class="bi bi-file-earmark-pdf"></i></span>
         <div class="txt"><b><?= te('Relatório completo (PDF)') ?></b><span><?= te('Todas as transações, totais por categoria e resumo dos cartões.') ?></span></div>
-        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="full"><i class="bi bi-download"></i> <?= te('Exportar') ?></button>
+        <?php if (is_pro()): ?><button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="full"><i class="bi bi-download"></i> <?= te('Exportar') ?></button><?php else: ?><a class="btn-s" href="pro.php?feature=reports"><i class="bi bi-gem" style="color:var(--fn-gold)"></i> <?= te('Pro') ?></a><?php endif; ?>
       </div>
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-4)" aria-hidden="true"><i class="bi bi-file-earmark-text"></i></span>
         <div class="txt"><b><?= te('Resumo (PDF)') ?></b><span><?= te('As últimas 20 transações e os totais. Bom para uma vista rápida.') ?></span></div>
-        <button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="summary"><i class="bi bi-download"></i> <?= te('Exportar') ?></button>
+        <?php if (is_pro()): ?><button type="submit" class="btn-s" formaction="../helpers/generate_report_pdf.php" name="type" value="summary"><i class="bi bi-download"></i> <?= te('Exportar') ?></button><?php else: ?><a class="btn-s" href="pro.php?feature=reports"><i class="bi bi-gem" style="color:var(--fn-gold)"></i> <?= te('Pro') ?></a><?php endif; ?>
       </div>
       <div class="dt-row">
         <span class="pg-ico sm" style="--tone:var(--cat-6)" aria-hidden="true"><i class="bi bi-file-earmark-spreadsheet"></i></span>

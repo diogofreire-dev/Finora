@@ -2,6 +2,7 @@
 // site/pages/market_search.php — sugestões de símbolos para o formulário de investimentos (JSON).
 // Só para utilizadores com sessão; limite de pedidos em market_search(); só GET.
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro_json();   // Bolsa e Investimentos são do Finora Pro
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/market.php';
 

@@ -33,6 +33,8 @@ jobs:
         run: |
           php tests/i18n_check.php
           php tests/i18n_missing.php en
+      - name: Assinatura dos webhooks do Stripe
+        run: php tests/stripe_signature_test.php
 
   secrets:
     name: Segredos (gitleaks)

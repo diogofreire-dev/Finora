@@ -3,6 +3,7 @@
  * get_company_by_nif.php — devolve o nome da empresa de um NIF (usado no scan de faturas)
  */
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro_json();   // a leitura de faturas é do Finora Pro
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/nif_lookup.php';
 

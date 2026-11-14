@@ -18,7 +18,10 @@ if (empty($_SESSION['user_id'])) {
 // falhavam a meio (ex.: user_settings com chave estrangeira para um utilizador que já não existe).
 require_once __DIR__ . '/../../config/db.php';
 // Na mesma consulta vêm a moeda e a língua da conta (user_settings pode ainda não ter linha: LEFT JOIN)
-$__userCheck = $pdo->prepare('SELECT s.currency, s.language, s.onboarded FROM users u LEFT JOIN user_settings s ON s.user_id = u.id WHERE u.id = :id');
+// e o estado da subscrição do Finora Pro (sem linha em subscriptions = plano grátis)
+$__userCheck = $pdo->prepare('SELECT s.currency, s.language, s.onboarded, p.status AS plan_status
+                              FROM users u LEFT JOIN user_settings s ON s.user_id = u.id
+                              LEFT JOIN subscriptions p ON p.user_id = u.id WHERE u.id = :id');
 $__userCheck->execute([':id' => (int) $_SESSION['user_id']]);
 $__userRow = $__userCheck->fetch();
 if (!$__userRow) {
@@ -43,5 +46,8 @@ set_user_currency($__userRow['currency'] ?? null);
 if (!empty($__userRow['language'])) set_lang($__userRow['language']);
 // Conta nova (sem definições ou com onboarded = 0): o dashboard manda-a primeiro para as boas-vindas
 define('FINORA_NEEDS_WELCOME', (int) ($__userRow['onboarded'] ?? 0) === 0);
+// Plano da conta (ver plan.php): as páginas do Pro chamam require_pro()
+require_once __DIR__ . '/plan.php';
+define('FINORA_PRO', plan_status_is_pro($__userRow['plan_status'] ?? null));
 unset($__userRow);
 require_once __DIR__ . '/categories.php';

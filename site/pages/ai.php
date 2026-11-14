@@ -1,6 +1,7 @@
 <?php
 // site/pages/ai.php
 require_once __DIR__ . '/../helpers/auth.php';
+require_pro('ai');   // Finora Pro (ver helpers/plan.php)
 require_once __DIR__ . '/../../config/db.php';
 require_once __DIR__ . '/../helpers/theme_helper.php';
 $uid = $_SESSION['user_id'] ?? null;
