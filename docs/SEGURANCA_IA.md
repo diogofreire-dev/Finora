@@ -56,10 +56,11 @@ dados de outras contas e regras de negócio ficam no código, não no texto do p
 
 Corre em cada pull request, depois de criar a base de dados.
 
-- **Argumentos:** 19 casos, entre eles ferramenta desconhecida, `user_id`, argumento extra, datas com SQL, intervalos, valores negativos e enums falsos.
+- **Argumentos:** 21 casos, entre eles ferramenta desconhecida, `user_id`, argumento extra, datas com SQL, períodos no futuro, intervalos, valores negativos e enums falsos.
 - **Isolamento entre contas:** cria uma vítima com um texto-canário e um atacante. Pesquisa como atacante por `CANARIO`, `%`, `_`, `' OR '1'='1` e `" OR user_id <> 0 --`, e o canário nunca aparece.
 - **Texto guardado:** uma descrição com `\n`, `<dados>` e 200 caracteres volta numa linha, sem `<` `>` e com 60 caracteres.
-- **Limpeza da resposta:** URLs, domínios sem `http`, emails e telefones portugueses e internacionais são retirados. Valores, datas e NIF ficam.
+- **Simulação:** com o mês atual quase todo gasto, uma compra agora não cabe, mas a mesma compra no mês seguinte cabe.
+- **Limpeza da resposta:** URLs, domínios sem `http` com qualquer terminação (`.ai`, `bit.ly`, `.co.uk`), emails e telefones portugueses e internacionais são retirados. Valores, datas, NIF e frases normais ficam.
 
 ### Com o modelo verdadeiro: `tests/ai_redteam.php`
 

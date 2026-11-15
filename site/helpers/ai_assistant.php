@@ -225,7 +225,8 @@ function ai_clean_reply(string $reply): string {
     $contact = current_lang() === 'en' ? '[contact removed]' : '[contacto removido]';
     $reply = preg_replace('/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/u', $contact, $reply);
     $reply = preg_replace('~\b(?:https?://|ftp://|www\.)\S+~iu', $link, $reply);
-    $reply = preg_replace('~\b(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+(?:com|net|org|pt|io|ly|me|co|app|xyz|info|link|site|online|top|dev|br|eu|biz|click|shop|store|ru|cn|tk)\b(?:/\S*)?~iu', $link, $reply);
+    // Domínios sem http (finora-login.ai, bit.ly/x): qualquer terminação de 2 a 24 letras, não só .com/.pt
+    $reply = preg_replace('~(?<![\w@.-])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}\b(?:/\S*)?~iu', $link, $reply);
     // Telefones portugueses (fixo ou móvel, com ou sem +351/00351) e números internacionais com +
     $reply = preg_replace('/(?<![\d.,])(?:(?:\+|00)351[ .-]?)?[29]\d{2}[ .-]?\d{3}[ .-]?\d{3}(?![\d.,])/u', $contact, $reply);
     $reply = preg_replace('/(?<![\w])\+\d{1,3}[ .-]?\d(?:[ .-]?\d){6,12}(?!\d)/u', $contact, $reply);

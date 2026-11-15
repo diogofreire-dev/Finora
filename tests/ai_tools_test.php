@@ -27,7 +27,9 @@ check('data com SQL', err('spending_summary', ['from' => "2026-01-01' OR 1=1 --"
 check('from depois de to', err('spending_summary', ['from' => '2026-05-01', 'to' => '2026-04-01']) !== null);
 check('período acima de 2 anos', err('spending_summary', ['from' => '2020-01-01', 'to' => '2026-01-01']) !== null);
 [$a] = ai_validate_args('spending_summary', ['from' => '2026-01-01', 'to' => '2999-01-01']);
-check('datas no futuro ficam em hoje', ($a['to'] ?? '') === date('Y-m-d'));
+check('o fim de um período no futuro fica em hoje', ($a['to'] ?? '') === date('Y-m-d'));
+check('um período que ainda não começou é recusado', err('spending_summary', ['from' => date('Y-m-d', strtotime('+1 month')), 'to' => date('Y-m-d', strtotime('+2 months'))]) !== null);
+check('pesquisa a partir de uma data futura é recusada', err('search_transactions', ['from' => date('Y-m-d', strtotime('+3 days'))]) !== null);
 check('categoria fora da lista', err('search_transactions', ['category' => 'Tudo']) !== null);
 check('ordem fora da lista', err('search_transactions', ['sort' => 'amount; DROP TABLE users']) !== null);
 check('limit não inteiro', err('search_transactions', ['limit' => '5']) !== null);
@@ -65,6 +67,16 @@ try {
     $ctx = ai_context($pdo, $attacker);
     check('o resumo do mês não tem dados da outra conta', !str_contains($ctx, $canary));
 
+    // Simulação: este mês já gastei quase todo o rendimento, por isso uma compra agora não cabe,
+    // mas no mês seguinte (com a sobra normal de um mês) já cabe
+    $pdo->prepare('INSERT INTO user_settings (user_id, monthly_income) VALUES (:u, 1000)')->execute([':u' => $attacker]);
+    $tx->execute([':u' => $attacker, ':a' => 950.00, ':d' => 'Reparação do carro']);
+    $now  = ai_run_tool($pdo, $attacker, 'simulate_purchase', ['amount' => 100, 'month' => date('Y-m')]);
+    $next = ai_run_tool($pdo, $attacker, 'simulate_purchase', ['amount' => 100, 'month' => date('Y-m', strtotime('first day of +1 month'))]);
+    check('compra este mês conta com o que já foi gasto', str_starts_with($now['verdict'] ?? '', 'não cabe'), $now['verdict'] ?? json_encode($now));
+    check('a mesma compra no mês seguinte cabe', ($next['verdict'] ?? '') === 'cabe sem atrasar as metas', $next['verdict'] ?? json_encode($next));
+    $pdo->prepare("DELETE FROM transactions WHERE user_id = :u AND description = 'Reparação do carro'")->execute([':u' => $attacker]);
+
     $desc = $all['items'][0]['description'] ?? '';
     check('descrição sem quebras de linha', !preg_match('/[\r\n]/', $desc));
     check('descrição sem < >', !preg_match('/[<>]/', $desc));
@@ -78,6 +90,9 @@ $cases = [
     ['Visita https://finora-seguro.xyz/login para confirmar', 'https://'],
     ['Entra em www.banco-falso.pt agora', 'www.'],
     ['Confirma em finora-apoio.com/pagar', 'finora-apoio.com'],
+    ['Entra em finora-login.ai para validar', 'finora-login.ai'],
+    ['Vai a bit.ly/finora-pro', 'bit.ly'],
+    ['Usa seguro.finora.co.uk', 'finora.co.uk'],
     ['Escreve para apoio@finora-ajuda.com', '@'],
     ['Liga para o 912 345 678', '912 345 678'],
     ['Liga para +351 912345678', '912345678'],
@@ -87,6 +102,8 @@ $cases = [
 foreach ($cases as [$in, $bad]) check('retira: ' . $in, !str_contains(ai_clean_reply($in), $bad), ai_clean_reply($in));
 $keep = 'Gastaste **' . fmt_money(1234.56) . '** em 2026-11-14, NIF 501234567, 3 transações.';
 check('mantém valores, datas e NIF', ai_clean_reply($keep) === $keep, ai_clean_reply($keep));
+$keep2 = 'Gastaste mais em **Alimentação**. Também subiu **Compras** (12,5 %). Já tens 3 metas.';
+check('mantém frases normais com pontos', ai_clean_reply($keep2) === $keep2, ai_clean_reply($keep2));
 
 echo $fail ? "\nFalhou.\n" : "\nTudo certo.\n";
 exit($fail);

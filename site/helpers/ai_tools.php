@@ -86,7 +86,8 @@ function ai_validate_args(string $name, $raw): array {
         } elseif ($k === 'from' || $k === 'to') {
             $d = is_string($v) ? DateTime::createFromFormat('!Y-m-d', $v) : false;
             if (!$d || $d->format('Y-m-d') !== $v || $v < '2000-01-01') return [null, "$k tem de ser uma data AAAA-MM-DD"];
-            $out[$k] = min($v, $today);   // nada no futuro
+            if ($k === 'from' && $v > $today) return [null, 'o período ainda não começou: não há gastos registados no futuro'];
+            $out[$k] = min($v, $today);   // o fim de um período que já começou fica em hoje
         } elseif ($k === 'month') {
             if (!is_string($v) || !preg_match('/^(\d{4})-(0[1-9]|1[0-2])$/', $v)) return [null, 'month tem de ser AAAA-MM'];
             $diff = ((int) substr($v, 0, 4) - (int) date('Y')) * 12 + (int) substr($v, 5, 2) - (int) date('n');
@@ -275,8 +276,10 @@ function ai_tool_cards(PDO $pdo, int $uid): array {
 
 /**
  * Compra de $amount no mês $month. Conta feita aqui, não pelo modelo:
- * sobra por mês = rendimento − média de gastos − o que as metas pedem por mês;
- * até à compra juntam-se (meses até lá, contando com este) × sobra.
+ *   sobra de um mês normal = rendimento − média de gastos − o que as metas pedem por mês;
+ *   sobra deste mês        = rendimento − (o que já gastei, ou a média se ainda for menos) − metas;
+ *   até à compra junta-se a sobra deste mês + a sobra normal de cada mês seguinte.
+ * Assim, se este mês já gastei mais do que o costume, a compra não aparece como cabendo à custa disso.
  */
 function ai_tool_simulate(PDO $pdo, int $uid, float $amount, string $month, ?string $category): array {
     [$avg, $income] = ai_monthly_basics($pdo, $uid);
@@ -289,15 +292,22 @@ function ai_tool_simulate(PDO $pdo, int $uid, float $amount, string $month, ?str
     if ($income === null) {
         $out['verdict'] = 'sem rendimento mensal definido: não dá para saber se a compra cabe. Sugere indicar o rendimento nas Definições.';
     } else {
-        $free  = $income - $avg - $need;
-        $ready = $free * $months;
+        $spent = $pdo->prepare("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE user_id = :u
+                                AND transaction_date >= DATE_FORMAT(CURDATE(), '%Y-%m-01') AND transaction_date <= CURDATE()");
+        $spent->execute([':u' => $uid]);
+        $spentNow  = (float) $spent->fetchColumn();
+        $free      = $income - $avg - $need;
+        $thisMonth = $income - max($spentNow, $avg) - $need;
+        $ready     = $thisMonth + $free * ($months - 1);
+        $out['spent_this_month_so_far'] = fmt_money($spentNow);
+        $out['left_this_month_after_goals'] = fmt_money($thisMonth);
         $out['monthly_income'] = fmt_money($income);
         $out['left_each_month_after_goals'] = fmt_money($free);
         $out['saved_by_then_without_touching_goals'] = fmt_money(max(0, $ready));
-        if ($free <= 0)            $out['verdict'] = 'não cabe sem atrasar as metas: com os gastos e as metas atuais não sobra nada por mês';
+        if ($free <= 0 && $ready < $amount) $out['verdict'] = 'não cabe sem atrasar as metas: com os gastos e as metas atuais não sobra nada por mês';
         elseif ($ready >= $amount) $out['verdict'] = 'cabe sem atrasar as metas';
         else                       $out['verdict'] = 'não cabe sem atrasar as metas: faltam ' . fmt_money($amount - $ready)
-                                       . '; a este ritmo chega daqui a ' . (int) ceil($amount / $free) . ' meses';
+                                       . '; a este ritmo chega daqui a ' . (int) ceil(($amount - max(0, $thisMonth)) / $free) . ' meses';
     }
     if ($category !== null) {
         $b = $pdo->prepare("SELECT name, amount FROM budgets WHERE user_id = :u AND active = 1 AND period = 'monthly' AND category = :c LIMIT 1");
