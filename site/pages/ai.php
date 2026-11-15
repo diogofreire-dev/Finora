@@ -111,12 +111,12 @@ include __DIR__ . '/../components/sidebar.php';
   <section class="pg-card" style="--tone:var(--cat-7)" aria-labelledby="chatTitle">
     <header class="pg-card-head">
       <span class="pg-ico" aria-hidden="true"><i class="bi bi-chat-dots"></i></span>
-      <div class="pg-grow"><h2 id="chatTitle"><?= te('Pergunta') ?></h2><p><?= te('Sobre gastos, categorias, cartões ou meses anteriores.') ?></p></div>
+      <div class="pg-grow"><h2 id="chatTitle"><?= te('Pergunta') ?></h2><p><?= te('Sobre gastos, orçamentos, metas, cartões ou se uma compra cabe no teu mês.') ?></p></div>
     </header>
     <div class="chat-body">
       <div class="chips">
-        <?php foreach ([[t('Quanto gastei este mês?'), '--cat-1'], [t('Em que categoria gasto mais?'), '--cat-2'],
-                        [t('Qual foi o meu maior gasto?'), '--cat-8'], [t('Como estou face ao mês passado?'), '--cat-3'],
+        <?php foreach ([[t('Quanto gastei este mês?'), '--cat-1'], [t('Posso gastar {amount} em {month} sem atrasar as metas?', ['amount' => fmt_money(500, 0), 'month' => month_name((int) date('n', strtotime('first day of +4 months')))]), '--cat-2'],
+                        [t('Qual foi o meu maior gasto este ano?'), '--cat-8'], [t('Como estão os meus orçamentos?'), '--cat-3'],
                         [t('Onde posso cortar?'), '--cat-4']] as [$q, $c]): ?>
           <button type="button" class="chip" style="--c:var(<?= $c ?>)"><?= htmlspecialchars($q) ?></button>
         <?php endforeach; ?>
@@ -128,7 +128,7 @@ include __DIR__ . '/../components/sidebar.php';
         <button type="submit" class="btn-s btn-s-primary" id="askBtn" aria-label="<?= te('Enviar pergunta') ?>"><i class="bi bi-send"></i></button>
       </form>
       <p class="ai-note"><i class="bi bi-shield-lock" aria-hidden="true"></i>
-        <?= te('Para responder, a Finora envia à Groq (o serviço de IA) um resumo dos teus gastos deste mês e a tua pergunta. Não envia o teu nome, email nem dados dos cartões além do nome que lhes deste. As respostas podem ter erros e não são aconselhamento financeiro.') ?></p>
+        <?= te('Para responder, a Finora envia à Groq (o serviço de IA) a tua pergunta, um resumo deste mês e, quando o assistente precisa, as transações, orçamentos, metas ou cartões que procura. Não envia o teu nome nem o teu email. O assistente só consegue ler os teus dados, nunca alterá-los. As respostas podem ter erros e não são aconselhamento financeiro.') ?></p>
     </div>
   </section>
 

@@ -98,6 +98,9 @@ jobs:
           echo "pass=$pass" >> "$GITHUB_OUTPUT"
           head -1 <<<"$out"
 
+      - name: Ferramentas do Assistente IA (isolamento e validação)
+        run: php tests/ai_tools_test.php
+
       - name: Abrir todas as páginas
         run: |
           php -S 127.0.0.1:8000 -t . > /tmp/php-server.log 2>&1 &
