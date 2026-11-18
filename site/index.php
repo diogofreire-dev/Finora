@@ -135,7 +135,7 @@ $features = [
         <p><?= te('Quanto já gastaste, para onde foi o dinheiro, o que tens para pagar e como estão os cartões. No telemóvel, apontas a câmara ao QR da fatura e o gasto fica registado.') ?></p>
       </div>
       <div class="ln-laptop" id="laptopStage">
-        <img class="ln-laptop-poster" src="assets/3d/finora-laptop.webp" width="1600" height="1000" loading="lazy"
+        <img class="ln-laptop-poster" src="assets/3d/finora-laptop<?= current_lang() === 'en' ? '-en' : '' ?>.webp" width="1600" height="1000" loading="lazy"
              alt="<?= te('Portátil aberto com o painel da Finora e, ao lado, um telemóvel com uma fatura lida pelo QR') ?>">
         <canvas class="ln-laptop-canvas" id="laptopCanvas" role="img"
                 aria-label="<?= te('Portátil e telemóvel em 3D: o portátil abre com o painel da Finora e o telemóvel mostra uma fatura lida pelo QR') ?>"></canvas>
@@ -232,6 +232,6 @@ $features = [
 })();
 </script>
 <script type="module" src="js/landing-card.js?v=1"></script>
-<script type="module" src="js/landing-laptop.js?v=2"></script>
+<script type="module" src="js/landing-laptop.js?v=3"></script>
 </body>
 </html>

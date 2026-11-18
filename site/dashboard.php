@@ -373,7 +373,7 @@ $greeting      = $hour < 12 ? t('Bom dia') : ($hour < 20 ? t('Boa tarde') : t('B
                 <div class="t1"><?= htmlspecialchars($r['name']) ?></div>
                 <div class="t2">
                   <?php if ($over): ?><?= abs($days) > 1 ? te('Em atraso há {n} dias', ['n' => abs($days)]) : te('Em atraso há 1 dia') ?>
-                  <?php elseif ($days === 0): ?>Vence hoje
+                  <?php elseif ($days === 0): ?><?= te('Vence hoje') ?>
                   <?php else: ?><?= $days > 1 ? te('Vence em {n} dias', ['n' => $days]) : te('Vence em 1 dia') ?><?php endif; ?>
                 </div>
               </div>
