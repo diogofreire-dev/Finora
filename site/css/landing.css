@@ -17,6 +17,8 @@
   --ln-glow-gold: rgba(226, 176, 74, .22);
   --ln-glow-blue: rgba(42, 120, 214, .14);
   --fn-logo-gold: #c48a12;
+  --ln-curve: #c48a12;
+  --ln-curve-op: .34;
   --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100;
   --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
   --ln-font:    'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -35,6 +37,8 @@
   --ln-glow-gold: rgba(226, 176, 74, .14);
   --ln-glow-blue: rgba(57, 135, 229, .16);
   --fn-logo-gold: #e2b04a;
+  --ln-curve: #e2b04a;
+  --ln-curve-op: .30;
   --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500;
   --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
   color-scheme: dark;
@@ -42,17 +46,26 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
-/* Fundo do topo: papel quadriculado, como um livro de contas, com dois brilhos suaves
-   (dourado atrás do título, azul atrás do cartão). Desvanece antes da primeira secção. */
+/* Fundo das páginas públicas, fixo atrás de tudo:
+   papel quadriculado de livro de contas, um brilho dourado e um azul, e a linha dourada do logo
+   a subir pelo ecrã (finora_backdrop() em helpers/brand.php), com o mês anterior a tracejado. */
 body::before {
-  content: ''; position: absolute; inset: 0 0 auto; height: min(820px, 100vh); z-index: -1; pointer-events: none;
+  content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background:
-    radial-gradient(38rem 26rem at 12% 18%, var(--ln-glow-gold), transparent 70%),
-    radial-gradient(42rem 30rem at 82% 30%, var(--ln-glow-blue), transparent 70%),
+    radial-gradient(44rem 30rem at 8% 12%, var(--ln-glow-gold), transparent 70%),
+    radial-gradient(48rem 34rem at 92% 78%, var(--ln-glow-blue), transparent 70%),
     linear-gradient(var(--ln-grid) 1px, transparent 1px) 0 0 / 32px 32px,
     linear-gradient(90deg, var(--ln-grid) 1px, transparent 1px) 0 0 / 32px 32px;
-  -webkit-mask-image: linear-gradient(#000 40%, transparent);
-  mask-image: linear-gradient(#000 40%, transparent);
+}
+.ln-backdrop { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
+.ln-bd-line, .ln-bd-arrow {
+  /* Sem vector-effect: o tracejado que desenha a linha tem de usar as medidas do viewBox */
+  stroke: var(--ln-curve); stroke-opacity: var(--ln-curve-op); stroke-width: 3;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.ln-bd-prev {
+  stroke: var(--ln-muted); stroke-opacity: .22; stroke-width: 2; stroke-dasharray: 6 9;
+  vector-effect: non-scaling-stroke;
 }
 body { position: relative; margin: 0; background: var(--ln-paper); color: var(--ln-text); font: 400 16px/1.6 var(--ln-font); -webkit-font-smoothing: antialiased; }
 h1, h2, h3, p, ul, ol { margin: 0; }
@@ -158,7 +171,7 @@ a { color: inherit; }
 /* ── Secções ───────────────────────────────────────────── */
 .ln-section { padding: 96px 0; }
 section[id] { scroll-margin-top: 72px; }
-.ln-section-tint { background: var(--ln-tint); }
+.ln-section-tint { background: color-mix(in srgb, var(--ln-tint) 72%, transparent); }
 .ln-head { max-width: 640px; margin-bottom: 48px; }
 .ln-head h2, .ln-security h2, .ln-final h2 {
   font: 700 clamp(32px, 4vw, 48px)/1.05 var(--ln-display); letter-spacing: -.025em;
