@@ -58,7 +58,7 @@ $features = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=5">
+  <link rel="stylesheet" href="css/landing.css?v=6">
   <link rel="modulepreload" href="js/lib/three/three.module.min.js">
   <script type="importmap">
   { "imports": { "three": "./js/lib/three/three.module.min.js", "three/addons/": "./js/lib/three/addons/" } }
@@ -125,6 +125,21 @@ $features = [
         </li>
 <?php endforeach; ?>
       </ul>
+    </div>
+  </section>
+
+  <section class="ln-section ln-showcase" id="por-dentro">
+    <div class="ln-wrap">
+      <div class="ln-head ln-head-center">
+        <h2><?= te('O teu mês inteiro num só ecrã') ?></h2>
+        <p><?= te('Quanto já gastaste, para onde foi o dinheiro, o que tens para pagar e como estão os cartões. É isto que vês ao entrar.') ?></p>
+      </div>
+      <div class="ln-laptop" id="laptopStage">
+        <img class="ln-laptop-poster" src="assets/3d/finora-laptop.webp" width="1600" height="1000" loading="lazy"
+             alt="<?= te('Portátil aberto com o painel da Finora: gastos do mês, categorias, pagamentos e cartões') ?>">
+        <canvas class="ln-laptop-canvas" id="laptopCanvas" role="img"
+                aria-label="<?= te('Portátil em 3D que abre e mostra o painel da Finora') ?>"></canvas>
+      </div>
     </div>
   </section>
 
@@ -217,5 +232,6 @@ $features = [
 })();
 </script>
 <script type="module" src="js/landing-card.js?v=1"></script>
+<script type="module" src="js/landing-laptop.js?v=1"></script>
 </body>
 </html>
