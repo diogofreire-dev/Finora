@@ -131,14 +131,14 @@ $features = [
   <section class="ln-section ln-showcase" id="por-dentro">
     <div class="ln-wrap">
       <div class="ln-head ln-head-center">
-        <h2><?= te('O teu mês inteiro num só ecrã') ?></h2>
-        <p><?= te('Quanto já gastaste, para onde foi o dinheiro, o que tens para pagar e como estão os cartões. É isto que vês ao entrar.') ?></p>
+        <h2><?= te('O teu mês inteiro, em qualquer ecrã') ?></h2>
+        <p><?= te('Quanto já gastaste, para onde foi o dinheiro, o que tens para pagar e como estão os cartões. No telemóvel, apontas a câmara ao QR da fatura e o gasto fica registado.') ?></p>
       </div>
       <div class="ln-laptop" id="laptopStage">
         <img class="ln-laptop-poster" src="assets/3d/finora-laptop.webp" width="1600" height="1000" loading="lazy"
-             alt="<?= te('Portátil aberto com o painel da Finora: gastos do mês, categorias, pagamentos e cartões') ?>">
+             alt="<?= te('Portátil aberto com o painel da Finora e, ao lado, um telemóvel com uma fatura lida pelo QR') ?>">
         <canvas class="ln-laptop-canvas" id="laptopCanvas" role="img"
-                aria-label="<?= te('Portátil em 3D que abre e mostra o painel da Finora') ?>"></canvas>
+                aria-label="<?= te('Portátil e telemóvel em 3D: o portátil abre com o painel da Finora e o telemóvel mostra uma fatura lida pelo QR') ?>"></canvas>
       </div>
     </div>
   </section>
@@ -232,6 +232,6 @@ $features = [
 })();
 </script>
 <script type="module" src="js/landing-card.js?v=1"></script>
-<script type="module" src="js/landing-laptop.js?v=1"></script>
+<script type="module" src="js/landing-laptop.js?v=2"></script>
 </body>
 </html>
