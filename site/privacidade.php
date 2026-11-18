@@ -45,7 +45,7 @@ $partners = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=5">
+  <link rel="stylesheet" href="css/landing.css?v=7">
   <style>
     .pv { max-width: 760px; padding-top: 32px; padding-bottom: 72px; }
     .pv h1 { font: 800 clamp(36px, 5vw, 52px)/1.05 var(--ln-display); letter-spacing: -.03em; color: var(--ln-ink); }
@@ -77,6 +77,7 @@ $partners = [
   </style>
 </head>
 <body>
+<?= finora_backdrop() ?>
 
 <header class="ln-nav">
   <div class="ln-wrap ln-nav-inner">
@@ -216,5 +217,6 @@ $partners = [
   });
 })();
 </script>
+<script src="js/landing-bg.js?v=1" defer></script>
 </body>
 </html>
