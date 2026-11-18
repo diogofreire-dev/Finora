@@ -1,7 +1,7 @@
 // site/js/landing-laptop.js — portátil e telemóvel em 3D na página inicial.
 // O portátil abre e mostra o painel; a seguir entra o telemóvel com uma fatura acabada de ler pelo QR.
 // Modelo feito no Blender (design/finora-laptop.blend) e exportado para assets/3d/finora-laptop.glb.
-// Os ecrãs do modelo vêm vazios: aqui recebem as capturas (claras ou escuras, conforme o tema).
+// Os ecrãs do modelo vêm vazios: aqui recebem as capturas (claras ou escuras, em português ou inglês).
 // Sem WebGL fica a imagem assets/3d/finora-laptop.webp.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -51,10 +51,12 @@ async function start() {
   const loader = new THREE.TextureLoader();
   const themeNow = () => document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
   const files = { laptop: 'laptop-ecra', phone: 'telemovel-ecra' };
+  // As capturas existem em português e em inglês: escolhe pela língua da página
+  const langSfx = document.documentElement.lang.startsWith('en') ? '-en' : '';
   const cache = {};
   const loadTex = (which, theme) => {
     const k = which + theme;
-    cache[k] ??= loader.loadAsync(`assets/3d/${files[which]}-${theme}.webp`).then((t) => {
+    cache[k] ??= loader.loadAsync(`assets/3d/${files[which]}-${theme}${langSfx}.webp`).then((t) => {
       t.colorSpace = THREE.SRGBColorSpace;
       t.flipY = false;                   // as UVs do glTF já vêm com o eixo V invertido
       t.anisotropy = renderer.capabilities.getMaxAnisotropy();

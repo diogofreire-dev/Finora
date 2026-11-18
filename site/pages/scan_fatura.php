@@ -232,7 +232,7 @@ include __DIR__ . '/../components/sidebar.php';
         <div class="row2 mb">
           <div>
             <label class="form-label" for="fAmount"><?= te('Valor ({symbol})', ['symbol' => currency_symbol()]) ?></label>
-            <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="0,00" autocomplete="off">
+            <input type="text" inputmode="decimal" class="form-control sc-amount" name="amount" id="fAmount" required placeholder="<?= current_lang() === 'en' ? '0.00' : '0,00' ?>" autocomplete="off">
           </div>
           <div>
             <label class="form-label" for="fDate"><?= te('Data') ?></label>
@@ -251,7 +251,7 @@ include __DIR__ . '/../components/sidebar.php';
             <label class="form-label" for="fCat"><?= te('Categoria') ?></label>
             <select class="form-select" name="category" id="fCat">
               <?php foreach ($categories as $cat): ?>
-                <option <?= $cat === 'Outros' ? 'selected' : '' ?>><?= htmlspecialchars($cat) ?></option>
+                <option value="<?= htmlspecialchars($cat) ?>" <?= $cat === 'Outros' ? 'selected' : '' ?>><?= te($cat) ?></option>
               <?php endforeach; ?>
             </select>
           </div>
@@ -400,7 +400,8 @@ function handleQR(raw) {
   }
 
   const total = /^\d+(\.\d{1,2})?$/.test(f.O || '') ? Number(f.O) : null;
-  if (total) $('fAmount').value = total.toFixed(2).replace('.', ',');
+  // Mesmo separador decimal da língua da página (o servidor aceita os dois)
+  if (total) $('fAmount').value = total.toLocaleString(<?= json_encode(js_locale()) ?>, { minimumFractionDigits: 2, maximumFractionDigits: 2, useGrouping: false });
   const iso = f.F.slice(0, 4) + '-' + f.F.slice(4, 6) + '-' + f.F.slice(6, 8);
   if (!isNaN(Date.parse(iso)) && iso <= $('fDate').max) $('fDate').value = iso;
   $('fNif').value = f.A;
