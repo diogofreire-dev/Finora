@@ -96,7 +96,6 @@ function piggy_html(float $pct, string $label, string $size = 'lg', ?float $mark
          . '<rect class="pg-part" x="186" y="94" width="30" height="36" rx="13"/>'
          . '<ellipse class="pg-nose" cx="197" cy="106" rx="2.6" ry="4"/><ellipse class="pg-nose" cx="206" cy="106" rx="2.6" ry="4"/>'
          . '<g class="pg-eye"><circle cx="168" cy="88" r="5"/></g>'
-         . '<path class="pg-cheek" d="M160 104 Q166 108 172 104"/>'
          . '<rect class="pg-part" x="74" y="156" width="24" height="30" rx="9"/><rect class="pg-part" x="128" y="156" width="24" height="30" rx="9"/>'
          . '</svg></div>';
 }
