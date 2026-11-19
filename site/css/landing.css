@@ -249,11 +249,39 @@ section[id] { scroll-margin-top: 72px; }
   display: flex; gap: 16px; align-items: center;
   padding: 18px 20px; border-radius: 18px; background: var(--ln-surface); border: 1px solid var(--ln-line);
 }
-.ln-avatar {
-  width: 52px; height: 52px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center;
-  background: var(--ln-ink); color: var(--ln-cream); font: 700 17px var(--ln-display);
-}
-[data-theme="dark"] .ln-avatar { background: var(--ln-gold-hi); color: var(--ln-ink); }
+/* Bonecos da equipa: cada um com o objeto do seu papel (cadeado: segurança; lápis: design).
+   Piscam os olhos, abanam a cabeça devagar e dão um salto quando se passa o rato no cartão. */
+.ln-buddy { width: 76px; height: 76px; flex-shrink: 0; overflow: visible; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
+.ln-team li:hover .ln-buddy { transform: translateY(-4px) rotate(-4deg); }
+.ln-buddy-dev    { --bd-bg: #dde8f7; --bd-shirt: var(--cat-1); --bd-skin: #8d5a3b; }
+.ln-buddy-design { --bd-bg: var(--ln-cream); --bd-shirt: var(--cat-7); --bd-skin: #7a4b2f; }
+[data-theme="dark"] .ln-buddy-dev    { --bd-bg: #1e2c47; }
+[data-theme="dark"] .ln-buddy-design { --bd-bg: #2b2740; }
+.ln-buddy-bg { fill: var(--bd-bg); }
+.ln-buddy-shirt { fill: var(--bd-shirt); }
+.ln-buddy-strings { fill: none; stroke: #fff; stroke-opacity: .7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.ln-buddy-skin { fill: var(--bd-skin); }
+.ln-buddy-hair { fill: #17110e; }
+.ln-buddy-eyes { fill: #17110e; }
+.ln-buddy-mouth { fill: none; stroke: #2a1810; stroke-width: 2.2; stroke-linecap: round; }
+.ln-buddy-badge > circle { fill: var(--ln-gold-hi); stroke: var(--ln-surface); stroke-width: 3; }
+.ln-buddy-ink { fill: var(--ln-ink); }
+.ln-buddy-shackle { fill: none; stroke: var(--ln-ink); stroke-width: 2.4; stroke-linecap: round; }
+.ln-buddy-tip { fill: var(--ln-cream); }
+.ln-buddy-scribble { fill: none; stroke: var(--ln-ink); stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 16; }
+
+.ln-buddy-eyes { transform-box: fill-box; transform-origin: center; animation: ln-blink 5s infinite; }
+.ln-buddy-design .ln-buddy-eyes { animation-delay: 1.8s; }
+.ln-buddy-head { transform-box: view-box; transform-origin: 48px 60px; animation: ln-nod 6s ease-in-out infinite; }
+.ln-buddy-design .ln-buddy-head { animation-delay: -2.5s; }
+.ln-buddy-shackle { animation: ln-lock 4s ease-in-out infinite; }
+.ln-buddy-pencil { transform-box: view-box; transform-origin: 0 6px; animation: ln-pencil 1.4s ease-in-out infinite alternate; }
+.ln-buddy-scribble { animation: ln-scribble 2.8s linear infinite; }
+@keyframes ln-blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(.1); } }
+@keyframes ln-nod { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+@keyframes ln-lock { 0%, 55% { transform: translateY(-3px); } 65%, 100% { transform: translateY(0); } }
+@keyframes ln-pencil { from { transform: rotate(18deg) translateX(-3px); } to { transform: rotate(30deg) translateX(3px); } }
+@keyframes ln-scribble { from { stroke-dashoffset: 16; } 60%, to { stroke-dashoffset: 0; } }
 .ln-team b { display: block; font: 700 18px/1.3 var(--ln-display); }
 .ln-team span { color: var(--ln-muted); font-size: 15px; }
 
@@ -304,6 +332,9 @@ section[id] { scroll-margin-top: 72px; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   * { transition: none !important; }
+  /* Os bonecos ficam parados: olhos abertos, cadeado fechado, rabisco desenhado */
+  .ln-buddy *, .ln-buddy { animation: none !important; }
+  .ln-buddy-pencil { transform: rotate(24deg); }
 }
 
 /* Seletor de língua (EN / PT) com o mesmo tamanho do botão do tema */
