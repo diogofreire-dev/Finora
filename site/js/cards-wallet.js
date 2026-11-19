@@ -1,6 +1,7 @@
 // site/js/cards-wallet.js — carteira 3D com os cartões ativos do utilizador (página Cartões).
 // Modelo: design/finora-wallet.blend → assets/3d/finora-wallet.glb (carteira + um cartão-modelo sem cor).
 // Cada cartão é uma cópia do modelo pintada com a cor do banco; o nome é desenhado numa textura.
+// Carregar num cartão escolhe-o no painel ao lado (evento "cards:pick"); escolher na lista faz-o espreitar.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -119,6 +120,7 @@ async function start() {
   holder.position.y = -midY * 0.92;
   const REST = { x: -0.28, y: -0.22 };
   const state = { x: REST.x, y: REST.y, dragging: false, moved: 0, lastX: 0, lastY: 0, hover: -1 };
+  let t = 0;   // segundos de animação
 
   function resize() {
     const r = stage.getBoundingClientRect();
@@ -143,14 +145,20 @@ async function start() {
     const h = ray.intersectObjects(picks, false)[0];
     return h ? h.object.userData.slot : -1;
   }
+  // Escolher um cartão: o painel ao lado mostra-o (cards.php ouve "cards:pick"),
+  // e o cartão espreita fora do bolso por um momento.
+  // Não fica levantado de vez: tapava os nomes dos cartões que estão atrás.
+  const peek = { k: -1, until: 0 };
+  function showOff(k) { peek.k = k; peek.until = t + 1.4; wake(); }
   function pick(k) {
-    const el = document.getElementById('card-' + cards[k].id);
-    if (!el) return;
-    el.scrollIntoView({ behavior: calm.matches ? 'auto' : 'smooth', block: 'center' });
-    el.focus({ preventScroll: true });
-    el.classList.add('is-picked');
-    setTimeout(() => el.classList.remove('is-picked'), 1600);
+    document.dispatchEvent(new CustomEvent('cards:pick', { detail: { id: cards[k].id } }));
+    showOff(k);
   }
+  // Escolhido na lista ao lado
+  document.addEventListener('cards:selected', (e) => {
+    const k = cards.findIndex((c) => c.id === e.detail.id);
+    if (k >= 0) showOff(k);
+  });
   // No telemóvel as faixas dos cartões são finas demais para o dedo: a carteira fica decorativa
   // (não apanha toques, o scroll passa) e a lista por baixo é onde se toca.
   if (touch.matches) stage.classList.add('is-touch');
@@ -178,7 +186,7 @@ async function start() {
   }
 
   // ── Animação ───────────────────────────────────────────
-  let visible = true, running = false, t = 0;
+  let visible = true, running = false;
   const clock = new THREE.Clock();
   function frame() {
     if (!visible || document.hidden) { running = false; return; }
@@ -191,10 +199,11 @@ async function start() {
     holder.rotation.set(state.x, state.y + sway, 0);
     // Telemóvel: cada cartão espreita sozinho, um de cada vez (desligado com "reduzir movimento")
     // Só os de trás (o da frente já está sempre à vista e, a subir, tapava os outros)
-    if (touch.matches && !calm.matches && n > 1) state.hover = (t % 2.8) < 1.5 ? 1 + Math.floor(t / 2.8) % (n - 1) : -1;
-    // O cartão por baixo do rato sobe para fora do bolso
+    if (touch.matches && !calm.matches && n > 1 && t >= peek.until) state.hover = (t % 2.8) < 1.5 ? 1 + Math.floor(t / 2.8) % (n - 1) : -1;
+    // O cartão por baixo do rato (ou o acabado de escolher) sobe para fora do bolso
+    const out = t < peek.until ? peek.k : -1;
     slots.forEach((s, k) => {
-      s.lift += ((state.hover === k ? 1.5 : 0) - s.lift) * (calm.matches ? 1 : 0.15);
+      s.lift += ((state.hover === k || out === k ? 1.5 : 0) - s.lift) * (calm.matches ? 1 : 0.15);
       s.obj.position.copy(b2t(s.base.x, s.base.y + s.lift, s.base.z));
     });
     renderer.render(scene, camera);

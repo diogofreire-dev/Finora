@@ -218,13 +218,42 @@ $walletCards = array_map(fn($c) => [
     .cd-alert .nm { font-weight: 600; color: var(--fn-text); }
     .cd-alert .mt { font-size: 13px; color: var(--fn-muted); }
 
-    /* Grelha de cartões: ocupa a largura toda */
+    /* Grelha de cartões: ocupa a largura toda (sem JavaScript, ou um cartão só) */
     .cd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 22px; }
+
+    /* Carteira + painel: à esquerda a carteira e a lista para escolher, à direita o cartão escolhido */
+    .cd-split { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: 32px; align-items: start; }
+    .cd-side { position: sticky; top: 90px; }
+    .cd-pick { display: none; flex-direction: column; gap: 8px; }
+    .cd-pick.is-ready { display: flex; }
+    .cd-pick button {
+      display: flex; align-items: center; gap: 12px; width: 100%; padding: 9px 12px; text-align: left;
+      border: 1px solid var(--fn-line); border-radius: 14px; background: var(--fn-surface); color: var(--fn-text);
+      font: inherit; cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s;
+    }
+    .cd-pick button:hover { border-color: var(--fn-accent); }
+    .cd-pick button:focus-visible { outline: 2px solid var(--fn-accent); outline-offset: 2px; }
+    .cd-pick button[aria-selected="true"] { border-color: var(--fn-gold); box-shadow: 0 0 0 3px var(--fn-gold-soft); }
+    .cd-pick .sw { width: 46px; aspect-ratio: 1.586; border-radius: 6px; flex-shrink: 0; box-shadow: 0 3px 8px -4px rgba(20, 33, 61, .5); }
+    .cd-pick .nm { flex: 1; min-width: 0; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .cd-pick .am { font-size: 14px; font-weight: 600; color: var(--fn-text); font-variant-numeric: tabular-nums; text-align: right; line-height: 1.25; }
+    .cd-pick .am small { display: block; font-size: 12px; font-weight: 400; color: var(--fn-muted); }
+    .cd-pick .am.over { color: #b42318; }
+    [data-theme="dark"] .cd-pick .am.over { color: #fda29b; }
+    /* Painel: um cartão de cada vez (o JavaScript esconde os outros) */
+    .cd-panel.is-ready { grid-template-columns: 1fr; }
+    .cd-panel .cd-tile[hidden] { display: none; }
+    .cd-panel.is-ready .cd-tile { padding: 22px; gap: 20px; animation: cd-in .28s ease-out; }
+    .cd-panel.is-ready .cd-visual { max-width: 440px; }
+    .cd-panel.is-ready .cd-avail { font-size: 34px; }
+    @keyframes cd-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) { .cd-panel.is-ready .cd-tile { animation: none; } }
+
     /* Carteira 3D */
-    .cd-wallet { display: none; position: relative; height: 380px; margin: 4px 0 22px; }
+    .cd-wallet { display: none; position: relative; height: 340px; margin: 0 0 14px; }
     .cd-wallet.is-on { display: block; }
     .cd-wallet::before {
-      content: ''; position: absolute; inset: 10% 22%; border-radius: 50%; pointer-events: none;
+      content: ''; position: absolute; inset: 10% 14%; border-radius: 50%; pointer-events: none;
       background: radial-gradient(closest-side, rgba(196, 138, 18, .14), transparent 70%);
     }
     .cd-wallet canvas { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; transition: opacity .5s; touch-action: pan-y; }
@@ -232,12 +261,20 @@ $walletCards = array_map(fn($c) => [
     .cd-wallet canvas.is-pointing { cursor: pointer; }
     .cd-wallet-hint { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; text-align: center; font-size: 13px; color: var(--fn-muted); }
     .cd-tile { scroll-margin-top: 90px; }
-    .cd-tile.is-picked { box-shadow: 0 0 0 3px var(--fn-gold); transition: box-shadow .3s; }
     .cd-tile:focus { outline: none; }
     /* Telemóvel: só decorativa, o toque passa para a página */
-    .cd-wallet.is-touch { height: 230px; margin-bottom: 14px; }
+    .cd-wallet.is-touch { height: 220px; margin-bottom: 12px; }
     .cd-wallet.is-touch canvas { pointer-events: none; }
     .cd-wallet.is-touch .cd-wallet-hint { display: none; }
+
+    /* Ecrãs estreitos: uma coluna (carteira, lista em fila, painel) */
+    @media (max-width: 900px) {
+      .cd-split { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+      .cd-side { position: static; }
+      .cd-pick { flex-direction: row; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 2px 8px; }
+      .cd-pick button { width: auto; flex: 0 0 auto; max-width: 240px; scroll-snap-align: start; }
+      .cd-pick .am { display: none; }   /* o valor está no painel logo abaixo; o nome precisa do espaço */
+    }
     .cd-tile { background: var(--fn-surface); border: 1px solid var(--fn-line); border-radius: 20px; padding: 14px; display: flex; flex-direction: column; gap: 16px; }
     .cd-tile.over { border-color: #fda29b; }
 
@@ -307,6 +344,7 @@ $walletCards = array_map(fn($c) => [
     @media (max-width: 560px) {
       .cd-head h1 { font-size: 26px; }
       .cd-grid { grid-template-columns: 1fr; }
+      .cd-panel.is-ready .cd-tile { padding: 14px; }
     }
   </style>
 </head>
@@ -404,15 +442,34 @@ $walletCards = array_map(fn($c) => [
   <?php else: ?>
 
     <?php if ($activeCount > 0): ?>
-    <!-- Carteira 3D (só aparece se o browser tiver WebGL; a lista em baixo tem a mesma informação) -->
+    <!-- Carteira + painel: à esquerda escolhe-se o cartão (na carteira 3D ou na lista),
+         à direita aparece tudo sobre ele. Sem JavaScript, o painel mostra os cartões todos. -->
+    <div class="cd-split">
+    <div class="cd-side">
+    <!-- Carteira 3D (só aparece se o browser tiver WebGL; a lista ao lado tem a mesma informação) -->
     <section class="cd-wallet" id="walletStage" aria-hidden="true">
       <canvas id="walletCanvas"></canvas>
-      <p class="cd-wallet-hint"><i class="bi bi-hand-index"></i> <?= te('Toca num cartão para o veres em baixo') ?></p>
+      <p class="cd-wallet-hint"><i class="bi bi-hand-index"></i> <?= te('Escolhe um cartão para veres os detalhes') ?></p>
     </section>
     <?php // JSON_HEX_TAG: um nome de cartão com "</script>" não consegue fechar este bloco ?>
     <script type="application/json" id="walletData"><?= json_encode($walletCards, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) ?></script>
 
-    <div class="cd-grid">
+    <div class="cd-pick" role="tablist" aria-label="<?= te('Escolher cartão') ?>">
+      <?php foreach ($activeCards as $c):
+        $limit = (float) $c['limit_amount'];
+        $avail = $limit - $c['balance'];
+      ?>
+        <button type="button" role="tab" id="pick-<?= (int) $c['id'] ?>" data-card="<?= (int) $c['id'] ?>" aria-controls="card-<?= (int) $c['id'] ?>" aria-selected="false" tabindex="-1">
+          <span class="sw" style="background:<?= card_gradient($c, $BANKS, $cardColors) ?>" aria-hidden="true"></span>
+          <span class="nm"><?= htmlspecialchars($c['name']) ?></span>
+          <span class="am <?= $limit > 0 && $avail < 0 ? 'over' : '' ?>"><?= $limit > 0 ? ($avail < 0 ? '−' : '') . fmt_money(abs($avail)) : fmt_money($c['balance']) ?>
+            <small><?= $limit <= 0 ? te('usado') : ($avail < 0 ? te('acima do limite') : te('disponível')) ?></small></span>
+        </button>
+      <?php endforeach; ?>
+    </div>
+    </div><!-- /cd-side -->
+
+    <div class="cd-grid cd-panel">
       <?php foreach ($activeCards as $c):
         $limit     = (float) $c['limit_amount'];
         $available = $limit - $c['balance'];
@@ -421,7 +478,7 @@ $walletCards = array_map(fn($c) => [
         $bank      = $BANKS[$c['bank'] ?? ''] ?? null;
         $bankLabel = $bank['label'] ?? '';
       ?>
-        <article class="cd-tile <?= $state === 'over' ? 'over' : '' ?>" id="card-<?= (int) $c['id'] ?>" tabindex="-1" aria-label="<?= htmlspecialchars($c['name']) ?>">
+        <article class="cd-tile <?= $state === 'over' ? 'over' : '' ?>" id="card-<?= (int) $c['id'] ?>" role="tabpanel" aria-labelledby="pick-<?= (int) $c['id'] ?>" tabindex="-1">
           <div class="cd-visual" style="background:<?= card_gradient($c, $BANKS, $cardColors) ?>">
             <?= bankWatermark($c['bank'] ?? '') ?>
             <div class="top">
@@ -475,6 +532,7 @@ $walletCards = array_map(fn($c) => [
         </article>
       <?php endforeach; ?>
     </div>
+    </div><!-- /cd-split -->
     <?php endif; ?>
 
     <?php if (!empty($inactiveCards)): ?>
@@ -548,12 +606,51 @@ $walletCards = array_map(fn($c) => [
   }));
 })();
 </script>
+<script>
+// Escolher o cartão: a lista (tabs) e a carteira 3D mostram um cartão de cada vez no painel.
+// A escolha fica guardada nesta sessão, para continuar no mesmo cartão depois de pagar ou editar.
+(function () {
+  const pick = document.querySelector('.cd-pick'), panel = document.querySelector('.cd-panel');
+  const tabs = pick ? [...pick.querySelectorAll('[role="tab"]')] : [];
+  if (tabs.length < 2) return;                       // um cartão só: fica como está
+  const ids = tabs.map((t) => t.dataset.card);
+  function select(id, opts = {}) {
+    id = String(id);
+    if (!ids.includes(id)) return;
+    tabs.forEach((t) => {
+      const on = t.dataset.card === id;
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById('card-' + t.dataset.card).hidden = !on;
+      if (on && opts.focus) t.focus();
+      if (on) t.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+    try { sessionStorage.setItem('fn-card', id); } catch (e) {}
+    if (opts.tell) document.dispatchEvent(new CustomEvent('cards:selected', { detail: { id: Number(id) } }));
+  }
+  tabs.forEach((t, i) => {
+    t.addEventListener('click', () => select(t.dataset.card, { tell: true }));
+    t.addEventListener('keydown', (e) => {
+      const go = { ArrowDown: i + 1, ArrowRight: i + 1, ArrowUp: i - 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (go === undefined) return;
+      e.preventDefault();
+      select(tabs[(go + tabs.length) % tabs.length].dataset.card, { focus: true, tell: true });
+    });
+  });
+  // Carregar num cartão da carteira 3D
+  document.addEventListener('cards:pick', (e) => select(e.detail.id, { focus: true }));
+  let first = ids[0];
+  try { const saved = sessionStorage.getItem('fn-card'); if (ids.includes(saved)) first = saved; } catch (e) {}
+  select(first);
+  pick.classList.add('is-ready'); panel.classList.add('is-ready');
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <?php if ($activeCount > 0): ?>
 <script type="importmap">
 { "imports": { "three": "../js/lib/three/three.module.min.js", "three/addons/": "../js/lib/three/addons/" } }
 </script>
-<script type="module" src="../js/cards-wallet.js?v=3"></script>
+<script type="module" src="../js/cards-wallet.js?v=4"></script>
 <?php endif; ?>
 </body>
 </html>
