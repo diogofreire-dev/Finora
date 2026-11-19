@@ -58,7 +58,7 @@ $features = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=8">
+  <link rel="stylesheet" href="css/landing.css?v=9">
   <link rel="modulepreload" href="js/lib/three/three.module.min.js">
   <script type="importmap">
   { "imports": { "three": "./js/lib/three/three.module.min.js", "three/addons/": "./js/lib/three/addons/" } }
@@ -234,6 +234,6 @@ $features = [
 </script>
 <script type="module" src="js/landing-card.js?v=1"></script>
 <script type="module" src="js/landing-laptop.js?v=3"></script>
-<script src="js/landing-bg.js?v=1" defer></script>
+<script src="js/landing-bg.js?v=2" defer></script>
 </body>
 </html>

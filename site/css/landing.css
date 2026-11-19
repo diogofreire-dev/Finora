@@ -21,6 +21,8 @@
   --ln-curve-op: .34;
   --ln-arrow-op: .8;
   --ln-glow-op: .22;
+  --ln-cat-line-op: .2;
+  --ln-cat-arrow-op: .5;
   --cat-1: #2a78d6; --cat-2: #eb6834; --cat-3: #1baf7a; --cat-4: #eda100;
   --cat-5: #e87ba4; --cat-6: #008300; --cat-7: #6250d6; --cat-8: #e34948;
   --ln-font:    'Figtree', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -43,6 +45,8 @@
   --ln-curve-op: .30;
   --ln-arrow-op: .85;
   --ln-glow-op: .26;
+  --ln-cat-line-op: .22;
+  --ln-cat-arrow-op: .55;
   --cat-1: #3987e5; --cat-2: #d95926; --cat-3: #199e70; --cat-4: #c98500;
   --cat-5: #d55181; --cat-6: #008300; --cat-7: #9085e9; --cat-8: #e66767;
   color-scheme: dark;
@@ -52,7 +56,8 @@
 html { scroll-behavior: smooth; }
 /* Fundo das páginas públicas, fixo atrás de tudo:
    papel quadriculado de livro de contas, um brilho dourado e um azul, e a linha dourada do logo
-   a subir pelo ecrã (finora_backdrop() em helpers/brand.php), com o mês anterior a tracejado. */
+   a subir pelo ecrã (finora_backdrop() em helpers/brand.php), com o mês anterior a tracejado
+   e setas mais pequenas nas cores das categorias. */
 body::before {
   content: ''; position: fixed; inset: 0; z-index: -2; pointer-events: none;
   background:
@@ -64,11 +69,15 @@ body::before {
 .ln-backdrop { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -1; pointer-events: none; }
 .ln-bd-line, .ln-bd-arrow {
   /* Sem vector-effect: o tracejado que desenha a linha tem de usar as medidas do viewBox */
-  stroke: var(--ln-curve); stroke-opacity: var(--ln-curve-op); stroke-width: 3;
+  stroke: var(--bd-c, var(--ln-curve)); stroke-opacity: var(--ln-curve-op); stroke-width: 3;
   stroke-linecap: round; stroke-linejoin: round;
 }
 /* A seta destaca-se da linha: mais opaca, mais grossa e com um brilho dourado por trás */
 .ln-bd-arrow { stroke-opacity: var(--ln-arrow-op); stroke-width: 5; }
+/* Setas das categorias: mais finas e mais suaves, para a dourada continuar a ser a principal */
+.ln-bd-cat .ln-bd-line  { stroke-width: 2.5; stroke-opacity: var(--ln-cat-line-op); }
+.ln-bd-cat .ln-bd-arrow { stroke-opacity: var(--ln-cat-arrow-op); }
+.ln-bd-c1 { --bd-c: var(--cat-1); } .ln-bd-c3 { --bd-c: var(--cat-3); } .ln-bd-c7 { --bd-c: var(--cat-7); }
 .ln-bd-glow-in  { stop-color: var(--ln-curve); stop-opacity: var(--ln-glow-op); }
 .ln-bd-glow-out { stop-color: var(--ln-curve); stop-opacity: 0; }
 .ln-bd-prev {
