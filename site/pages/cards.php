@@ -244,8 +244,20 @@ $walletCards = array_map(fn($c) => [
     .cd-panel.is-ready { grid-template-columns: 1fr; }
     .cd-panel .cd-tile[hidden] { display: none; }
     .cd-panel.is-ready .cd-tile { padding: 22px; gap: 20px; animation: cd-in .28s ease-out; }
-    .cd-panel.is-ready .cd-visual { max-width: 440px; }
+    .cd-panel.is-ready .cd-visual { max-width: 440px; width: 100%; margin-inline: auto; }
     .cd-panel.is-ready .cd-avail { font-size: 34px; }
+    /* Painel largo: cartão à esquerda, números à direita, botões por baixo a toda a largura
+       (antes o cartão ficava limitado a 440 px e sobrava um espaço vazio à direita) */
+    .cd-panel.is-ready { container-type: inline-size; }
+    @container (min-width: 600px) {
+      .cd-panel.is-ready .cd-tile {
+        display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        grid-template-areas: "visual body" "actions actions"; align-items: center; column-gap: 26px;
+      }
+      .cd-panel.is-ready .cd-tile .cd-visual { grid-area: visual; max-width: none; }
+      .cd-panel.is-ready .cd-tile .cd-body { grid-area: body; padding: 0; }
+      .cd-panel.is-ready .cd-tile .cd-actions { grid-area: actions; padding: 0; }
+    }
     @keyframes cd-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     @media (prefers-reduced-motion: reduce) { .cd-panel.is-ready .cd-tile { animation: none; } }
 
