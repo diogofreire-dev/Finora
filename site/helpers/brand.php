@@ -13,19 +13,35 @@ const FINORA_LOGO_SVG = '<svg class="%s" viewBox="-16 -770 2763 935" role="img" 
 
 // Fundo das páginas públicas (início, termos, privacidade): a linha dourada do logo, em grande,
 // a subir pelo ecrã, com a linha tracejada do mês anterior por baixo, como no gráfico do painel.
-// A seta na ponta é mais forte que a linha e tem um brilho por trás, para se destacar.
-// Fica fixo atrás do conteúdo; js/landing-bg.js faz a linha dourada crescer com o scroll.
+// A dourada é o total do mês: a seta na ponta é mais forte e tem um brilho por trás.
+// As setas mais pequenas são categorias, com as cores que têm na app (--cat-N), mais finas e suaves.
+// Fica fixo atrás do conteúdo; js/landing-bg.js faz cada linha crescer com o scroll.
+// data-bd-from: quanto da linha já aparece no topo da página; data-bd-size: tamanho da seta.
 function finora_backdrop(): string {
     return <<<'SVG'
 <svg class="ln-backdrop" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
-  <path class="ln-bd-prev" d="M-40 965 C640 955 1180 890 1640 460" fill="none"/>
-  <path class="ln-bd-line" id="lnBdLine" d="M-40 930 C620 925 1120 820 1540 200" fill="none"/>
   <defs>
     <radialGradient id="lnBdGlow"><stop offset="0" class="ln-bd-glow-in"/><stop offset="1" class="ln-bd-glow-out"/></radialGradient>
   </defs>
-  <g id="lnBdArrow">
-    <circle class="ln-bd-glow" r="70" fill="url(#lnBdGlow)"/>
-    <path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/>
+  <path class="ln-bd-prev" d="M-40 965 C640 955 1180 890 1640 460" fill="none"/>
+  <g class="ln-bd-series ln-bd-cat ln-bd-c1" data-bd-from=".2" data-bd-size=".7">
+    <path class="ln-bd-line" d="M-30 640 C150 636 250 590 310 470" fill="none"/>
+    <g class="ln-bd-tip"><path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/></g>
+  </g>
+  <g class="ln-bd-series ln-bd-cat ln-bd-c3" data-bd-from=".1" data-bd-size=".55">
+    <path class="ln-bd-line" d="M960 310 C1060 306 1140 270 1200 180" fill="none"/>
+    <g class="ln-bd-tip"><path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/></g>
+  </g>
+  <g class="ln-bd-series ln-bd-cat ln-bd-c7" data-bd-from=".15" data-bd-size=".6">
+    <path class="ln-bd-line" d="M1060 1040 C1200 1015 1320 965 1420 860" fill="none"/>
+    <g class="ln-bd-tip"><path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/></g>
+  </g>
+  <g class="ln-bd-series ln-bd-gold" data-bd-from=".3" data-bd-size="1">
+    <path class="ln-bd-line" d="M-40 930 C620 925 1120 820 1540 200" fill="none"/>
+    <g class="ln-bd-tip">
+      <circle class="ln-bd-glow" r="70" fill="url(#lnBdGlow)"/>
+      <path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/>
+    </g>
   </g>
 </svg>
 SVG;
