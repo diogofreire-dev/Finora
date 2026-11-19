@@ -25,7 +25,7 @@ function finora_backdrop(): string {
   </defs>
   <g id="lnBdArrow">
     <circle class="ln-bd-glow" r="70" fill="url(#lnBdGlow)"/>
-    <path class="ln-bd-arrow" d="M-46 -40 L0 0 L-58 8" fill="none"/>
+    <path class="ln-bd-arrow" d="M-44 -30 L0 0 L-44 30" fill="none"/>
   </g>
 </svg>
 SVG;
