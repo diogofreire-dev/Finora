@@ -13,13 +13,20 @@ const FINORA_LOGO_SVG = '<svg class="%s" viewBox="-16 -770 2763 935" role="img" 
 
 // Fundo das páginas públicas (início, termos, privacidade): a linha dourada do logo, em grande,
 // a subir pelo ecrã, com a linha tracejada do mês anterior por baixo, como no gráfico do painel.
+// A seta na ponta é mais forte que a linha e tem um brilho por trás, para se destacar.
 // Fica fixo atrás do conteúdo; js/landing-bg.js faz a linha dourada crescer com o scroll.
 function finora_backdrop(): string {
     return <<<'SVG'
 <svg class="ln-backdrop" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
   <path class="ln-bd-prev" d="M-40 965 C640 955 1180 890 1640 460" fill="none"/>
   <path class="ln-bd-line" id="lnBdLine" d="M-40 930 C620 925 1120 820 1540 200" fill="none"/>
-  <path class="ln-bd-arrow" id="lnBdArrow" d="M-34 -30 L0 0 L-44 6" fill="none"/>
+  <defs>
+    <radialGradient id="lnBdGlow"><stop offset="0" class="ln-bd-glow-in"/><stop offset="1" class="ln-bd-glow-out"/></radialGradient>
+  </defs>
+  <g id="lnBdArrow">
+    <circle class="ln-bd-glow" r="70" fill="url(#lnBdGlow)"/>
+    <path class="ln-bd-arrow" d="M-46 -40 L0 0 L-58 8" fill="none"/>
+  </g>
 </svg>
 SVG;
 }
