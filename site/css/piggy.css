@@ -29,7 +29,6 @@
 .piggy .pg-slot  { fill: var(--pg-ink); }
 .piggy .pg-nose  { fill: var(--pg-ink); opacity: .75; }
 .piggy .pg-eye   { fill: var(--pg-ink); }
-.piggy .pg-cheek { fill: none; stroke: var(--pg-ink); stroke-width: 2.5; stroke-linecap: round; opacity: .5; }
 .piggy .pg-shine { fill: none; stroke: #fff; stroke-width: 5; stroke-linecap: round; opacity: .8; }
 [data-theme="dark"] .piggy .pg-shine { opacity: .25; }
 .piggy .pg-pile     { fill: var(--pg-gold); }

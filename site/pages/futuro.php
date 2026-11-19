@@ -122,7 +122,7 @@ $savedIncome = (float) ($stInc->fetchColumn() ?: 0);
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=10">
-  <link rel="stylesheet" href="../css/piggy.css?v=4">
+  <link rel="stylesheet" href="../css/piggy.css?v=5">
   <style>
     .gl { max-width: 1200px; margin: 0 auto; padding-bottom: 56px; }
     .gl-head h1 { margin: 0 0 6px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
