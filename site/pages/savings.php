@@ -161,12 +161,6 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
     .sv-actions { display: flex; gap: 10px; flex-wrap: wrap; }
     .main-content .sv-actions .btn-s { min-height: 46px; padding: 0 20px; font-size: 15px; }
 
-    /* Menos cor: os blocos de baixo ficam neutros (cabeçalho branco e ícone cinzento-azulado);
-       a cor fica para o que tem significado: dourado = poupado, verde/vermelho = pus/tirei */
-    .sv .pg-card-head { background: var(--fn-surface); border-bottom: 1px solid var(--fn-line); }
-    .sv .pg-card-head .pg-ico { background: var(--fn-paper); color: var(--fn-ink); box-shadow: none; }
-    [data-theme="dark"] .sv .pg-card-head .pg-ico { color: #f3e7c8; }
-
     .sv-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
 
     /* Movimentos */
@@ -175,9 +169,8 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
     .sv-list { list-style: none; margin: 0; padding: 0 8px 8px; }
     .sv-list li { display: flex; align-items: center; gap: 14px; padding: 10px 12px; border-radius: 12px; }
     .sv-list li:hover { background: var(--fn-paper); }
-    .sv-ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; font-size: 16px; color: #067647; background: var(--fn-paper); }
-    .sv-ico.out { color: #b42318; }
-    [data-theme="dark"] .sv-ico { color: #75e0a7; } [data-theme="dark"] .sv-ico.out { color: #fda29b; }
+    .sv-ico { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; font-size: 16px; color: #fff; background: #12b76a; }
+    .sv-ico.out { background: #d92d20; }
     .sv-what { flex: 1; min-width: 0; }
     .sv-what b { display: block; font-size: 15px; color: var(--fn-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .sv-what small { font-size: 13px; color: var(--fn-muted); }
