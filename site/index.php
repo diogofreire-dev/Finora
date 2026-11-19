@@ -58,7 +58,7 @@ $features = [
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Figtree:wght@400;500;600;700&display=swap">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.min.css"
         integrity="sha384-fFxL8wXRpg9gVqGpY+URMtLr3fLL0WBbo4NBQ+IWwMDYjIjI5VQ46XlJm5+BUlXJ" crossorigin="anonymous">
-  <link rel="stylesheet" href="css/landing.css?v=9">
+  <link rel="stylesheet" href="css/landing.css?v=10">
   <link rel="modulepreload" href="js/lib/three/three.module.min.js">
   <script type="importmap">
   { "imports": { "three": "./js/lib/three/three.module.min.js", "three/addons/": "./js/lib/three/addons/" } }
@@ -188,8 +188,51 @@ $features = [
         <p><?= te('A Finora começou como a nossa Prova de Aptidão Profissional: uma forma simples e gratuita de qualquer pessoa perceber o que gasta.') ?></p>
       </div>
       <ul class="ln-team">
-        <li><span class="ln-avatar" aria-hidden="true">DF</span><div><b>Diogo Freire</b><span><?= te('Arquitetura, PHP, base de dados e segurança') ?></span></div></li>
-        <li><span class="ln-avatar" aria-hidden="true">JA</span><div><b>Jandro Antunes</b><span><?= te('Design da interface e experiência de utilização') ?></span></div></li>
+        <li><svg class="ln-buddy ln-buddy-dev" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+            <defs><clipPath id="lnBuddyDev"><circle cx="48" cy="48" r="46"/></clipPath></defs>
+            <circle class="ln-buddy-bg" cx="48" cy="48" r="46"/>
+            <g clip-path="url(#lnBuddyDev)">
+              <path class="ln-buddy-shirt" d="M12 100 C12 77 27 67 48 67 C69 67 84 77 84 100Z"/>
+              <path class="ln-buddy-strings" d="M43 70 V80 M53 70 V80"/>
+              <rect class="ln-buddy-skin" x="42" y="54" width="12" height="15" rx="5"/>
+              <g class="ln-buddy-head">
+                <circle class="ln-buddy-skin" cx="31.5" cy="43" r="3.5"/><circle class="ln-buddy-skin" cx="64.5" cy="43" r="3.5"/>
+                <circle class="ln-buddy-skin" cx="48" cy="41" r="17"/>
+                <path class="ln-buddy-hair" d="M31 39 C29 25 39 20 49 20 C60 20 67 27 65 38 C60 32 52 30 44 31 C38 32 34 35 31 39Z"/>
+                <g class="ln-buddy-eyes"><ellipse cx="42" cy="43" rx="2.1" ry="2.5"/><ellipse cx="54" cy="43" rx="2.1" ry="2.5"/></g>
+                <path class="ln-buddy-mouth" d="M43.5 50 Q48 54 52.5 50"/>
+              </g>
+            </g>
+            <g class="ln-buddy-badge" transform="translate(77 75)">
+              <circle r="15"/>
+              <path class="ln-buddy-shackle" d="M-4.5 -2 V-6 A4.5 4.5 0 0 1 4.5 -6 V-2"/>
+              <rect class="ln-buddy-ink" x="-7" y="-2" width="14" height="10" rx="2.5"/>
+            </g>
+          </svg><div><b>Diogo Freire</b><span><?= te('Arquitetura, PHP, base de dados e segurança') ?></span></div></li>
+        <li><svg class="ln-buddy ln-buddy-design" viewBox="0 0 96 96" aria-hidden="true" focusable="false">
+            <defs><clipPath id="lnBuddyDesign"><circle cx="48" cy="48" r="46"/></clipPath></defs>
+            <circle class="ln-buddy-bg" cx="48" cy="48" r="46"/>
+            <g clip-path="url(#lnBuddyDesign)">
+              <path class="ln-buddy-shirt" d="M12 100 C12 77 27 67 48 67 C69 67 84 77 84 100Z"/>
+              <path class="ln-buddy-strings" d="M40 68 L48 77 L56 68"/>
+              <rect class="ln-buddy-skin" x="42" y="54" width="12" height="15" rx="5"/>
+              <g class="ln-buddy-head">
+                <circle class="ln-buddy-skin" cx="31.5" cy="43" r="3.5"/><circle class="ln-buddy-skin" cx="64.5" cy="43" r="3.5"/>
+                <circle class="ln-buddy-skin" cx="48" cy="41" r="17"/>
+                <g class="ln-buddy-hair"><circle cx="35" cy="31" r="6"/><circle cx="42" cy="25" r="7"/><circle cx="51" cy="23.5" r="7"/><circle cx="59" cy="27" r="6.5"/><circle cx="63" cy="34" r="4.5"/><circle cx="32.5" cy="37" r="3.5"/></g>
+                <g class="ln-buddy-eyes"><ellipse cx="42" cy="43" rx="2.1" ry="2.5"/><ellipse cx="54" cy="43" rx="2.1" ry="2.5"/></g>
+                <path class="ln-buddy-mouth" d="M43 49.5 Q48 54.5 53 49.5"/>
+              </g>
+            </g>
+            <g class="ln-buddy-badge" transform="translate(77 75)">
+              <circle r="15"/>
+              <path class="ln-buddy-scribble" d="M-8 6 Q-5 1 -2 5 T4 4"/>
+              <g class="ln-buddy-pencil">
+                <rect class="ln-buddy-ink" x="-2.2" y="-10" width="4.4" height="12" rx="1"/>
+                <path class="ln-buddy-tip" d="M-2.2 2 L2.2 2 L0 6.5Z"/>
+              </g>
+            </g>
+          </svg><div><b>Jandro Antunes</b><span><?= te('Design da interface e experiência de utilização') ?></span></div></li>
       </ul>
     </div>
   </section>
