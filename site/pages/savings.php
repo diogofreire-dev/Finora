@@ -134,26 +134,28 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
   <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
   <link rel="stylesheet" href="../css/sidebar.css?v=7">
   <link rel="stylesheet" href="../css/finora.css?v=10">
-  <link rel="stylesheet" href="../css/piggy.css?v=3">
+  <link rel="stylesheet" href="../css/piggy.css?v=4">
   <style>
     .sv { max-width: 1120px; margin: 0 auto; padding-bottom: 56px; }
     .sv h1 { margin: 0 0 18px; font-family: var(--fn-font-brand); font-weight: 700; font-size: 30px; letter-spacing: -0.6px; color: var(--fn-ink); }
 
-    /* Mealheiro grande + números */
+    /* Topo: mealheiro | total e botões | números do mês */
     .sv-hero {
-      display: grid; grid-template-columns: 320px minmax(0, 1fr); gap: 28px; align-items: center;
-      padding: 26px 30px; margin-bottom: 22px; border-radius: 22px; border: 1px solid var(--fn-line);
-      background: radial-gradient(120% 140% at 0% 100%, color-mix(in srgb, var(--fn-gold) 14%, var(--fn-surface)), var(--fn-surface) 60%);
+      display: grid; grid-template-columns: 200px minmax(0, 1fr) minmax(220px, 280px); gap: 30px; align-items: center;
+      padding: 22px 28px; margin-bottom: 22px; border-radius: 22px; border: 1px solid var(--fn-line); background: var(--fn-surface);
     }
     .sv-hero .piggy { margin: 0 auto; }
     .sv-label { font-size: 15px; color: var(--fn-muted); margin: 0; }
-    .sv-total { margin: 2px 0 10px; font-family: var(--fn-font-brand); font-weight: 800; font-size: clamp(40px, 6vw, 60px); letter-spacing: -1.5px; line-height: 1; color: var(--fn-ink); }
+    .sv-total { margin: 2px 0 8px; font-family: var(--fn-font-brand); font-weight: 800; font-size: clamp(38px, 5vw, 54px); letter-spacing: -1.5px; line-height: 1; color: var(--fn-ink); }
     [data-theme="dark"] .sv-total { color: #fff; }
-    .sv-milestone { margin: 0 0 18px; font-size: 15px; color: var(--fn-muted); }
+    .sv-milestone { margin: 0 0 8px; font-size: 15px; color: var(--fn-muted); }
     .sv-milestone strong { color: var(--fn-text); }
-    .sv-stats { display: flex; gap: 26px; flex-wrap: wrap; margin-bottom: 22px; }
-    .sv-stats div { font-size: 13px; color: var(--fn-muted); }
-    .sv-stats strong { display: block; font-size: 19px; color: var(--fn-text); }
+    .sv-goalbar { height: 8px; max-width: 360px; border-radius: 4px; background: var(--fn-paper); overflow: hidden; margin-bottom: 18px; }
+    .sv-goalbar span { display: block; height: 100%; border-radius: 4px; background: var(--fn-gold); }
+    /* Números do mês: lista à direita, separada por uma linha */
+    .sv-stats { list-style: none; margin: 0; padding: 0 0 0 26px; border-left: 1px solid var(--fn-line); display: grid; gap: 14px; }
+    .sv-stats li { display: grid; gap: 1px; font-size: 13px; color: var(--fn-muted); }
+    .sv-stats strong { font-size: 20px; color: var(--fn-text); font-variant-numeric: tabular-nums; }
     .sv-stats .pos { color: #067647; } .sv-stats .neg { color: #b42318; }
     [data-theme="dark"] .sv-stats .pos { color: #75e0a7; } [data-theme="dark"] .sv-stats .neg { color: #fda29b; }
     .sv-actions { display: flex; gap: 10px; flex-wrap: wrap; }
@@ -228,9 +230,12 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
     .sv-dialog .acts { display: flex; gap: 8px; justify-content: flex-end; margin-top: 6px; }
 
     @media (max-width: 900px) {
-      .sv-hero { grid-template-columns: minmax(0, 1fr); text-align: center; padding: 22px 18px; }
-      .sv-hero .piggy-lg { width: min(70%, 240px); }
-      .sv-stats, .sv-actions { justify-content: center; }
+      .sv-hero { grid-template-columns: minmax(0, 1fr); text-align: center; padding: 22px 18px; gap: 18px; }
+      .sv-hero .piggy-lg { width: min(60%, 200px); }
+      .sv-goalbar { margin-inline: auto; }
+      .sv-actions { justify-content: center; }
+      .sv-stats { border-left: 0; padding: 16px 0 0; border-top: 1px solid var(--fn-line); grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+      .sv-stats strong { font-size: 17px; }
       .sv-grid { grid-template-columns: minmax(0, 1fr); }
     }
     @media (max-width: 520px) { .sv h1 { font-size: 26px; } .main-content .sv-actions .btn-s { flex: 1; justify-content: center; } }
@@ -260,17 +265,18 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
           <?= t('Faltam {amount} para o próximo marco: {next}.', ['amount' => '<strong>' . fmt_money($milestone - $total) . '</strong>', 'next' => fmt_money($milestone, 0)]) ?>
         <?php endif; ?>
       </p>
-      <div class="sv-stats">
-        <?php $net = (float) $month['put'] + (float) $month['took']; ?>
-        <div><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_money(abs($net)) ?></strong><?= te('este mês') ?></div>
-        <div><strong><?= fmt_money($avgSix) ?></strong><?= te('média por mês (6 meses)') ?></div>
-        <div><strong><?= fmt_money(max($byGoal[0] ?? 0, 0)) ?></strong><?= te('sem meta') ?></div>
-      </div>
+      <div class="sv-goalbar" aria-hidden="true"><span style="width: <?= round(max(0, min(100, $fillPct)), 1) ?>%"></span></div>
       <div class="sv-actions">
         <button type="button" class="btn-s btn-s-primary" data-open="in"><i class="bi bi-plus-lg"></i> <?= te('Pôr de lado') ?></button>
         <button type="button" class="btn-s" data-open="out" <?= $total <= 0 ? 'disabled' : '' ?>><i class="bi bi-dash-lg"></i> <?= te('Tirar') ?></button>
       </div>
     </div>
+    <?php $net = (float) $month['put'] + (float) $month['took']; ?>
+    <ul class="sv-stats">
+      <li><strong class="<?= $net >= 0 ? 'pos' : 'neg' ?>"><?= ($net >= 0 ? '+' : '−') . fmt_money(abs($net)) ?></strong><?= te('este mês') ?></li>
+      <li><strong><?= fmt_money($avgSix) ?></strong><?= te('média por mês (6 meses)') ?></li>
+      <li><strong><?= fmt_money(max($byGoal[0] ?? 0, 0)) ?></strong><?= te('sem meta') ?></li>
+    </ul>
   </section>
 
   <div class="sv-grid">
