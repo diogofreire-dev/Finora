@@ -253,17 +253,17 @@ section[id] { scroll-margin-top: 72px; }
    Piscam os olhos, abanam a cabeça devagar e dão um salto quando se passa o rato no cartão. */
 .ln-buddy { width: 76px; height: 76px; flex-shrink: 0; overflow: visible; transition: transform .35s cubic-bezier(.34, 1.56, .64, 1); }
 .ln-team li:hover .ln-buddy { transform: translateY(-4px) rotate(-4deg); }
-.ln-buddy-dev    { --bd-bg: #dde8f7; --bd-shirt: var(--cat-1); }
-.ln-buddy-design { --bd-bg: var(--ln-cream); --bd-shirt: var(--cat-7); }
+.ln-buddy-dev    { --bd-bg: #dde8f7; --bd-shirt: var(--cat-1); --bd-skin: #8d5a3b; }
+.ln-buddy-design { --bd-bg: var(--ln-cream); --bd-shirt: var(--cat-7); --bd-skin: #7a4b2f; }
 [data-theme="dark"] .ln-buddy-dev    { --bd-bg: #1e2c47; }
 [data-theme="dark"] .ln-buddy-design { --bd-bg: #2b2740; }
 .ln-buddy-bg { fill: var(--bd-bg); }
 .ln-buddy-shirt { fill: var(--bd-shirt); }
 .ln-buddy-strings { fill: none; stroke: #fff; stroke-opacity: .7; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.ln-buddy-skin { fill: #e9b48c; }
-.ln-buddy-hair { fill: #3a2a20; }
-.ln-buddy-eyes { fill: #1b2438; }
-.ln-buddy-mouth { fill: none; stroke: #1b2438; stroke-width: 2; stroke-linecap: round; }
+.ln-buddy-skin { fill: var(--bd-skin); }
+.ln-buddy-hair { fill: #17110e; }
+.ln-buddy-eyes { fill: #17110e; }
+.ln-buddy-mouth { fill: none; stroke: #2a1810; stroke-width: 2.2; stroke-linecap: round; }
 .ln-buddy-badge > circle { fill: var(--ln-gold-hi); stroke: var(--ln-surface); stroke-width: 3; }
 .ln-buddy-ink { fill: var(--ln-ink); }
 .ln-buddy-shackle { fill: none; stroke: var(--ln-ink); stroke-width: 2.4; stroke-linecap: round; }
