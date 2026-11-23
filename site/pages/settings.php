@@ -82,6 +82,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $flash = ['success', $theme === 'dark' ? 'Tema escuro ativado.' : 'Tema claro ativado.'];
         }
 
+        elseif ($action === 'update_background') {
+            $bg = valid_background($_POST['background'] ?? '');
+            $pdo->prepare('UPDATE user_settings SET background = :b WHERE user_id = :uid')->execute([':b' => $bg, ':uid' => $uid]);
+            $flash = ['success', t('Fundo da app alterado.')];
+        }
+
         elseif ($action === 'update_language') {
             $code = $_POST['language'] ?? '';
             if (isset(LANGS[$code])) {
@@ -335,6 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 unset($_SESSION['flash_settings']);
 
 $currentTheme = valid_theme($settings['theme'] ?? 'light');
+$currentBg    = getUserBackground($pdo, $uid);
 $avatarFile   = $user['avatar_path'] ? __DIR__ . '/../' . $user['avatar_path'] : null;
 $avatarUrl    = $avatarFile && is_file($avatarFile) ? '../' . $user['avatar_path'] . '?v=' . filemtime($avatarFile) : null;
 $initial      = mb_strtoupper(mb_substr($user['username'], 0, 1));
@@ -432,6 +439,10 @@ $since        = strtotime($user['created_at']);
     .st-theme .name { display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 14px; font-weight: 600; color: var(--fn-text); }
     .st-theme .name i { color: var(--fn-muted); }
     .st-theme input:checked ~ .name i { color: var(--fn-accent); }
+    /* Fundo da app: 4 miniaturas, desenhadas com as cores do tema atual */
+    .st-bgs { grid-template-columns: repeat(4, minmax(0, 170px)); padding-top: 4px; }
+    .st-subtitle { margin: 0; padding: 4px 20px 0; font-size: 14px; font-weight: 700; color: var(--fn-text); }
+    .mini.bg { --bg: var(--fn-paper); --card: var(--fn-surface); --line: var(--fn-line); --ink: var(--fn-ink); --gold: var(--fn-gold); }
 
     /* Interruptor (checkbox verdadeira com aspeto de switch) */
 
@@ -448,6 +459,8 @@ $since        = strtotime($user['created_at']);
       #notifForm { flex-wrap: nowrap; }
       .st-form .grid2 { grid-template-columns: 1fr; }
       .st-themes { gap: 10px; padding: 16px; }
+      .st-bgs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .st-subtitle { padding: 4px 16px 0; }
     }
     /* Preferências das notificações */
     .st-prefs { padding: 4px 8px 10px; border-top: 1px solid var(--fn-line); }
@@ -684,6 +697,37 @@ include __DIR__ . '/../components/sidebar.php';
         </fieldset>
         <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary"><?= te('Guardar tema') ?></button></div></noscript>
       </form>
+      <form method="post" id="backgroundForm">
+        <?= csrf_field() ?>
+        <input type="hidden" name="action" value="update_background">
+        <p class="st-subtitle" id="bgLegend"><?= te('Fundo da app') ?></p>
+        <fieldset class="st-themes st-bgs" aria-labelledby="bgLegend">
+          <?php
+          // Miniatura de cada fundo (160×100), por cima de um cartão para se ver como fica com conteúdo
+          $bgMinis = [
+            'constelacao'  => [t('Constelação'), '<g fill="var(--ink)" opacity=".35"><circle cx="18" cy="20" r="2"/><circle cx="46" cy="12" r="1.6"/><circle cx="34" cy="38" r="1.8"/><circle cx="140" cy="18" r="2"/><circle cx="122" cy="34" r="1.6"/><circle cx="148" cy="84" r="1.8"/><circle cx="16" cy="86" r="1.6"/></g><g fill="none" stroke="var(--ink)" stroke-width=".8" opacity=".25"><path d="M18 20 L46 12 L34 38 Z"/><path d="M140 18 L122 34"/></g>'],
+            'liso'         => [t('Liso'), ''],
+            'quadriculado' => [t('Quadriculado'), '<g stroke="var(--ink)" stroke-width=".6" opacity=".14">' . implode('', array_map(fn($x) => "<path d=\"M$x 0 V100\"/>", range(10, 150, 10))) . implode('', array_map(fn($y) => "<path d=\"M0 $y H160\"/>", range(10, 90, 10))) . '</g>'],
+            'linha'        => [t('Linha dourada'), '<path d="M-4 90 C60 89 108 78 148 20" fill="none" stroke="var(--gold)" stroke-width="2.4" opacity=".55" stroke-linecap="round"/><path d="M140 20 L148 20 L146 28" fill="none" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M-4 62 C14 62 24 57 30 45" fill="none" stroke="#3987e5" stroke-width="1.8" opacity=".5" stroke-linecap="round"/>'],
+          ];
+          foreach ($bgMinis as $val => [$label, $art]): ?>
+            <label class="st-theme">
+              <input type="radio" name="background" value="<?= $val ?>" <?= $currentBg === $val ? 'checked' : '' ?>>
+              <span class="mini bg" aria-hidden="true">
+                <svg viewBox="0 0 160 100" preserveAspectRatio="none">
+                  <rect width="160" height="100" fill="var(--bg)"/>
+                  <?= $art ?>
+                  <rect x="44" y="30" width="72" height="42" rx="6" fill="var(--card)" stroke="var(--line)"/>
+                  <rect x="52" y="39" width="34" height="5" rx="2.5" fill="var(--ink)" opacity=".4"/>
+                  <rect x="52" y="50" width="48" height="9" rx="3" fill="var(--ink)"/>
+                </svg>
+              </span>
+              <span class="name"><?= htmlspecialchars($label) ?></span>
+            </label>
+          <?php endforeach; ?>
+        </fieldset>
+        <noscript><div class="st-row"><button type="submit" class="btn-s btn-s-primary"><?= te('Guardar fundo') ?></button></div></noscript>
+      </form>
       <form method="post" id="languageForm" class="st-row">
         <?= csrf_field() ?>
         <input type="hidden" name="action" value="update_language">
@@ -837,6 +881,12 @@ include __DIR__ . '/../components/sidebar.php';
 // Tema: mostra logo e grava
 document.getElementById('language').addEventListener('change', () => document.getElementById('languageForm').submit());
 document.getElementById('currency').addEventListener('change', () => document.getElementById('currencyForm').submit());
+// Fundo da app: mostra logo (a barra lateral desenha-o em #appBg) e grava
+document.querySelectorAll('#backgroundForm input[name="background"]').forEach(r => r.addEventListener('change', () => {
+  const bg = document.getElementById('appBg');
+  if (bg) bg.dataset.bg = r.value;
+  document.getElementById('backgroundForm').submit();
+}));
 document.querySelectorAll('#themeForm input[name="theme"]').forEach(r => r.addEventListener('change', () => {
   document.documentElement.setAttribute('data-theme', r.value);
   document.getElementById('themeForm').submit();
