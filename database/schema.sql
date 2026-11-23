@@ -92,6 +92,7 @@ CREATE TABLE IF NOT EXISTS user_settings (
   id            INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
   user_id       INT UNSIGNED NOT NULL UNIQUE,
   theme         VARCHAR(10)  DEFAULT 'light',
+  background    VARCHAR(12)  NOT NULL DEFAULT 'constelacao', -- fundo da app (helpers/theme_helper.php)
   currency      VARCHAR(3)   DEFAULT 'EUR',
   language      VARCHAR(5)   DEFAULT 'pt-PT',
   notifications TINYINT(1)   DEFAULT 1,
@@ -444,3 +445,5 @@ ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS monthly_income DECIMAL(10,2) 
 -- DEFAULT 1: as contas que já existem não são mandadas para as boas-vindas.
 -- O código põe 0 explicitamente quando cria as definições de uma conta nova.
 ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS onboarded TINYINT(1) NOT NULL DEFAULT 1 AFTER monthly_income;
+-- Fundo da app escolhido nas Definições; as contas que já existem ficam com o que tinham (constelação)
+ALTER TABLE user_settings ADD COLUMN IF NOT EXISTS background VARCHAR(12) NOT NULL DEFAULT 'constelacao' AFTER theme;

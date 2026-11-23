@@ -6,6 +6,7 @@
 
 require_once __DIR__ . '/../helpers/brand.php';
 require_once __DIR__ . '/../helpers/i18n.php';
+require_once __DIR__ . '/../helpers/theme_helper.php';
 
 $_sp  = $sidebarPrefix ?? '../';
 $_ap  = $activePage    ?? '';
@@ -64,6 +65,8 @@ if (isset($pdo) && !empty($_SESSION['user_id'])) {
 // Plano grátis: as entradas do Finora Pro levam uma etiqueta (ao abrir, a página explica o Pro)
 $_isPro  = function_exists('is_pro') && is_pro();
 $_proTag = $_isPro ? '' : ' <span class="sidebar-pro">' . te('Pro') . '</span>';
+// Fundo escolhido nas Definições (whitelist em theme_helper.php)
+$_bg = (isset($pdo) && !empty($_SESSION['user_id'])) ? getUserBackground($pdo, (int) $_SESSION['user_id']) : 'constelacao';
 $_username = $_SESSION['username'] ?? '';
 $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 ?>
@@ -78,7 +81,50 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
                   display: grid; place-items: center; background: #14213d; color: #e2b04a; font-size: 9px;
                   box-shadow: 0 0 0 2px var(--fn-surface); }
   .app-user-pro i { line-height: 1; }
+
+  /* ── Fundo da app (Definições → Aparência) ──────────────────
+     .app-bg fica atrás de tudo; data-bg diz qual é. A "constelação" é a de sempre:
+     os brilhos de theme.css (.main-content::before) e o canvas das partículas.
+     Os outros fundos desligam os dois. */
+  .app-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; --bg-grid: rgba(20, 33, 61, .05); --bg-line-op: .22; --bg-arrow-op: .5; --bg-cat-op: .14; }
+  [data-theme="dark"] .app-bg { --bg-grid: rgba(255, 255, 255, .045); --bg-line-op: .24; --bg-arrow-op: .55; --bg-cat-op: .18; }
+  .app-bg:not([data-bg="constelacao"]) ~ #particles-canvas,
+  .app-bg:not([data-bg="constelacao"]) ~ .main-content::before { display: none; }
+  .app-bg[data-bg="quadriculado"] {
+    background:
+      radial-gradient(44rem 30rem at 6% 14%, color-mix(in srgb, var(--fn-gold) 12%, transparent), transparent 70%),
+      radial-gradient(48rem 34rem at 94% 82%, color-mix(in srgb, var(--cat-1) 9%, transparent), transparent 70%),
+      linear-gradient(var(--bg-grid) 1px, transparent 1px) 0 0 / 32px 32px,
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px) 0 0 / 32px 32px;
+  }
+  .app-bg[data-bg="linha"] {
+    background:
+      radial-gradient(44rem 30rem at 6% 14%, color-mix(in srgb, var(--fn-gold) 10%, transparent), transparent 70%),
+      radial-gradient(48rem 34rem at 94% 82%, color-mix(in srgb, var(--cat-1) 8%, transparent), transparent 70%);
+  }
+  .app-bg svg { display: none; width: 100%; height: 100%; }
+  .app-bg[data-bg="linha"] svg { display: block; }
+  .app-bg .bl-gold { stroke: var(--fn-gold); stroke-opacity: var(--bg-line-op); stroke-width: 3; }
+  .app-bg .bl-cat  { stroke-opacity: var(--bg-cat-op); stroke-width: 2.5; }
+  .app-bg .bl-tip  { stroke-opacity: var(--bg-arrow-op); stroke-width: 5; }
+  .app-bg .bl-cat.bl-tip { stroke-opacity: calc(var(--bg-arrow-op) * .7); }
+  .app-bg .bl-prev { stroke: var(--fn-muted, #5f6982); stroke-opacity: .18; stroke-width: 2; stroke-dasharray: 6 9; vector-effect: non-scaling-stroke; }
+  .app-bg path { fill: none; stroke-linecap: round; stroke-linejoin: round; }
 </style>
+<!-- Fundo da app: constelação (canvas a seguir), liso, quadriculado ou linha dourada -->
+<div class="app-bg" id="appBg" data-bg="<?= htmlspecialchars($_bg) ?>" aria-hidden="true">
+  <svg viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" focusable="false">
+    <path class="bl-prev" d="M-40 965 C640 955 1180 890 1640 460"/>
+    <path class="bl-cat" style="stroke:var(--cat-1)" d="M-30 640 C150 636 250 590 310 470"/>
+    <path class="bl-cat bl-tip" style="stroke:var(--cat-1)" transform="translate(310 470) rotate(-63.4) scale(.7)" d="M-44 -30 L0 0 L-44 30"/>
+    <path class="bl-cat" style="stroke:var(--cat-3)" d="M960 310 C1060 306 1140 270 1200 180"/>
+    <path class="bl-cat bl-tip" style="stroke:var(--cat-3)" transform="translate(1200 180) rotate(-56.3) scale(.55)" d="M-44 -30 L0 0 L-44 30"/>
+    <path class="bl-cat" style="stroke:var(--cat-7)" d="M1060 1040 C1200 1015 1320 965 1420 860"/>
+    <path class="bl-cat bl-tip" style="stroke:var(--cat-7)" transform="translate(1420 860) rotate(-46.4) scale(.6)" d="M-44 -30 L0 0 L-44 30"/>
+    <path class="bl-gold" d="M-40 930 C620 925 1120 820 1540 200"/>
+    <path class="bl-gold bl-tip" transform="translate(1540 200) rotate(-55.9)" d="M-44 -30 L0 0 L-44 30"/>
+  </svg>
+</div>
 <!-- Particles canvas (visible in all post-login pages) -->
 <canvas id="particles-canvas" style="position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;"></canvas>
 
@@ -336,7 +382,7 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
 
   function resize() { W = canvas.width = window.innerWidth; H = canvas.height = window.innerHeight; }
   resize();
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', () => { resize(); if (!running) start(); });
 
   function isDark() { return document.documentElement.getAttribute('data-theme') === 'dark'; }
 
@@ -345,7 +391,17 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
       vx: (Math.random()-.5)*.4, vy: (Math.random()-.5)*.4, r: Math.random()*2+1 });
   }
 
+  // Só anda com o fundo "constelação" (Definições → Aparência). Com "reduzir movimento" fica parado.
+  const bg   = document.getElementById('appBg');
+  const calm = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let running = false;
+  const active = () => !bg || bg.dataset.bg === 'constelacao';
+  function start() { if (!running && active() && !document.hidden) { running = true; requestAnimationFrame(draw); } }
+  if (bg) new MutationObserver(start).observe(bg, { attributes: true, attributeFilter: ['data-bg'] });
+  document.addEventListener('visibilitychange', start);
+
   function draw() {
+    if (!active() || document.hidden) { running = false; return; }
     ctx.clearRect(0, 0, W, H);
     const dark     = isDark();
     const dotColor = dark ? 'rgba(200,160,100,.50)' : 'rgba(0,40,80,.25)';
@@ -367,9 +423,10 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
         }
       }
     }
+    if (calm.matches) { running = false; return; }   // desenha uma vez e fica parado
     requestAnimationFrame(draw);
   }
-  draw();
+  start();
 })();
 </script>
 

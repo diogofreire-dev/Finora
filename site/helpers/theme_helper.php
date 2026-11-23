@@ -33,3 +33,25 @@ function getUserTheme($pdo, $user_id) {
         return 'light';
     }
 }
+
+// Fundos da app (Definições → Aparência). Tal como o tema, só valores desta lista chegam ao HTML.
+//   constelacao  — pontos e linhas animados com brilhos suaves (o fundo de sempre)
+//   liso         — só a cor de fundo; o mais leve
+//   quadriculado — papel quadriculado de livro de contas, como na página inicial
+//   linha        — a linha dourada do logo com setas nas cores das categorias, como na página inicial
+const BACKGROUNDS = ['constelacao', 'liso', 'quadriculado', 'linha'];
+
+function valid_background(?string $bg): string {
+    return in_array($bg, BACKGROUNDS, true) ? $bg : 'constelacao';
+}
+
+function getUserBackground($pdo, $user_id): string {
+    if (!$user_id) return 'constelacao';
+    try {
+        $stmt = $pdo->prepare('SELECT background FROM user_settings WHERE user_id = :uid');
+        $stmt->execute([':uid' => $user_id]);
+        return valid_background($stmt->fetchColumn() ?: null);
+    } catch (PDOException $e) {
+        return 'constelacao';     // base ainda sem a coluna (migration_background.sql): fica o fundo de sempre
+    }
+}
