@@ -311,7 +311,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
       <input type="hidden" name="year" value="<?= (int) $year ?>">
       <input type="hidden" name="compare_year" value="<?= (int) $compareYear ?>">
       <label class="visually-hidden" for="anCard"><?= te('Cartão') ?></label>
-      <select id="anCard" name="card_id" class="form-select" onchange="this.form.submit()">
+      <select id="anCard" name="card_id" class="form-select" data-autosubmit>
         <option value=""><?= te('Todos os cartões') ?></option>
         <?php foreach ($cards as $c): ?>
           <option value="<?= $c['id'] ?>" <?= $card_id == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
@@ -357,7 +357,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
         <input type="hidden" name="year" value="<?= (int) $year ?>">
         <?php if ($card_id): ?><input type="hidden" name="card_id" value="<?= (int) $card_id ?>"><?php endif; ?>
         <label class="visually-hidden" for="anCompare"><?= te('Comparar com') ?></label>
-        <select id="anCompare" name="compare_year" class="form-select" onchange="this.form.submit()">
+        <select id="anCompare" name="compare_year" class="form-select" data-autosubmit>
           <?php foreach ($allYears as $y): if ($y == $year) continue; ?>
             <option value="<?= $y ?>" <?= $compareYear == $y ? 'selected' : '' ?>><?= te('Comparar com {year}', ['year' => $y]) ?></option>
           <?php endforeach; ?>
@@ -420,7 +420,7 @@ $maxCatTotal = $categoryTotals ? max(array_column($categoryTotals, 'total')) : 0
           <input type="hidden" name="compare_year" value="<?= (int) $compareYear ?>">
           <?php if ($card_id): ?><input type="hidden" name="card_id" value="<?= (int) $card_id ?>"><?php endif; ?>
           <label class="visually-hidden" for="anTopMonth"><?= te('Mês') ?></label>
-          <select id="anTopMonth" name="top5_month" class="form-select" onchange="this.form.submit()">
+          <select id="anTopMonth" name="top5_month" class="form-select" data-autosubmit>
             <option value="0" <?= $top5Month == 0 ? 'selected' : '' ?>><?= te('Ano inteiro') ?></option>
             <?php for ($m = 1; $m <= 12; $m++): ?>
               <option value="<?= $m ?>" <?= $top5Month == $m ? 'selected' : '' ?>><?= ucfirst(month_name_pt($m)) ?></option>

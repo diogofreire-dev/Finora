@@ -4,6 +4,9 @@
 // A frase portuguesa é a própria chave (como no gettext), por isso uma frase sem tradução aparece em português
 // em vez de partir a página. As traduções estão em site/lang/<código>.php.
 
+// Content-Security-Policy em todas as páginas (todas carregam este ficheiro)
+require_once __DIR__ . '/security_headers.php';
+
 // Código → [nome na própria língua, valor do atributo lang do HTML, locale do Intl no JavaScript]
 const LANGS = [
     'pt-PT' => ['Português', 'pt-PT', 'pt-PT'],

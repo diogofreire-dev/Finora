@@ -8,9 +8,6 @@ require_once __DIR__ . '/helpers/i18n.php';
 @include_once __DIR__ . '/../config/brevo.php';
 $siteUrl = rtrim(defined('APP_URL') ? APP_URL : '', '/');
 
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
-
 $features = [
     ['icon' => 'credit-card-2-front', 'title' => t('Cartões'),             'text' => t('Todos os teus cartões num só sítio, com o limite e o que ainda tens disponível.')],
     ['icon' => 'receipt',             'title' => t('Transações'),          'text' => t('Regista cada gasto com categoria e cartão. Pesquisa por texto, mês ou categoria.')],

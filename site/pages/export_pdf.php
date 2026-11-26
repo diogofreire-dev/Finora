@@ -285,7 +285,7 @@ include __DIR__ . '/../components/sidebar.php';
           <h4 class="fw-bold mb-3"><?= te('Relatório Completo') ?></h4>
           <p class="text-muted mb-4"><?= te('Todas as transações com análise detalhada') ?></p>
           <!-- Botão de exportação completa -->
-          <button type="button" class="btn btn-primary px-4" onclick="exportReport('full')">
+          <button type="button" class="btn btn-primary px-4" data-export="full">
             <i class="bi bi-download"></i> <?= te('Exportar Completo') ?>
           </button>
         </div>
@@ -298,7 +298,7 @@ include __DIR__ . '/../components/sidebar.php';
           <h4 class="fw-bold mb-3"><?= te('Relatório Resumido') ?></h4>
           <p class="text-muted mb-4"><?= te('Últimas 20 transações e resumo') ?></p>
           <!-- Botão de exportação resumida -->
-          <button type="button" class="btn btn-outline-primary px-4" onclick="exportReport('summary')">
+          <button type="button" class="btn btn-outline-primary px-4" data-export="summary">
             <i class="bi bi-download"></i> <?= te('Exportar Resumido') ?>
           </button>
         </div>
@@ -340,6 +340,7 @@ include __DIR__ . '/../components/sidebar.php';
     params.append('type', type);
     window.location.href = '../helpers/generate_report_pdf.php?' + params.toString();
   }
+  document.querySelectorAll('[data-export]').forEach((b) => b.addEventListener('click', () => exportReport(b.dataset.export)));
 </script>
 </body>
 </html>

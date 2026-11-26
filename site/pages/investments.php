@@ -338,7 +338,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
                     data-id="<?= (int) $i['id'] ?>" data-name="<?= htmlspecialchars($i['name']) ?>" data-type="<?= htmlspecialchars($i['type']) ?>"
                     data-ticker="<?= htmlspecialchars($i['ticker'] ?? '') ?>" data-quantity="<?= htmlspecialchars((string) (float) $i['quantity']) ?>"
                     data-buy="<?= htmlspecialchars((string) (float) $i['buy_price']) ?>" data-current="<?= htmlspecialchars((string) (float) $i['current_price']) ?>"><i class="bi bi-pencil"></i></button>
-            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este investimento? Não é possível desfazer.')) ?>)">
+            <form method="post" data-confirm="<?= te('Apagar este investimento? Não é possível desfazer.') ?>">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="investment_id" value="<?= (int) $i['id'] ?>">
@@ -397,7 +397,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
       </div>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="button" class="btn-s" data-close-dialog><?= te('Cancelar') ?></button>
       <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <span><?= te('Adicionar') ?></span></button>
     </div>
   </form>
@@ -415,7 +415,7 @@ $activePage = 'investments'; $sidebarPrefix = '../';
       <input id="ivNewPrice" type="text" name="current_price" class="form-control" inputmode="decimal" required>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="button" class="btn-s" data-close-dialog><?= te('Cancelar') ?></button>
       <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Guardar preço') ?></button>
     </div>
   </form>

@@ -260,7 +260,7 @@ unset($b);
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
               <button type="submit"><i class="bi bi-pause-circle"></i> <?= te('Pausar') ?></button>
             </form>
-            <form method="post" class="del" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']])) ?>)">
+            <form method="post" class="del" data-confirm="<?= te('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']]) ?>">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
@@ -287,7 +287,7 @@ unset($b);
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">
               <button type="submit" class="btn-s"><i class="bi bi-play-circle"></i> <?= te('Retomar') ?></button>
             </form>
-            <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']])) ?>)">
+            <form method="post" data-confirm="<?= te('Apagar o orçamento «{name}»? Não é possível desfazer.', ['name' => $b['name']]) ?>">
               <?= csrf_field() ?>
               <input type="hidden" name="action" value="delete">
               <input type="hidden" name="budget_id" value="<?= $b['id'] ?>">

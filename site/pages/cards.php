@@ -595,7 +595,7 @@ $walletCards = array_map(fn($c) => [
     </div>
     <p class="note"><?= te('O pagamento repõe o disponível do cartão. Não conta como gasto na análise, porque as compras já lá estão.') ?></p>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="button" class="btn-s" data-close-dialog><?= te('Cancelar') ?></button>
       <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Registar pagamento') ?></button>
     </div>
   </form>

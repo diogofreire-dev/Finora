@@ -300,7 +300,7 @@ function day_label(string $day): string {
       </label>
       <label class="tx-card-select">
         <span class="visually-hidden"><?= te('Cartão') ?></span>
-        <select name="card_id" class="form-select" onchange="this.form.submit()">
+        <select name="card_id" class="form-select" data-autosubmit>
           <option value=""><?= te('Todos os cartões') ?></option>
           <?php foreach ($cards as $c): ?>
             <option value="<?= $c['id'] ?>" <?= $card_id == $c['id'] ? 'selected' : '' ?>><?= htmlspecialchars($c['name']) ?></option>
@@ -363,7 +363,7 @@ function day_label(string $day): string {
               <span class="tx-amt">−<?= fmt_money($t['amount']) ?></span>
               <div class="tx-actions">
                 <a href="edit_transaction.php?id=<?= $t['id'] ?>" aria-label="<?= te('Editar {name}', ['name' => $t['description']]) ?>" title="<?= te('Editar') ?>"><i class="bi bi-pencil"></i></a>
-                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar esta transação? Não é possível desfazer.')) ?>)">
+                <form method="post" data-confirm="<?= te('Apagar esta transação? Não é possível desfazer.') ?>">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="transaction_id" value="<?= $t['id'] ?>">
