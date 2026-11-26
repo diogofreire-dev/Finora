@@ -6,8 +6,6 @@ require_once __DIR__ . '/helpers/format.php';
 @include_once __DIR__ . '/../config/brevo.php';
 $contact = defined('APP_CONTACT_EMAIL') ? APP_CONTACT_EMAIL : '';
 
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
 
 $updated = fmt_date_long(mktime(0, 0, 0, 11, 14, 2026), true);
 

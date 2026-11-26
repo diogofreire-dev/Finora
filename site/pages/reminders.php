@@ -506,7 +506,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                       </div>
                       <span class="lc-amt"><?= fmt_money($it['amount']) ?></span>
                       <?php if ($it['canPay']): ?>
-                        <button type="button" class="btn-s btn-s-success lc-pay" onclick="openMarkPaidModal(<?= $it['id'] ?>)"><i class="bi bi-check2"></i> <?= te('Pago') ?></button>
+                        <button type="button" class="btn-s btn-s-success lc-pay" data-mark-paid="<?= (int) $it['id'] ?>"><i class="bi bi-check2"></i> <?= te('Pago') ?></button>
                       <?php endif; ?>
                     </li>
                   <?php endforeach; ?>
@@ -551,15 +551,15 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
               </div>
               <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
-                <button type="button" class="btn-s btn-s-success lm-pay" onclick="openMarkPaidModal(<?= (int) $r['id'] ?>)"><i class="bi bi-check2"></i> <?= te('Marcar como pago') ?></button>
-                <button type="button" class="ico" onclick="openEditModal(<?= htmlspecialchars(json_encode($r)) ?>)" aria-label="<?= te('Editar {name}', ['name' => $r['name']]) ?>" title="<?= te('Editar') ?>"><i class="bi bi-pencil"></i></button>
+                <button type="button" class="btn-s btn-s-success lm-pay" data-mark-paid="<?= (int) $r['id'] ?>"><i class="bi bi-check2"></i> <?= te('Marcar como pago') ?></button>
+                <button type="button" class="ico" data-edit-reminder="<?= htmlspecialchars(json_encode($r)) ?>" aria-label="<?= te('Editar {name}', ['name' => $r['name']]) ?>" title="<?= te('Editar') ?>"><i class="bi bi-pencil"></i></button>
                 <form method="post">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="toggle">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
                   <button type="submit" class="ico" aria-label="<?= te('Pausar {name}', ['name' => $r['name']]) ?>" title="<?= te('Pausar') ?>"><i class="bi bi-pause-circle"></i></button>
                 </form>
-                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
+                <form method="post" data-confirm="<?= te('Apagar este lembrete? Não é possível desfazer.') ?>">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
@@ -585,13 +585,13 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
               </div>
               <span class="lm-amt"><?= fmt_money($r['amount']) ?></span>
               <div class="lm-actions">
-                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Voltar a marcar este pagamento como pendente?')) ?>)">
+                <form method="post" data-confirm="<?= te('Voltar a marcar este pagamento como pendente?') ?>">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="unmark_paid">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
                   <button type="submit" class="ico" aria-label="<?= te('Voltar a pendente') ?>" title="<?= te('Voltar a pendente') ?>"><i class="bi bi-arrow-counterclockwise"></i></button>
                 </form>
-                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
+                <form method="post" data-confirm="<?= te('Apagar este lembrete? Não é possível desfazer.') ?>">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
@@ -623,7 +623,7 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
                   <button type="submit" class="btn-s lm-pay"><i class="bi bi-play-circle"></i> <?= te('Retomar') ?></button>
                 </form>
-                <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este lembrete? Não é possível desfazer.')) ?>)">
+                <form method="post" data-confirm="<?= te('Apagar este lembrete? Não é possível desfazer.') ?>">
                   <?= csrf_field() ?>
                   <input type="hidden" name="action" value="delete">
                   <input type="hidden" name="reminder_id" value="<?= (int) $r['id'] ?>">
@@ -773,6 +773,13 @@ $hasPending = $overdueReminders || $upcomingReminders || $futureReminders;
   }));
 })();
 
+// Botões "Pago" e "Editar" (data-mark-paid / data-edit-reminder; a CSP não deixa usar onclick=)
+document.addEventListener('click', (e) => {
+  const pay = e.target.closest('[data-mark-paid]');
+  if (pay) { openMarkPaidModal(Number(pay.dataset.markPaid)); return; }
+  const ed = e.target.closest('[data-edit-reminder]');
+  if (ed) openEditModal(JSON.parse(ed.dataset.editReminder));
+});
 function openMarkPaidModal(reminderId) {
   document.getElementById('mark_paid_reminder_id').value = reminderId;
   new bootstrap.Modal(document.getElementById('markPaidModal')).show();

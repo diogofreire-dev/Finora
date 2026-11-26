@@ -289,8 +289,8 @@ if ($card_id) {
 <div class="print-btn-bar">
     <span class="bar-title">Pré-visualização do Relatório</span>
     <div class="bar-actions">
-        <button class="btn-print" onclick="window.print()">Guardar / Imprimir PDF</button>
-        <button class="btn-close" onclick="history.length > 1 ? history.back() : window.location.href='../pages/dados.php'">✕ Fechar</button>
+        <button class="btn-print" data-print>Guardar / Imprimir PDF</button>
+        <button class="btn-close" data-back="../pages/dados.php">✕ Fechar</button>
     </div>
 </div>
 
@@ -432,6 +432,11 @@ if ($card_id) {
 </div><!-- /page -->
 
 <script>
+// Botões da barra (sem onclick= por causa da CSP)
+document.querySelector('[data-print]').addEventListener('click', () => window.print());
+document.querySelector('[data-back]').addEventListener('click', (e) => {
+  if (history.length > 1) history.back(); else window.location.href = e.currentTarget.dataset.back;
+});
 // Auto-abre o diálogo de impressão (opcional — comenta se não quiseres)
 // window.addEventListener('load', () => setTimeout(() => window.print(), 500));
 </script>

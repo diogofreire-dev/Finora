@@ -25,3 +25,20 @@ RedirectMatch 404 ^/(.*/)?(config|cron|database|vendor|docs|aprendizagem|design)
     php_value session.cookie_samesite Lax
     php_flag  session.use_strict_mode On
 </IfModule>
+
+# Cabeçalhos de segurança em todas as respostas (a Content-Security-Policy vem do PHP,
+# site/helpers/security_headers.php, porque leva um nonce novo em cada pedido).
+# O HSTS (Strict-Transport-Security) já é posto pela configuração do Apache no servidor.
+#   nosniff            → o browser não "adivinha" o tipo de um ficheiro (um .txt não corre como script)
+#   Referrer-Policy    → outros sites só veem o domínio de onde vens, nunca o caminho nem o ?query
+#   X-Frame-Options    → ninguém mete a Finora num iframe (clickjacking); o frame-ancestors da CSP faz o mesmo nos browsers novos
+#   Permissions-Policy → câmara só para a própria Finora (Ler fatura); o resto desligado
+#   COOP               → uma janela de outro site aberta a partir daqui não consegue mexer nesta
+# setifempty: uma página pode pôr uma regra mais apertada (as de login usam Referrer-Policy: same-origin)
+<IfModule mod_headers.c>
+    Header setifempty X-Content-Type-Options "nosniff"
+    Header setifempty Referrer-Policy "strict-origin-when-cross-origin"
+    Header setifempty X-Frame-Options "DENY"
+    Header setifempty Permissions-Policy "camera=(self), microphone=(), geolocation=(), payment=(), usb=()"
+    Header setifempty Cross-Origin-Opener-Policy "same-origin"
+</IfModule>

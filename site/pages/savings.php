@@ -318,7 +318,7 @@ $preGoal   = in_array($preGoal, $goalIds, true) ? $preGoal : 0;
                 <small><?= date('j', $ts) ?> <?= mb_substr(month_name((int) date('n', $ts)), 0, 3) ?> · <?= $m['goal_name'] ? htmlspecialchars($m['goal_name']) : te('Sem meta') ?></small>
               </div>
               <span class="sv-amt <?= $out ? 'out' : '' ?>"><?= ($out ? '−' : '+') . fmt_money(abs($m['amount'])) ?></span>
-              <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar este movimento?')) ?>)">
+              <form method="post" data-confirm="<?= te('Apagar este movimento?') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="back" value="<?= htmlspecialchars(http_build_query($filters)) ?>">

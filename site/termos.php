@@ -9,8 +9,6 @@ require_once __DIR__ . '/helpers/plan.php';
 $contact = defined('APP_CONTACT_EMAIL') ? APP_CONTACT_EMAIL : '';
 $mail    = $contact !== '' ? '<a href="mailto:' . htmlspecialchars($contact) . '">' . htmlspecialchars($contact) . '</a>' : '';
 
-header('X-Content-Type-Options: nosniff');
-header('Referrer-Policy: strict-origin-when-cross-origin');
 
 $updated = fmt_date_long(mktime(0, 0, 0, 11, 14, 2026), true);
 $price   = fmt_money(PRO_PRICE_CENTS / 100, 2, PRO_CURRENCY);

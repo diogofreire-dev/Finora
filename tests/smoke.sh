@@ -31,6 +31,18 @@ check() {   # check <caminho> [estado esperado]
 # Páginas públicas
 for p in index.php privacidade.php termos.php auth/login.php auth/register.php auth/forgot_password.php; do check "$p"; done
 
+# Content-Security-Policy com nonce (helpers/security_headers.php): o cabeçalho existe e o nonce
+# do cabeçalho é o mesmo que está nos <script> da página
+csp_page="$(curl -s -D - "$BASE/index.php")"
+csp_nonce="$(grep -i '^content-security-policy:' <<<"$csp_page" | grep -oE "'nonce-[A-Za-z0-9+/=]+'" | head -1 | sed -E "s/'nonce-(.*)'/\1/" || true)"
+if [[ -z "$csp_nonce" ]]; then
+  echo "✗ index.php → sem Content-Security-Policy com nonce"; fail=1
+elif ! grep -qF "nonce=\"$csp_nonce\"" <<<"$csp_page"; then
+  echo "✗ index.php → os <script> não têm o nonce do cabeçalho"; fail=1
+else
+  echo "✓ Content-Security-Policy com nonce"
+fi
+
 # Sem sessão, as páginas da app redirecionam para o login
 check dashboard.php 302
 

@@ -213,7 +213,7 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
     <a href="<?= $_sp ?>dashboard.php" class="app-brand" aria-label="<?= te('Finora — início') ?>">
       <?= finora_logo('app-logo') ?>
     </a>
-    <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="<?= te('Fechar menu') ?>">
+    <button class="sidebar-close" type="button" data-close-sidebar aria-label="<?= te('Fechar menu') ?>">
       <i class="bi bi-x-lg"></i>
     </button>
   </div>
@@ -282,7 +282,7 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   </div>
 </aside>
 
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+<div class="sidebar-overlay" id="sidebarOverlay" data-close-sidebar></div>
 
 <script>
 (function () {
@@ -371,6 +371,28 @@ $_initial  = strtoupper(mb_substr($_username !== '' ? $_username : 'U', 0, 1));
   window.closeSidebar = closeSidebar;
   window.toggleSidebar = () => sb.classList.contains('open') ? closeSidebar() : openSidebar();
 })();
+</script>
+<script>
+// ── Ações sem JavaScript inline ─────────────────────────────
+// A Content-Security-Policy (helpers/security_headers.php) não deixa correr onclick="…" nem onsubmit="…".
+// Em vez disso os elementos têm atributos data-*, tratados aqui para todas as páginas da app:
+//   <form data-confirm="Texto">  pergunta antes de enviar (o texto é HTML escapado, nunca código)
+//   data-close-dialog            fecha o <dialog> onde está
+//   data-autosubmit              envia o formulário ao mudar (filtros)
+//   data-close-sidebar           fecha o menu lateral
+document.addEventListener('submit', (e) => {
+  const f = e.target.closest('form[data-confirm]');
+  if (f && !confirm(f.dataset.confirm)) { e.preventDefault(); e.stopImmediatePropagation(); }
+}, true);
+document.addEventListener('click', (e) => {
+  const d = e.target.closest('[data-close-dialog]');
+  if (d) { d.closest('dialog')?.close(); return; }
+  if (e.target.closest('[data-close-sidebar]') && window.closeSidebar) window.closeSidebar();
+});
+document.addEventListener('change', (e) => {
+  const el = e.target.closest('[data-autosubmit]');
+  if (el && el.form) el.form.submit();
+});
 </script>
 <script>
 // ── Partículas (injetadas pelo sidebar em todas as páginas) ─

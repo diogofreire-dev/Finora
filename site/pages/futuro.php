@@ -268,7 +268,7 @@ $savedIncome = (float) ($stInc->fetchColumn() ?: 0);
                       data-id="<?= (int) $g['id'] ?>" data-name="<?= htmlspecialchars($g['name']) ?>"
                       data-amount="<?= htmlspecialchars($g['target_amount']) ?>" data-income="<?= htmlspecialchars($g['monthly_income']) ?>"
                       data-date="<?= htmlspecialchars($g['target_date']) ?>"><i class="bi bi-pencil"></i></button>
-              <form method="post" onsubmit="return confirm(<?= htmlspecialchars(tj('Apagar esta meta? O dinheiro poupado nela passa para as poupanças sem meta.')) ?>)">
+              <form method="post" data-confirm="<?= te('Apagar esta meta? O dinheiro poupado nela passa para as poupanças sem meta.') ?>">
                 <?= csrf_field() ?>
                 <input type="hidden" name="action" value="delete">
                 <input type="hidden" name="goal_id" value="<?= (int) $g['id'] ?>">
@@ -375,7 +375,7 @@ $savedIncome = (float) ($stInc->fetchColumn() ?: 0);
       <input type="date" name="target_date" id="edit_target_date" class="form-control" required>
     </div>
     <div class="acts">
-      <button type="button" class="btn-s" onclick="this.closest('dialog').close()"><?= te('Cancelar') ?></button>
+      <button type="button" class="btn-s" data-close-dialog><?= te('Cancelar') ?></button>
       <button type="submit" class="btn-s btn-s-primary"><i class="bi bi-check2"></i> <?= te('Guardar') ?></button>
     </div>
   </form>
